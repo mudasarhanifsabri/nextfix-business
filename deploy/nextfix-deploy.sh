@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 # This script is called by the queue worker with fixed arguments from the
-# approved server-side manifest. Keep it outside the web document root.
+# exact Git commit selected by the server. Keep it outside the web document root.
 COMMIT="${1:-}"
 VERSION="${2:-}"
 RUN_ID="${3:-}"
@@ -58,4 +58,5 @@ php "$RELEASE/artisan" up
 
 echo "stage=health"
 curl --fail --silent --show-error --max-time 20 "$NEXTFIX_HEALTH_URL" >/dev/null
+printf '{"version":"%s","commit":"%s","deployed_at":"%s"}\n' "$VERSION" "$COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$NEXTFIX_SHARED/current.json"
 echo "stage=complete version=$VERSION commit=$COMMIT"

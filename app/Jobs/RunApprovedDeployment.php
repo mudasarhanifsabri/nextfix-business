@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\DeploymentRun;
-use App\Services\ApprovedRelease;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
@@ -18,7 +17,7 @@ class RunApprovedDeployment implements ShouldQueue
 
     public function __construct(public int $deploymentRunId) {}
 
-    public function handle(ApprovedRelease $approvedRelease): void
+    public function handle(): void
     {
         $run = DeploymentRun::findOrFail($this->deploymentRunId);
         $lock = Cache::lock('nextfix:deployment', config('deployment.lock_seconds'));
@@ -29,13 +28,12 @@ class RunApprovedDeployment implements ShouldQueue
         }
 
         try {
-            $release = $approvedRelease->read();
-            throw_unless($release && hash_equals($release['release_id'], $run->release_id), new \RuntimeException('Approved manifest no longer matches the queued release.'));
+            throw_unless(preg_match('/^[a-f0-9]{40}$/', $run->release_id), new \RuntimeException('Queued Git commit is invalid.'));
             $script = config('deployment.script_path');
             throw_unless($script && is_file($script), new \RuntimeException('Restricted deployment script is unavailable.'));
 
             $run->update(['status' => 'running', 'stage' => 'preflight', 'started_at' => now()]);
-            $process = new Process([$script, $release['commit'], $release['version'], (string) $run->id]);
+            $process = new Process([$script, $run->release_id, $run->version, (string) $run->id]);
             $process->setTimeout(config('deployment.timeout_seconds'));
             $process->run(function (string $type, string $output) use ($run): void {
                 $clean = preg_replace('/(token|password|secret|key)\s*[=:]\s*\S+/i', '$1=[REDACTED]', $output);

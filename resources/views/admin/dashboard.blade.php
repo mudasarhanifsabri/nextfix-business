@@ -1,0 +1,7 @@
+@extends('layouts.app', ['heading' => 'Operations control'])
+@section('content')
+<section class="hero compact"><div><p class="eyebrow">NEXTFIX ADMINISTRATION</p><h2>Today’s operation at a glance</h2><p>Focus on exceptions, assignments and customer decisions.</p></div><span class="status confirmed">Systems healthy</span></section>
+<div class="stat-grid admin"><article><span>Companies</span><strong>{{ $companyCount }}</strong><small>active accounts</small></article><article><span>Today’s jobs</span><strong>{{ $todayCount }}</strong><small>across all teams</small></article><article><span>Payment exceptions</span><strong>{{ $pendingCount }}</strong><small>pending verification</small></article></div>
+<section class="panel" id="operations"><div class="panel-head"><div><p class="eyebrow">OPERATIONS QUEUE</p><h3>Recent bookings</h3></div><button class="secondary">Dispatch calendar</button></div>
+<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Company / unit</th><th>Service</th><th>Schedule</th><th>Status</th></tr></thead><tbody>@foreach($bookings as $booking)<tr><td><strong>{{ $booking->reference }}</strong></td><td>{{ $booking->company->name }}<small>{{ $booking->unit->building }} · {{ $booking->unit->unit_number }}</small></td><td>{{ $booking->service_name }}</td><td>{{ $booking->scheduled_at->format('d M, g:i A') }}</td><td><span class="status {{ $booking->status }}">{{ str_replace('_', ' ', $booking->status) }}</span></td></tr>@endforeach</tbody></table></div></section>
+@endsection

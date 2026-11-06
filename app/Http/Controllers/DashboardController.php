@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Booking;
+use App\Models\Company;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class DashboardController extends Controller
+{
+    public function __invoke(Request $request): View
+    {
+        $user = $request->user();
+        if ($user->role === 'nextfix_admin') {
+            return view('admin.dashboard', [
+                'companyCount' => Company::count(),
+                'todayCount' => Booking::whereDate('scheduled_at', today())->count(),
+                'pendingCount' => Booking::where('payment_status', 'pending')->count(),
+                'bookings' => Booking::with(['company', 'unit'])->latest('scheduled_at')->limit(8)->get(),
+            ]);
+        }
+
+        $bookings = Booking::where('company_id', $user->company_id)->with('unit')->latest('scheduled_at')->get();
+
+        return view('dashboard', [
+            'upcoming' => $bookings->where('scheduled_at', '>=', now())->take(4),
+            'pendingCount' => $bookings->where('payment_status', 'pending')->count(),
+            'activeCount' => $bookings->whereIn('status', ['confirmed', 'assigned', 'on_the_way', 'in_progress'])->count(),
+        ]);
+    }
+}

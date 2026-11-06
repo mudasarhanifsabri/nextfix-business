@@ -1,0 +1,8 @@
+@extends('layouts.app', ['heading' => 'Companies'])
+@section('content')
+<div class="page-actions"><div><p class="eyebrow">CUSTOMER ACCOUNTS</p><h2>Company directory</h2><p class="muted">Manage onboarding, service activity and commercial records.</p></div><a class="primary" href="{{ route('admin.companies.create') }}">+ Add new company</a></div>
+<section class="panel"><div class="panel-head"><form class="list-search"><input name="search" value="{{ request('search') }}" placeholder="Search company, contact or email"><button class="secondary">Search</button></form><span class="muted">{{ $companies->total() }} companies</span></div>
+<div class="table-wrap"><table><thead><tr><th>Company</th><th>Primary contact</th><th>Portfolio</th><th>Bookings</th><th>Status</th><th></th></tr></thead><tbody>
+@forelse($companies as $company)<tr><td><strong>{{ $company->name }}</strong><small>{{ $company->legal_name ?: $company->industry ?: 'Business account' }}</small></td><td>{{ $company->contact_name }}<small>{{ $company->email ?: $company->phone }}</small></td><td>{{ $company->units_count }} units<small>{{ $company->users_count }} users</small></td><td>{{ $company->bookings_count }}</td><td><span class="status {{ $company->status }}">{{ $company->status }}</span></td><td><a class="row-link" href="{{ route('admin.companies.show', $company) }}">View →</a></td></tr>@empty<tr><td colspan="6"><div class="empty"><h4>No companies found</h4><p>Add the first company or change your search.</p></div></td></tr>@endforelse
+</tbody></table></div><div class="pager">{{ $companies->links() }}</div></section>
+@endsection

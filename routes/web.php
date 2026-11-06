@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
@@ -25,4 +26,7 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
     Route::get('/admin/system-updates', [SystemUpdateController::class, 'index'])->name('admin.updates.index');
     Route::post('/admin/system-updates', [SystemUpdateController::class, 'store'])->name('admin.updates.store');
+    Route::resource('/admin/companies', CompanyController::class)
+        ->only(['index', 'create', 'store', 'show'])
+        ->names('admin.companies');
 });

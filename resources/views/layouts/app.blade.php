@@ -18,7 +18,11 @@
                 <a class="{{ request()->routeIs('bookings.*') ? 'active' : '' }}" href="{{ route('bookings.index') }}"><span>▣</span> Bookings</a>
                 <a class="{{ request()->routeIs('units.*') ? 'active' : '' }}" href="{{ route('units.index') }}"><span>◇</span> Units</a>
             @else
-                <a href="#operations"><span>▣</span> Operations</a><a href="#companies"><span>◇</span> Companies</a>
+                <a href="{{ route('dashboard') }}#operations"><span>▣</span> Operations</a>
+                <div class="nav-group {{ request()->routeIs('admin.companies.*') ? 'open' : '' }}">
+                    <a class="nav-parent {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}"><span>◇</span> Companies <b>⌄</b></a>
+                    <div class="nav-sub"><a class="{{ request()->routeIs('admin.companies.index') || request()->routeIs('admin.companies.show') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}">List</a><a class="{{ request()->routeIs('admin.companies.create') ? 'active' : '' }}" href="{{ route('admin.companies.create') }}">Add new</a></div>
+                </div>
                 <a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}"><span>↻</span> System updates</a>
             @endif
         </nav>

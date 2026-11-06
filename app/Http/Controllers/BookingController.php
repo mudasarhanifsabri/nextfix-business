@@ -32,9 +32,9 @@ class BookingController extends Controller
         Booking::create($data + [
             'company_id' => $request->user()->company_id, 'unit_id' => $unit->id,
             'reference' => 'NFB-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
-            'status' => 'awaiting_payment', 'payment_status' => 'pending', 'amount_minor' => 0, 'currency' => 'AED',
+            'status' => 'pending', 'payment_status' => 'manual', 'amount_minor' => 0, 'currency' => 'AED',
         ]);
 
-        return redirect()->route('bookings.index')->with('status', 'Booking saved. Pricing and payment remain pending review.');
+        return redirect()->route('bookings.index')->with('status', 'Booking requested. We will confirm the schedule and price with you.');
     }
 }

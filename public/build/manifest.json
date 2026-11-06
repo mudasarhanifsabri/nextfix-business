@@ -4,13 +4,18 @@
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/css/customer.css": {
+    "file": "assets/customer-CNejUGz1.css",
+    "src": "resources/css/customer.css",
+    "isEntry": true
+  },
   "resources/css/ultimate.css": {
     "file": "assets/ultimate-DVsWGF6K.css",
     "src": "resources/css/ultimate.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BlTgSSP5.js",
+    "file": "assets/app-DuIWyx4I.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

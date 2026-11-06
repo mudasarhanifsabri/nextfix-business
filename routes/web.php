@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -29,4 +31,11 @@ Route::middleware('auth')->group(function (): void {
     Route::resource('/admin/companies', CompanyController::class)
         ->only(['index', 'create', 'store', 'show'])
         ->names('admin.companies');
+    Route::get('/admin/invoices', [FinanceController::class, 'invoices'])->name('admin.invoices.index');
+    Route::get('/admin/invoices/{invoice}', [FinanceController::class, 'invoice'])->name('admin.invoices.show');
+    Route::get('/admin/invoices/{invoice}/pdf', [FinanceController::class, 'pdf'])->name('admin.invoices.pdf');
+    Route::get('/admin/payments', [FinanceController::class, 'payments'])->name('admin.payments.index');
+    Route::get('/admin/notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::post('/admin/notifications/read-all', [NotificationController::class, 'readAll'])->name('admin.notifications.read-all');
+    Route::get('/admin/notifications/{notification}', [NotificationController::class, 'read'])->name('admin.notifications.read');
 });

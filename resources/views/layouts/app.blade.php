@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#1267e8">
     <link rel="manifest" href="/manifest.webmanifest">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <title>{{ $title ?? 'NextFix Business' }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/ultimate.css', 'resources/js/app.js'])
 </head>
 <body>
 <div class="app-shell">
@@ -23,6 +25,9 @@
                     <a class="nav-parent {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}"><span>◇</span> Companies <b>⌄</b></a>
                     <div class="nav-sub"><a class="{{ request()->routeIs('admin.companies.index') || request()->routeIs('admin.companies.show') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}">List</a><a class="{{ request()->routeIs('admin.companies.create') ? 'active' : '' }}" href="{{ route('admin.companies.create') }}">Add new</a></div>
                 </div>
+                <a class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}" href="{{ route('admin.invoices.index') }}"><span>▤</span> Invoices</a>
+                <a class="{{ request()->routeIs('admin.payments.*') ? 'active' : '' }}" href="{{ route('admin.payments.index') }}"><span>◉</span> Payments</a>
+                <a class="{{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}" href="{{ route('admin.notifications.index') }}"><span>●</span> Notifications</a>
                 <a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}"><span>↻</span> System updates</a>
             @endif
         </nav>
@@ -32,13 +37,17 @@
         </div>
     </aside>
     <main>
-        <header class="topbar"><div><p class="eyebrow">{{ auth()->user()->company?->name ?? 'NextFix Operations' }}</p><h1>{{ $heading ?? 'Overview' }}</h1></div><div class="top-actions"><button class="icon-button" aria-label="Notifications">●</button><span>{{ now()->timezone('Asia/Dubai')->format('D, d M') }}</span></div></header>
+        <header class="topbar"><div><p class="eyebrow">{{ auth()->user()->company?->name ?? 'NextFix Operations' }}</p><h1>{{ $heading ?? 'Overview' }}</h1></div><div class="top-actions">
+            <div class="dropdown"><button class="icon-button bell-button" data-bs-toggle="dropdown" aria-label="Notifications"><i class="bi bi-bell"></i>@if(auth()->user()->unreadNotifications->count())<b>{{ auth()->user()->unreadNotifications->count() }}</b>@endif</button><div class="dropdown-menu dropdown-menu-end notification-menu"><div class="notification-menu-head"><strong>Notifications</strong><a href="{{ route('admin.notifications.index') }}">View all</a></div>@forelse(auth()->user()->notifications()->limit(5)->get() as $note)<a class="dropdown-item {{ $note->read_at ? '' : 'unread' }}" href="{{ route('admin.notifications.read', $note) }}"><span class="note-dot {{ $note->data['level'] ?? 'info' }}"></span><div><strong>{{ $note->data['title'] ?? 'Notification' }}</strong><small>{{ $note->data['message'] ?? '' }}</small><time>{{ $note->created_at->diffForHumans() }}</time></div></a>@empty<div class="empty small">No notifications yet.</div>@endforelse</div></div>
+            <span>{{ now()->timezone('Asia/Dubai')->format('D, d M') }}</span></div></header>
         <div class="content">
             @if(session('status'))<div class="flash">{{ session('status') }}</div>@endif
             @yield('content')
         </div>
     </main>
 </div>
+<div class="toast-container position-fixed top-0 end-0 p-3">@if(session('status'))<div class="toast show border-0 shadow" role="alert"><div class="toast-header"><span class="note-dot success"></span><strong class="me-auto">NextFix</strong><button type="button" class="btn-close" data-bs-dismiss="toast"></button></div><div class="toast-body">{{ session('status') }}</div></div>@endif</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @if(auth()->user()->role !== 'nextfix_admin')<nav class="mobile-nav"><a href="{{ route('dashboard') }}">⌂<span>Home</span></a><a href="{{ route('bookings.index') }}">▣<span>Bookings</span></a><a href="{{ route('units.index') }}">◇<span>Units</span></a><a href="#">○<span>Account</span></a></nav>@endif
 </body>
 </html>

@@ -36,4 +36,9 @@ class Company extends Model
     {
         return $this->hasMany(CompanyDocument::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
 }

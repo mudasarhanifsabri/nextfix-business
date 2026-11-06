@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Company;
+use App\Models\Invoice;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -17,6 +19,9 @@ class DashboardController extends Controller
                 'companyCount' => Company::count(),
                 'todayCount' => Booking::whereDate('scheduled_at', today())->count(),
                 'pendingCount' => Booking::where('payment_status', 'pending')->count(),
+                'revenue' => Payment::where('status', 'completed')->sum('amount_minor'),
+                'outstanding' => Invoice::whereIn('status', ['sent', 'overdue'])->sum('amount_minor'),
+                'overdueCount' => Invoice::where('status', 'overdue')->count(),
                 'bookings' => Booking::with(['company', 'unit'])->latest('scheduled_at')->limit(8)->get(),
             ]);
         }

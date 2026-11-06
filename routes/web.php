@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,4 +23,6 @@ Route::middleware('auth')->group(function (): void {
         ->whereIn('service', ['cleaning', 'maintenance'])->name('bookings.create');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+    Route::get('/admin/system-updates', [SystemUpdateController::class, 'index'])->name('admin.updates.index');
+    Route::post('/admin/system-updates', [SystemUpdateController::class, 'store'])->name('admin.updates.store');
 });

@@ -19,6 +19,7 @@
                 <a class="{{ request()->routeIs('units.*') ? 'active' : '' }}" href="{{ route('units.index') }}"><span>◇</span> Units</a>
             @else
                 <a href="#operations"><span>▣</span> Operations</a><a href="#companies"><span>◇</span> Companies</a>
+                <a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}"><span>↻</span> System updates</a>
             @endif
         </nav>
         <div class="sidebar-foot">
@@ -34,6 +35,6 @@
         </div>
     </main>
 </div>
-<nav class="mobile-nav"><a href="{{ route('dashboard') }}">⌂<span>Home</span></a><a href="{{ route('bookings.index') }}">▣<span>Bookings</span></a><a href="{{ route('units.index') }}">◇<span>Units</span></a><a href="#">○<span>Account</span></a></nav>
+@if(auth()->user()->role !== 'nextfix_admin')<nav class="mobile-nav"><a href="{{ route('dashboard') }}">⌂<span>Home</span></a><a href="{{ route('bookings.index') }}">▣<span>Bookings</span></a><a href="{{ route('units.index') }}">◇<span>Units</span></a><a href="#">○<span>Account</span></a></nav>@endif
 </body>
 </html>

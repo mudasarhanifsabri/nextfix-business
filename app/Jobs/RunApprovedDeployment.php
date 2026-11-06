@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Models\DeploymentRun;
+use App\Services\ApprovedRelease;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Cache;
+use Symfony\Component\Process\Process;
+use Throwable;
+
+class RunApprovedDeployment implements ShouldQueue
+{
+    use Queueable;
+
+    public int $tries = 1;
+
+    public function __construct(public int $deploymentRunId) {}
+
+    public function handle(ApprovedRelease $approvedRelease): void
+    {
+        $run = DeploymentRun::findOrFail($this->deploymentRunId);
+        $lock = Cache::lock('nextfix:deployment', config('deployment.lock_seconds'));
+        if (! $lock->get()) {
+            $run->update(['status' => 'failed', 'stage' => 'lock', 'finished_at' => now(), 'log' => $run->log."\nDeployment lock unavailable."]);
+
+            return;
+        }
+
+        try {
+            $release = $approvedRelease->read();
+            throw_unless($release && hash_equals($release['release_id'], $run->release_id), new \RuntimeException('Approved manifest no longer matches the queued release.'));
+            $script = config('deployment.script_path');
+            throw_unless($script && is_file($script), new \RuntimeException('Restricted deployment script is unavailable.'));
+
+            $run->update(['status' => 'running', 'stage' => 'preflight', 'started_at' => now()]);
+            $process = new Process([$script, $release['commit'], $release['version'], (string) $run->id]);
+            $process->setTimeout(config('deployment.timeout_seconds'));
+            $process->run(function (string $type, string $output) use ($run): void {
+                $clean = preg_replace('/(token|password|secret|key)\s*[=:]\s*\S+/i', '$1=[REDACTED]', $output);
+                $run->update(['stage' => 'deploying', 'log' => mb_substr($run->log."\n".$clean, -12000)]);
+            });
+            throw_unless($process->isSuccessful(), new \RuntimeException('Deployment runner exited with a failure.'));
+            $run->update(['status' => 'success', 'stage' => 'complete', 'finished_at' => now()]);
+        } catch (Throwable $error) {
+            $run->update(['status' => 'failed', 'stage' => 'failed', 'finished_at' => now(), 'log' => mb_substr($run->log."\n".$error->getMessage(), -12000)]);
+            throw $error;
+        } finally {
+            $lock->release();
+        }
+    }
+}

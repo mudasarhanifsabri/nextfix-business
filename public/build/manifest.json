@@ -12,6 +12,11 @@
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/css/booking-evidence.css": {
+    "file": "assets/booking-evidence-Dit8d2qQ.css",
+    "src": "resources/css/booking-evidence.css",
+    "isEntry": true
+  },
   "resources/css/customer.css": {
     "file": "assets/customer-CNejUGz1.css",
     "src": "resources/css/customer.css",
@@ -38,8 +43,13 @@
     "isEntry": true
   },
   "resources/css/worker-actions.css": {
-    "file": "assets/worker-actions-2TfxKejs.css",
+    "file": "assets/worker-actions-D8xrj3QR.css",
     "src": "resources/css/worker-actions.css",
+    "isEntry": true
+  },
+  "resources/css/worker-completion.css": {
+    "file": "assets/worker-completion-KyAHMkVb.css",
+    "src": "resources/css/worker-completion.css",
     "isEntry": true
   },
   "resources/css/worker-flow.css": {
@@ -58,7 +68,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-B8ae3IHP.js",
+    "file": "assets/app-BiY6xX26.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

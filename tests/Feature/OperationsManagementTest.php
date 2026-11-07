@@ -75,7 +75,7 @@ class OperationsManagementTest extends TestCase
         $unit = Unit::create(['company_id' => $company->id, 'building' => 'Test Tower', 'unit_number' => '101', 'address' => 'Dubai']);
         $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-WORK-001', 'service_type' => 'maintenance', 'service_name' => 'AC repair', 'scheduled_at' => now()->addHour(), 'status' => 'assigned', 'workflow_stage' => 'work']);
 
-        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Tap when done');
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Tap each finished task');
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
             'action' => 'hold', 'completed_items' => ['arrival', 'safety'], 'hold_reason' => 'waiting_parts',
         ])->assertRedirect();

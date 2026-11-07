@@ -29,7 +29,7 @@ class WorkerJobController extends Controller
     {
         $professional = $this->professional($request);
         abort_unless($booking->professional_id === $professional->id, 403);
-        $booking->load(['company', 'unit', 'inspectionPhotos', 'workPhotos']);
+        $booking->load(['company', 'unit', 'issuePhotos', 'inspectionPhotos', 'workPhotos']);
         $checklist = config('workflows.'.$booking->service_type, config('workflows.maintenance'));
 
         return view('worker.jobs.show', compact('professional', 'booking', 'checklist'));
@@ -95,6 +95,11 @@ class WorkerJobController extends Controller
             $updates += ['status' => 'in_progress', 'hold_reason' => null, 'hold_note' => null, 'work_started_at' => $booking->work_started_at ?? now()];
         } elseif ($action === 'complete') {
             abort_unless($progress === 100, 422, 'Complete every checklist item before closing the job.');
+            abort_unless(
+                $booking->photos()->where('category', 'after')->exists(),
+                422,
+                'Add at least one after-work photo before closing the job.'
+            );
             $updates += ['status' => 'completed', 'work_completed_at' => now(), 'hold_reason' => null, 'hold_note' => null];
         } elseif (! in_array($booking->status, ['on_hold', 'completed'], true)) {
             $updates += ['status' => 'in_progress', 'work_started_at' => $booking->work_started_at ?? now()];
@@ -131,7 +136,7 @@ class WorkerJobController extends Controller
         $message = match ($action) {
             'inspection' => 'Inspection saved. Add the estimate next.',
             'estimate' => 'Quotation sent to the company for approval.',
-            'photo' => 'Work photos added.',
+            'photo' => 'After-work proof saved.',
             'hold' => 'Job saved on hold.',
             'complete' => 'Job completed.',
             default => 'Progress saved.',
@@ -145,7 +150,7 @@ class WorkerJobController extends Controller
         $user = $request->user();
         $allowed = $user?->role === 'nextfix_admin'
             || ($user?->role === 'company_manager' && $user->company_id === $jobPhoto->booking->company_id)
-            || ($user?->role === 'professional' && $user->professional?->id === $jobPhoto->professional_id);
+            || ($user?->role === 'professional' && $user->professional?->id === $jobPhoto->booking->professional_id);
         abort_unless($allowed, 403);
         abort_unless(Storage::disk('public')->exists($jobPhoto->path), 404);
         return response()->file(Storage::disk('public')->path($jobPhoto->path), ['Cache-Control' => 'private, max-age=3600']);

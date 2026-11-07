@@ -96,8 +96,34 @@ if (workerChecks) {
         const percent = Math.round((complete / boxes.length) * 100);
         const label = document.querySelector('[data-job-percent]');
         const bar = document.querySelector('[data-job-bar]');
+        const done = document.querySelector('[data-job-done]');
+        const remaining = document.querySelector('[data-job-remaining]');
         if (label) label.textContent = percent;
         if (bar) bar.style.width = `${percent}%`;
+        if (done) done.textContent = complete;
+        if (remaining) remaining.textContent = `${boxes.length - complete} remaining`;
+        boxes.forEach((box) => {
+            const state = box.closest('label')?.querySelector('em');
+            if (state) state.textContent = box.checked ? 'Done' : 'Tap';
+        });
+
+        const swipeForm = document.querySelector('[data-swipe-form]');
+        if (swipeForm) {
+            const hasAfterPhoto = swipeForm.dataset.afterPhoto === '1';
+            const ready = complete === boxes.length && hasAfterPhoto;
+            const slider = swipeForm.querySelector('input[type="range"]');
+            const help = swipeForm.querySelector('[data-swipe-help]');
+            const title = swipeForm.querySelector('.swipe-ready-title strong');
+            const icon = swipeForm.querySelector('.swipe-ready-title>i');
+            slider.disabled = !ready;
+            swipeForm.classList.toggle('is-ready', ready);
+            swipeForm.classList.toggle('is-locked', !ready);
+            if (title) title.textContent = ready ? 'Ready to close' : 'Finish requirements first';
+            if (help) help.textContent = ready
+                ? 'Swipe the arrow to confirm handover'
+                : `${boxes.length - complete} tasks${hasAfterPhoto ? '' : ' and after photos'} remaining`;
+            if (icon) icon.className = `bi ${ready ? 'bi-check2-circle' : 'bi-lock'}`;
+        }
     };
     workerChecks.addEventListener('change', updateWorkerProgress);
     updateWorkerProgress();
@@ -105,9 +131,11 @@ if (workerChecks) {
 
 document.querySelectorAll('[data-swipe-form]').forEach((form) => {
     const slider = form.querySelector('input[type="range"]');
+    slider.addEventListener('input', () => form.style.setProperty('--swipe', `${slider.value}%`));
     slider.addEventListener('change', () => {
         if (Number(slider.value) < 95) {
             slider.value = 0;
+            form.style.setProperty('--swipe', '0%');
             return;
         }
         const checked = document.querySelectorAll('.worker-check-items input:checked');

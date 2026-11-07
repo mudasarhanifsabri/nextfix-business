@@ -18,7 +18,7 @@ return [
         'repair' => 'Complete approved repair work',
         'test' => 'Test equipment or affected area',
         'clean' => 'Clean work area and remove waste',
-        'photos' => 'Before and after photos captured',
+        'photos' => 'Final repair photos captured',
         'handover' => 'Record result and secure the unit',
     ],
 ];

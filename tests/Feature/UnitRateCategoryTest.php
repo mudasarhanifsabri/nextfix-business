@@ -7,6 +7,8 @@ use App\Models\CompanyRateCard;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class UnitRateCategoryTest extends TestCase
@@ -15,6 +17,7 @@ class UnitRateCategoryTest extends TestCase
 
     public function test_tap_selected_unit_category_controls_cleaning_rate(): void
     {
+        Storage::fake('public');
         $company = Company::create(['name' => 'Tap Homes']);
         $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
         CompanyRateCard::create([
@@ -39,8 +42,10 @@ class UnitRateCategoryTest extends TestCase
         $this->actingAs($manager)->post(route('bookings.store'), [
             'unit_id' => $unit->id, 'service_type' => 'cleaning', 'service_name' => 'Checkout cleaning',
             'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            'booking_photos' => [UploadedFile::fake()->image('access.jpg')],
         ])->assertRedirect(route('bookings.index'));
 
         $this->assertDatabaseHas('bookings', ['unit_id' => $unit->id, 'amount_minor' => 50000]);
+        $this->assertDatabaseHas('job_photos', ['uploaded_by_user_id' => $manager->id, 'category' => 'booking_issue']);
     }
 }

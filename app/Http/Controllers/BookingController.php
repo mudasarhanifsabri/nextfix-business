@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Invoice;
+use App\Models\JobPhoto;
 use App\Models\Unit;
 use App\Services\NomodPaymentLinks;
 use App\Support\RateCatalogue;
@@ -41,6 +42,8 @@ class BookingController extends Controller
             'unit_id' => ['required', 'integer'], 'service_type' => ['required', 'in:cleaning,maintenance'],
             'service_name' => ['required', 'string', 'max:120'], 'scheduled_at' => ['required', 'date', 'after:now'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'booking_photos' => ['nullable', 'array', 'max:8'],
+            'booking_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
         ]);
         $unit = Unit::where('company_id', $request->user()->company_id)->findOrFail($data['unit_id']);
         $company = $request->user()->company;
@@ -59,6 +62,19 @@ class BookingController extends Controller
             'reference' => 'NFB-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
             'status' => $data['service_type'] === 'maintenance' ? 'awaiting_inspection_payment' : 'pending', 'payment_status' => 'pending', 'amount_minor' => $amount, 'inspection_fee_minor' => $data['service_type'] === 'maintenance' ? $amount : 0, 'currency' => 'AED',
         ]);
+        foreach ($request->file('booking_photos', []) as $photo) {
+            $path = $photo->store('job-evidence/'.$booking->id, 'public');
+            JobPhoto::create([
+                'booking_id' => $booking->id,
+                'uploaded_by_user_id' => $request->user()->id,
+                'path' => $path,
+                'original_name' => $photo->getClientOriginalName(),
+                'mime_type' => $photo->getMimeType(),
+                'size' => $photo->getSize(),
+                'category' => 'booking_issue',
+                'captured_at' => now(),
+            ]);
+        }
         if ($data['service_type'] === 'maintenance') {
             $successUrl = route('bookings.index', ['nf_booking' => $booking->id, 'nf_payment' => 'inspection']);
             $url = rescue(fn () => app(NomodPaymentLinks::class)->create('Inspection '.$booking->reference, [['name'=>'Maintenance inspection fee','amount'=>number_format($amount/100,2,'.',''),'quantity'=>1]], 'NextFix booking '.$booking->reference.' inspection payment.', $successUrl, route('bookings.index')), null, false);

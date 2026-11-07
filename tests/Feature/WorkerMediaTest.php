@@ -42,11 +42,20 @@ class WorkerMediaTest extends TestCase
         $booking->update(['workflow_stage' => 'work', 'payment_status' => 'paid', 'status' => 'assigned', 'completed_items' => ['arrival'], 'progress' => 13]);
         $this->actingAs($worker)->get(route('worker.jobs.index'))->assertOk()->assertSee('PAID · READY FOR WORK');
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
-            'action' => 'photo', 'work_photo_category' => 'before',
-            'work_photos' => [UploadedFile::fake()->image('before.jpg'), UploadedFile::fake()->image('panel.jpg')],
+            'action' => 'complete', 'completed_items' => array_keys(config('workflows.maintenance')),
+        ])->assertStatus(422);
+        $this->assertNotSame('completed', $booking->fresh()->status);
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'photo', 'work_photo_category' => 'after',
+            'work_photos' => [UploadedFile::fake()->image('finished.jpg'), UploadedFile::fake()->image('panel.jpg')],
         ])->assertRedirect();
-        $this->assertDatabaseHas('job_photos', ['booking_id' => $booking->id, 'category' => 'before']);
+        $this->assertDatabaseHas('job_photos', ['booking_id' => $booking->id, 'category' => 'after']);
         $this->assertSame(['arrival'], $booking->fresh()->completed_items);
-        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Show the work')->assertSee('2 saved');
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Add after-work photos')->assertSee('2 saved');
+
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'complete', 'completed_items' => array_keys(config('workflows.maintenance')),
+        ])->assertRedirect();
+        $this->assertSame('completed', $booking->fresh()->status);
     }
 }

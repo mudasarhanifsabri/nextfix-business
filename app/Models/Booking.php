@@ -38,6 +38,16 @@ class Booking extends Model
         return $this->hasMany(JobPhoto::class)->where('category', 'inspection')->oldest('captured_at');
     }
 
+    public function photos(): HasMany
+    {
+        return $this->hasMany(JobPhoto::class);
+    }
+
+    public function issuePhotos(): HasMany
+    {
+        return $this->hasMany(JobPhoto::class)->where('category', 'booking_issue')->oldest('captured_at');
+    }
+
     public function workPhotos(): HasMany
     {
         return $this->hasMany(JobPhoto::class)->whereIn('category', ['before', 'progress', 'after'])->oldest('captured_at');

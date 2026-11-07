@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#1267e8">
     <link rel="manifest" href="{{ auth()->user()->role === 'nextfix_admin' ? '/manifest-admin.webmanifest' : '/manifest-company.webmanifest' }}">
     <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="/images/pwa/icon-192.png">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">

@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CompanyController extends Controller
@@ -82,6 +83,42 @@ class CompanyController extends Controller
             ->load(['users', 'units', 'bookings' => fn ($q) => $q->latest('scheduled_at')->limit(10), 'invoices' => fn ($q) => $q->latest()->limit(10), 'documents' => fn ($q) => $q->latest()->limit(10)]);
 
         return view('admin.companies.show', compact('company'));
+    }
+
+    public function edit(Request $request, Company $company): View
+    {
+        $this->authorizeAdmin($request);
+
+        return view('admin.companies.edit', compact('company'));
+    }
+
+    public function update(Request $request, Company $company): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+        $manager = $company->users()->where('role', 'company_manager')->oldest()->first();
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'legal_name' => ['nullable', 'string', 'max:255'],
+            'trade_license_number' => ['nullable', 'string', 'max:100'],
+            'trn' => ['nullable', 'string', 'max:100'],
+            'industry' => ['nullable', 'string', 'max:100'],
+            'contact_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('companies')->ignore($company), Rule::unique('users')->ignore($manager?->id)],
+            'phone' => ['required', 'string', 'max:50'],
+            'billing_email' => ['nullable', 'email', 'max:255'],
+            'billing_address' => ['required', 'string', 'max:1000'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'country' => ['required', 'string', 'max:100'],
+            'payment_terms' => ['required', 'integer', 'in:0,7,15,30,45,60'],
+            'status' => ['required', 'in:active,onboarding'],
+        ]);
+
+        DB::transaction(function () use ($company, $manager, $data): void {
+            $company->update($data);
+            $manager?->update(['name' => $data['contact_name'], 'email' => $data['email']]);
+        });
+
+        return redirect()->route('admin.companies.show', $company)->with('status', 'Company profile updated.');
     }
 
 }

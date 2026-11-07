@@ -15,6 +15,8 @@ use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\NomodWebhookController;
 use App\Http\Controllers\RateCardController;
+use App\Http\Controllers\CompanyRegistrationController;
+use App\Http\Controllers\PasswordController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -23,7 +25,13 @@ Route::post('/webhooks/nomod', NomodWebhookController::class)->name('webhooks.no
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
-    Route::post('/login', [AuthController::class, 'store'])->name('login.store');
+    Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:10,1')->name('login.store');
+    Route::get('/register', [CompanyRegistrationController::class, 'create'])->name('register');
+    Route::post('/register', [CompanyRegistrationController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
+    Route::get('/forgot-password', [PasswordController::class, 'request'])->name('password.request');
+    Route::post('/forgot-password', [PasswordController::class, 'email'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordController::class, 'reset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordController::class, 'update'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function (): void {
@@ -39,7 +47,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/admin/system-updates', [SystemUpdateController::class, 'index'])->name('admin.updates.index');
     Route::post('/admin/system-updates', [SystemUpdateController::class, 'store'])->name('admin.updates.store');
     Route::resource('/admin/companies', CompanyController::class)
-        ->only(['index', 'create', 'store', 'show'])
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update'])
         ->names('admin.companies');
     Route::get('/admin/companies/{company}/rates', [RateCardController::class, 'admin'])->name('admin.companies.rates.show');
     Route::post('/admin/companies/{company}/rates', [RateCardController::class, 'save'])->name('admin.companies.rates.save');

@@ -17,6 +17,11 @@
     "src": "resources/css/booking-evidence.css",
     "isEntry": true
   },
+  "resources/css/company-mobile.css": {
+    "file": "assets/company-mobile-5fKoR7Nw.css",
+    "src": "resources/css/company-mobile.css",
+    "isEntry": true
+  },
   "resources/css/customer.css": {
     "file": "assets/customer-CNejUGz1.css",
     "src": "resources/css/customer.css",

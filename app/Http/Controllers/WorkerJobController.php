@@ -39,6 +39,7 @@ class WorkerJobController extends Controller
     {
         $professional = $this->professional($request);
         abort_unless($booking->professional_id === $professional->id, 403);
+        abort_if($booking->status === 'completed', 422, 'Completed jobs are locked and cannot be changed.');
         $checklist = config('workflows.'.$booking->service_type, config('workflows.maintenance'));
         $data = $request->validate([
             'completed_items' => ['nullable', 'array'],

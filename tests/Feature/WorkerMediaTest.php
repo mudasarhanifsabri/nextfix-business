@@ -57,5 +57,17 @@ class WorkerMediaTest extends TestCase
             'action' => 'complete', 'completed_items' => array_keys(config('workflows.maintenance')),
         ])->assertRedirect();
         $this->assertSame('completed', $booking->fresh()->status);
+        $photoCount = $booking->photos()->count();
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'photo', 'work_photo_category' => 'after',
+            'work_photos' => [UploadedFile::fake()->image('late-change.jpg')],
+        ])->assertStatus(422);
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'save', 'completed_items' => [],
+        ])->assertStatus(422);
+        $this->assertSame($photoCount, $booking->photos()->count());
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))
+            ->assertOk()->assertSee('Job completed · record locked')
+            ->assertDontSee('Save checklist progress')->assertDontSee('Save after photos');
     }
 }

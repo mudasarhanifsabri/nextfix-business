@@ -18,7 +18,7 @@ class PwaInstallTest extends TestCase
         $worker = User::factory()->create(['role' => 'professional']);
         Professional::create(['user_id' => $worker->id, 'name' => 'PWA Worker', 'role' => 'maintenance', 'phone' => '+971500000111']);
 
-        $this->actingAs($company)->get(route('dashboard'))->assertOk()->assertSee('/manifest-company.webmanifest', false)->assertSee('apple-touch-icon', false);
+        $this->actingAs($company)->get(route('dashboard'))->assertOk()->assertSee('/manifest-company.webmanifest', false)->assertSee('apple-touch-icon', false)->assertSee('company-app', false)->assertSee('company-mobile', false)->assertSee('mobile-nav', false);
         $this->actingAs($admin)->get(route('dashboard'))->assertOk()->assertSee('/manifest-admin.webmanifest', false)->assertSee('data-install-app', false)->assertSee('admin-mobile', false)->assertSee('data-pwa-splash', false);
         $this->actingAs($worker)->get(route('worker.jobs.index'))->assertOk()->assertSee('/manifest-worker.webmanifest', false)->assertSee('data-install-app', false)->assertSee('data-pwa-splash', false);
     }

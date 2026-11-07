@@ -194,6 +194,10 @@ if (cleaningChecklist) {
     };
     showStep(activeStep);
     cleaningChecklist.addEventListener('change', () => window.setTimeout(() => showStep(1), 20));
+    const photoPlan = ['Entrance', ...allChecks
+        .filter((box) => /^(studio_room|bedroom_|maid_room|bathrooms|kitchen|living)/.test(box.value))
+        .map((box) => box.closest('label')?.querySelector('strong')?.textContent.trim())
+        .filter(Boolean)];
 
     const installCamera = (form, title) => {
         if (!form) return;
@@ -206,15 +210,15 @@ if (cleaningChecklist) {
         launch.addEventListener('click', async () => {
             if (!navigator.mediaDevices?.getUserMedia) { input.click(); return; }
             const overlay = document.createElement('section'); overlay.className = 'nf-camera';
-            overlay.innerHTML = `<header><strong>${title}</strong><button type="button" aria-label="Close">×</button></header><div class="nf-camera-stage"><video autoplay playsinline muted></video><div class="nf-camera-guide"></div></div><footer><div class="nf-camera-shots"></div><div class="nf-camera-controls"><button type="button" class="nf-camera-fallback">Gallery</button><button type="button" class="nf-camera-capture" aria-label="Take photo"></button><button type="button" class="nf-camera-done" disabled>Done</button></div></footer>`;
+            overlay.innerHTML = `<header><div><strong>${title}</strong><small class="nf-camera-prompt"></small></div><button type="button" aria-label="Close">×</button></header><div class="nf-camera-stage"><video autoplay playsinline muted></video><div class="nf-camera-guide"></div></div><footer><div class="nf-camera-shots"></div><div class="nf-camera-controls"><button type="button" class="nf-camera-fallback"><i class="bi bi-images"></i><span>Gallery</span></button><button type="button" class="nf-camera-capture" aria-label="Take photo"></button><button type="button" class="nf-camera-done" disabled><span>Done</span><i class="bi bi-check2"></i></button></div></footer>`;
             document.body.appendChild(overlay); document.body.style.overflow = 'hidden';
             const video = overlay.querySelector('video'); const shots = overlay.querySelector('.nf-camera-shots');
-            const done = overlay.querySelector('.nf-camera-done'); const files = []; let stream;
+            const done = overlay.querySelector('.nf-camera-done'); const prompt = overlay.querySelector('.nf-camera-prompt'); const files = []; let stream;
             const close = () => { stream?.getTracks().forEach((track) => track.stop()); overlay.remove(); document.body.style.overflow = ''; };
-            const render = () => { shots.replaceChildren(); files.forEach((file,index) => { const card=document.createElement('span'); card.className='nf-camera-shot'; const img=document.createElement('img'); img.src=URL.createObjectURL(file); const remove=document.createElement('button'); remove.type='button'; remove.textContent='×'; remove.addEventListener('click',()=>{files.splice(index,1);render();}); card.append(img,remove); shots.appendChild(card); }); done.disabled=!files.length; };
+            const render = () => { shots.replaceChildren(); files.forEach((file,index) => { const card=document.createElement('span'); card.className='nf-camera-shot'; const img=document.createElement('img'); img.src=URL.createObjectURL(file); const remove=document.createElement('button'); remove.type='button'; remove.textContent='×'; remove.addEventListener('click',()=>{files.splice(index,1);render();}); card.append(img,remove); shots.appendChild(card); }); done.disabled=!files.length; const next=photoPlan[files.length]; prompt.textContent=next ? `${files.length + 1} of ${photoPlan.length} · ${next}` : `Suggested areas covered · ${files.length} photos`; shots.scrollLeft=shots.scrollWidth; };
             overlay.querySelector('header button').addEventListener('click', close);
             overlay.querySelector('.nf-camera-fallback').addEventListener('click', () => { close(); input.click(); });
-            try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); video.srcObject = stream; }
+            try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); video.srcObject = stream; render(); }
             catch (_) { close(); input.click(); return; }
             overlay.querySelector('.nf-camera-capture').addEventListener('click', () => { const canvas=document.createElement('canvas'); canvas.width=video.videoWidth||1280; canvas.height=video.videoHeight||960; canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height); canvas.toBlob((blob)=>{ if(!blob)return; files.push(new File([blob],`nextfix-${Date.now()}-${files.length+1}.jpg`,{type:'image/jpeg'})); render(); },'image/jpeg',.86); });
             done.addEventListener('click', async () => { done.disabled=true; done.textContent='Uploading…'; const payload=new FormData(form); payload.delete(input.name); files.forEach((file)=>payload.append(input.name,file)); try { const response=await fetch(form.action,{method:'POST',body:payload,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}}); if(!response.ok)throw new Error(); close(); window.location.reload(); } catch(_){ done.disabled=false; done.textContent='Try again'; } });

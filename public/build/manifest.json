@@ -52,6 +52,11 @@
     "src": "resources/css/worker-actions.css",
     "isEntry": true
   },
+  "resources/css/worker-camera-fix.css": {
+    "file": "assets/worker-camera-fix-D1DHHLb_.css",
+    "src": "resources/css/worker-camera-fix.css",
+    "isEntry": true
+  },
   "resources/css/worker-camera.css": {
     "file": "assets/worker-camera-B6SnvFVG.css",
     "src": "resources/css/worker-camera.css",
@@ -83,7 +88,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CAo_ZtIF.js",
+    "file": "assets/app-EryfsnAo.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

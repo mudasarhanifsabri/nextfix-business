@@ -37,7 +37,7 @@ return [
 
     'nomod' => [
         'mode' => env('NOMOD_MODE', 'disabled'),
-        'base_url' => env('NOMOD_BASE_URL'),
+        'base_url' => env('NOMOD_BASE_URL', 'https://api.nomod.com'),
         'api_key' => env('NOMOD_API_KEY'),
         'webhook_secret' => env('NOMOD_WEBHOOK_SECRET'),
     ],

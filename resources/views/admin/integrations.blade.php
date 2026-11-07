@@ -11,7 +11,7 @@ MAIL_SCHEME=tls
 MAIL_FROM_ADDRESS=notifications@nextage.ae
 MAIL_FROM_NAME="NextFix Home Services"</pre></details></section>
     <section class="panel integration-card"><div class="integration-icon payment"><i class="bi bi-credit-card-2-front"></i></div><div><p class="eyebrow">PAYMENT LINKS</p><h3>Nomod</h3><p>Create invoice payment links, reconcile successful payments and verify webhook callbacks.</p></div><span class="status {{ $nomodReady ? 'confirmed' : 'pending' }}">{{ $nomodReady ? 'Connected' : 'Disabled safely' }}</span><dl><dt>Mode</dt><dd>{{ ucfirst($nomodMode) }}</dd><dt>API credentials</dt><dd>{{ $nomodReady ? 'Available on server' : 'Not configured' }}</dd></dl><details><summary>Required .env settings</summary><pre>NOMOD_MODE=test
-NOMOD_BASE_URL=https://your-approved-nomod-endpoint
+NOMOD_BASE_URL=https://api.nomod.com
 NOMOD_API_KEY=server-secret
 NOMOD_WEBHOOK_SECRET=server-secret</pre></details></section>
 </div>

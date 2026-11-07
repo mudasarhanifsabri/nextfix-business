@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\Unit;
 use App\Services\NomodPaymentLinks;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -76,5 +77,30 @@ class BookingController extends Controller
         $reason = $data['decision_note'] ?? 'Please revise the quotation.';
         $booking->update(['workflow_stage' => 'estimate', 'status' => 'changes_requested', 'customer_decision_at' => now(), 'customer_decision_note' => $reason]);
         return back()->with('status', 'Changes requested. NextFix will revise the quotation.');
+    }
+
+    public function quotationPdf(Request $request, Booking $booking)
+    {
+        $this->authorizeBookingDocument($request, $booking);
+        abort_unless($booking->estimate_submitted_at, 404, 'Quotation is not available yet.');
+        $booking->load(['company', 'unit', 'professional']);
+
+        return Pdf::loadView('bookings.quotation-pdf', ['booking' => $booking])
+            ->download('Quotation-'.$booking->reference.'.pdf');
+    }
+
+    public function invoicePdf(Request $request, Booking $booking)
+    {
+        $this->authorizeBookingDocument($request, $booking);
+        abort_unless($booking->quotation_invoice_id, 404, 'Invoice is not available yet.');
+        $invoice = $booking->quotationInvoice()->with(['company', 'payments'])->firstOrFail();
+
+        return Pdf::loadView('admin.finance.pdf', ['invoice' => $invoice])
+            ->download(($invoice->status === 'paid' ? 'Paid-' : '').$invoice->number.'.pdf');
+    }
+
+    private function authorizeBookingDocument(Request $request, Booking $booking): void
+    {
+        abort_unless($request->user()->role === 'nextfix_admin' || $booking->company_id === $request->user()->company_id, 403);
     }
 }

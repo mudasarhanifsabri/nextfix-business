@@ -119,10 +119,12 @@ class OperationsManagementTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_customer_approval']);
         $this->assertDatabaseCount('notifications', 1);
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Waiting for company approval')->assertDontSee('Tap when done');
-        $this->actingAs($manager)->get(route('bookings.index'))->assertOk()->assertSee('Quotations ready for review')->assertSee('AED 225.00');
+        $this->actingAs($manager)->get(route('bookings.index'))->assertOk()->assertSee('Quotations ready for review')->assertSee('AED 236.25');
+        $this->actingAs($manager)->get(route('bookings.quotation.pdf', $booking))->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->actingAs($manager)->post(route('bookings.quotation-decision', $booking), ['decision' => 'approve'])->assertRedirect();
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_quote_payment', 'status' => 'awaiting_quote_payment']);
         $this->assertDatabaseHas('invoices', ['company_id' => $company->id, 'subtotal_minor' => 22500, 'tax_minor' => 1125, 'amount_minor' => 23625]);
+        $this->actingAs($manager)->get(route('bookings.invoice.pdf', $booking->fresh()))->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertDontSee('Tap when done');
     }
 

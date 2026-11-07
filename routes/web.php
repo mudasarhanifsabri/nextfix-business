@@ -31,6 +31,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/bookings/create/{service}', [BookingController::class, 'create'])
         ->whereIn('service', ['cleaning', 'maintenance'])->name('bookings.create');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+    Route::get('/bookings/{booking}/quotation.pdf', [BookingController::class, 'quotationPdf'])->name('bookings.quotation.pdf');
+    Route::get('/bookings/{booking}/invoice.pdf', [BookingController::class, 'invoicePdf'])->name('bookings.invoice.pdf');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
     Route::get('/admin/system-updates', [SystemUpdateController::class, 'index'])->name('admin.updates.index');
     Route::post('/admin/system-updates', [SystemUpdateController::class, 'store'])->name('admin.updates.store');

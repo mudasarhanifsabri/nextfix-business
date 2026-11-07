@@ -27,5 +27,22 @@
     <div class="deployment-progress-meta"><span>Commit {{ substr($activeRun->release_id, 0, 7) }}</span><span>The page refreshes automatically</span></div>
 </section>
 @endif
-<section class="panel history"><div class="panel-head"><div><p class="eyebrow">RELEASE HISTORY</p><h3>Deployment runs</h3></div></div><div class="table-wrap"><table><thead><tr><th>Version</th><th>Requested by</th><th>Status</th><th>Stage</th><th>Started</th><th>Finished</th></tr></thead><tbody>@forelse($runs as $run)<tr><td><strong>{{ $run->version }}</strong><small>{{ $run->release_id }}</small></td><td>{{ $run->user->name }}</td><td><span class="status {{ $run->status === 'success' ? 'confirmed' : ($run->status === 'failed' ? 'pending' : 'in_progress') }}">{{ $run->status }}</span></td><td>{{ $run->stage }}</td><td>{{ $run->started_at?->format('d M Y, g:i A') ?? '—' }}</td><td>{{ $run->finished_at?->format('d M Y, g:i A') ?? '—' }}</td></tr>@empty<tr><td colspan="6"><div class="empty"><p>No deployment runs recorded.</p></div></td></tr>@endforelse</tbody></table></div></section>
+@php($latestRun = $runs->first())
+@if(!$activeRun && $latestRun?->status === 'failed')
+<section class="panel deployment-error">
+    <div><span class="deployment-error-icon">!</span><div><p class="eyebrow">LAST UPDATE FAILED</p><h3>{{ ucfirst($latestRun->stage) }}</h3><p>The code was left in its last safe state. Open the technical log below for the exact server error.</p></div></div>
+    <details><summary>Show technical log</summary><pre>{{ $latestRun->log }}</pre></details>
+</section>
+@endif
+<section class="panel history">
+    <div class="panel-head"><div><p class="eyebrow">RELEASE HISTORY</p><h3>Deployment runs</h3></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Version</th><th>Requested by</th><th>Status</th><th>Stage</th><th>Started</th><th>Finished</th></tr></thead><tbody>
+    @forelse($runs as $run)
+        <tr><td><strong>{{ $run->version }}</strong><small>{{ $run->release_id }}</small></td><td>{{ $run->user->name }}</td><td><span class="status {{ $run->status === 'success' ? 'confirmed' : ($run->status === 'failed' ? 'pending' : 'in_progress') }}">{{ $run->status }}</span></td><td>{{ $run->stage }}</td><td>{{ $run->started_at?->format('d M Y, g:i A') ?? '—' }}</td><td>{{ $run->finished_at?->format('d M Y, g:i A') ?? '—' }}</td></tr>
+        <tr class="deployment-log-row"><td colspan="6"><details><summary>View deployment log</summary><pre>{{ $run->log }}</pre></details></td></tr>
+    @empty
+        <tr><td colspan="6"><div class="empty"><p>No deployment runs recorded.</p></div></td></tr>
+    @endforelse
+    </tbody></table></div>
+</section>
 @endsection

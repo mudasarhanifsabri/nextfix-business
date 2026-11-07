@@ -14,9 +14,23 @@ STATE_FILE="${NEXTFIX_RELEASE_STATE:-$REPOSITORY/storage/app/releases/current.js
 [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "Invalid deployment run"; exit 22; }
 [[ -n "$REPOSITORY" && -d "$REPOSITORY/.git" ]] || { echo "Git repository is unavailable"; exit 23; }
 
-for command in git php composer; do
+for command in git php; do
     command -v "$command" >/dev/null || { echo "Missing command: $command"; exit 24; }
 done
+
+if command -v composer >/dev/null 2>&1; then
+    COMPOSER=("$(command -v composer)")
+elif [[ -x /opt/cpanel/composer/bin/composer ]]; then
+    COMPOSER=(/opt/cpanel/composer/bin/composer)
+elif [[ -f /opt/cpanel/composer/bin/composer ]]; then
+    COMPOSER=("$(command -v php)" /opt/cpanel/composer/bin/composer)
+elif [[ -x /usr/local/bin/composer ]]; then
+    COMPOSER=(/usr/local/bin/composer)
+else
+    echo "Composer executable was not found in the web process environment."
+    echo "Configure COMPOSER_HOME or ask the host for the cPanel Composer path."
+    exit 24
+fi
 
 cd "$REPOSITORY"
 echo "stage=preflight version=$VERSION run=$RUN_ID"
@@ -40,7 +54,7 @@ echo "stage=activate"
 git merge --ff-only "$COMMIT"
 
 echo "stage=dependencies"
-composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+"${COMPOSER[@]}" install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
 echo "stage=migrate"
 php artisan migrate --force

@@ -35,6 +35,7 @@ class RunApprovedDeployment implements ShouldQueue
             $run->update(['status' => 'running', 'stage' => 'preflight', 'started_at' => now()]);
             $process = new Process(['bash', $script, $run->release_id, $run->version, (string) $run->id]);
             $process->setEnv(array_merge($_SERVER, $_ENV, [
+                'PATH' => '/opt/cpanel/composer/bin:/usr/local/cpanel/3rdparty/bin:/usr/local/bin:/usr/bin:/bin:'.($_SERVER['PATH'] ?? $_ENV['PATH'] ?? ''),
                 'NEXTFIX_REPOSITORY' => (string) config('deployment.repository_path'),
                 'NEXTFIX_GIT_REMOTE' => (string) config('deployment.remote', 'origin'),
                 'NEXTFIX_BRANCH' => (string) config('deployment.branch', 'main'),
@@ -47,7 +48,7 @@ class RunApprovedDeployment implements ShouldQueue
                 $stage = $matches[1] ? end($matches[1]) : $run->stage;
                 $run->update(['stage' => $stage, 'log' => mb_substr($run->log."\n".$clean, -12000)]);
             });
-            throw_unless($process->isSuccessful(), new \RuntimeException('Deployment runner exited with a failure.'));
+            throw_unless($process->isSuccessful(), new \RuntimeException('Deployment runner exited with code '.$process->getExitCode().'. Review the deployment log below.'));
             $run->update(['status' => 'success', 'stage' => 'complete', 'finished_at' => now()]);
         } catch (Throwable $error) {
             $run->update(['status' => 'failed', 'stage' => 'failed', 'finished_at' => now(), 'log' => mb_substr($run->log."\n".$error->getMessage(), -12000)]);

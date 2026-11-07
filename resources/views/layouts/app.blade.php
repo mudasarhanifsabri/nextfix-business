@@ -6,7 +6,6 @@
     <meta name="theme-color" content="#1267e8">
     <link rel="manifest" href="/manifest.webmanifest">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <title>{{ $title ?? 'NextFix Business' }}</title>
     @vite(['resources/css/app.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/js/app.js'])
 </head>

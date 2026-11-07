@@ -56,10 +56,15 @@ class WorkerJobController extends Controller
         $updates = ['completed_items' => $completed, 'progress' => $progress];
         $action = $data['action'] ?? 'save';
 
+        if (in_array($action, ['save', 'hold', 'resume', 'complete'], true)) {
+            abort_unless(in_array($booking->workflow_stage, ['work', 'complete'], true), 422, 'Work is locked until the estimate is approved.');
+        }
+
         if ($action === 'inspection') {
             $request->validate(['inspection_condition' => ['required'], 'inspection_report' => ['required', 'string', 'max:2000']]);
             $updates += ['workflow_stage' => 'estimate', 'inspection_condition' => $data['inspection_condition'], 'inspection_issues' => $data['inspection_issues'] ?? [], 'inspection_report' => $data['inspection_report']];
         } elseif ($action === 'estimate') {
+            abort_unless($booking->workflow_stage === 'estimate', 422, 'Complete the inspection before submitting an estimate.');
             $request->validate(['labour_hours' => ['required', 'numeric', 'min:0'], 'labour_cost' => ['required', 'numeric', 'min:0'], 'parts_cost' => ['required', 'numeric', 'min:0']]);
             $updates += ['workflow_stage' => 'awaiting_approval', 'status' => 'awaiting_approval', 'labour_hours' => $data['labour_hours'], 'labour_amount_minor' => (int) round($data['labour_cost'] * 100), 'parts_amount_minor' => (int) round($data['parts_cost'] * 100), 'parts_required' => $data['parts_required'] ?? null, 'estimate_note' => $data['estimate_note'] ?? null, 'estimate_submitted_at' => now()];
         } elseif ($action === 'hold') {

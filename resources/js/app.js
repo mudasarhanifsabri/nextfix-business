@@ -9,6 +9,15 @@ let installPrompt;
 const installButtons = [...document.querySelectorAll('[data-install-app]')];
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const splash = document.querySelector('[data-pwa-splash]');
+if (isStandalone && splash && !sessionStorage.getItem('nextfix-splash-seen')) {
+    document.documentElement.classList.add('pwa-launching');
+    sessionStorage.setItem('nextfix-splash-seen', '1');
+    window.setTimeout(() => {
+        document.documentElement.classList.add('pwa-splash-leaving');
+        window.setTimeout(() => document.documentElement.classList.remove('pwa-launching', 'pwa-splash-leaving'), 450);
+    }, 1450);
+}
 window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault(); installPrompt = event;
     installButtons.forEach((button) => { button.hidden = false; });

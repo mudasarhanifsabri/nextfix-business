@@ -15,6 +15,7 @@
     @vite(['resources/css/app.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/css/quote-flow.css', 'resources/js/app.js'])
 </head>
 <body>
+@include('partials.pwa-splash')
 <div class="app-shell">
     <aside class="sidebar">
         <a href="{{ route('dashboard') }}" class="brand brand-image"><img src="/images/brand/nextfix-square.png" alt="NextFix Home Services"><span>NextFix<small>BUSINESS</small></span></a>
@@ -57,6 +58,10 @@
 </div>
 <div class="toast-container position-fixed top-0 end-0 p-3">@if(session('status'))<div class="toast show border-0 shadow" role="alert"><div class="toast-header"><span class="note-dot success"></span><strong class="me-auto">NextFix</strong><button type="button" class="btn-close" data-bs-dismiss="toast"></button></div><div class="toast-body">{{ session('status') }}</div></div>@endif</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-@if(auth()->user()->role !== 'nextfix_admin')<nav class="mobile-nav"><a href="{{ route('dashboard') }}">⌂<span>Home</span></a><a href="{{ route('bookings.index') }}">▣<span>Bookings</span></a><a href="{{ route('units.index') }}">◇<span>Units</span></a><a href="#">○<span>Account</span></a></nav>@endif
+@if(auth()->user()->role !== 'nextfix_admin')
+<nav class="mobile-nav"><a href="{{ route('dashboard') }}"><i class="bi bi-house"></i><span>Home</span></a><a href="{{ route('bookings.index') }}"><i class="bi bi-calendar-check"></i><span>Bookings</span></a><a href="{{ route('units.index') }}"><i class="bi bi-buildings"></i><span>Units</span></a><a href="{{ route('admin.notifications.index') }}"><i class="bi bi-bell"></i><span>Alerts</span></a></nav>
+@else
+<nav class="mobile-nav admin-mobile"><a href="{{ route('dashboard') }}"><i class="bi bi-grid"></i><span>Home</span></a><a href="{{ route('admin.operations.index') }}"><i class="bi bi-calendar3"></i><span>Jobs</span></a><a href="{{ route('admin.professionals.index') }}"><i class="bi bi-people"></i><span>Team</span></a><a href="{{ route('admin.companies.index') }}"><i class="bi bi-buildings"></i><span>Companies</span></a><a href="{{ route('admin.notifications.index') }}"><i class="bi bi-bell"></i><span>Alerts</span></a></nav>
+@endif
 </body>
 </html>

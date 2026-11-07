@@ -19,8 +19,8 @@ class PwaInstallTest extends TestCase
         Professional::create(['user_id' => $worker->id, 'name' => 'PWA Worker', 'role' => 'maintenance', 'phone' => '+971500000111']);
 
         $this->actingAs($company)->get(route('dashboard'))->assertOk()->assertSee('/manifest-company.webmanifest', false)->assertSee('apple-touch-icon', false);
-        $this->actingAs($admin)->get(route('dashboard'))->assertOk()->assertSee('/manifest-admin.webmanifest', false)->assertSee('data-install-app', false);
-        $this->actingAs($worker)->get(route('worker.jobs.index'))->assertOk()->assertSee('/manifest-worker.webmanifest', false)->assertSee('data-install-app', false);
+        $this->actingAs($admin)->get(route('dashboard'))->assertOk()->assertSee('/manifest-admin.webmanifest', false)->assertSee('data-install-app', false)->assertSee('admin-mobile', false)->assertSee('data-pwa-splash', false);
+        $this->actingAs($worker)->get(route('worker.jobs.index'))->assertOk()->assertSee('/manifest-worker.webmanifest', false)->assertSee('data-install-app', false)->assertSee('data-pwa-splash', false);
     }
 
     public function test_all_manifests_have_required_android_and_ios_assets(): void

@@ -3,6 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\PreventStaleFormCache;
+use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,10 +14,39 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(append: [PreventStaleFormCache::class]);
         $middleware->validateCsrfTokens(except: [
             'webhooks/nomod',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->respond(function (Response $response) {
+            if ($response->getStatusCode() !== 419) {
+                return $response;
+            }
+
+            $request = request();
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Your secure session expired. Refresh and try again.'], 419);
+            }
+
+            if ($request->is('logout')) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')->with('status', 'Signed out. You can now use another account.');
+            }
+
+            if ($request->is('login')) {
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')
+                    ->withInput($request->only('email'))
+                    ->with('status', 'Your secure session was refreshed. Please sign in again.');
+            }
+
+            return redirect()->route('login')
+                ->with('status', 'Your session expired safely. Please sign in again to continue.');
+        });
     })->create();

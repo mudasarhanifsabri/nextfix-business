@@ -7,6 +7,12 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
 }
 
+// Browsers and installed PWAs can restore a page from their back-forward cache
+// with an old CSRF token after logout or account switching. Force a fresh page.
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) window.location.reload();
+});
+
 let installPrompt;
 const installButtons = [...document.querySelectorAll('[data-install-app]')];
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);

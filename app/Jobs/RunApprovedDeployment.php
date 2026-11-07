@@ -33,7 +33,13 @@ class RunApprovedDeployment implements ShouldQueue
             throw_unless($script && is_file($script), new \RuntimeException('Restricted deployment script is unavailable.'));
 
             $run->update(['status' => 'running', 'stage' => 'preflight', 'started_at' => now()]);
-            $process = new Process([$script, $run->release_id, $run->version, (string) $run->id]);
+            $process = new Process(['bash', $script, $run->release_id, $run->version, (string) $run->id]);
+            $process->setEnv(array_merge($_SERVER, $_ENV, [
+                'NEXTFIX_REPOSITORY' => (string) config('deployment.repository_path'),
+                'NEXTFIX_GIT_REMOTE' => (string) config('deployment.remote', 'origin'),
+                'NEXTFIX_BRANCH' => (string) config('deployment.branch', 'main'),
+                'NEXTFIX_RELEASE_STATE' => (string) config('deployment.state_path'),
+            ]));
             $process->setTimeout(config('deployment.timeout_seconds'));
             $process->run(function (string $type, string $output) use ($run): void {
                 $clean = preg_replace('/(token|password|secret|key)\s*[=:]\s*\S+/i', '$1=[REDACTED]', $output);

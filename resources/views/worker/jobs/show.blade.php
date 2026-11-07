@@ -1,6 +1,6 @@
 @extends('layouts.worker', ['title' => $booking->reference.' | NextFix'])
 @section('content')
-@php($stage = $booking->workflow_stage ?? 'inspection')
+@php($stage = ($booking->workflow_stage === 'inspect' ? 'inspection' : ($booking->workflow_stage ?? 'inspection')))
 @php($journeyStage = in_array($stage, ['admin_review', 'awaiting_customer_approval', 'awaiting_quote_payment'], true) ? 'approval' : $stage)
 <a class="worker-back" href="{{ route('worker.jobs.index') }}"><i class="bi bi-chevron-left"></i> My jobs</a>
 <section class="worker-job-hero"><div><p>{{ $booking->reference }}</p><h1>{{ $booking->service_name }}</h1><span><i class="bi bi-geo-alt"></i> {{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</span></div><span class="worker-status {{ $booking->status }}">{{ str_replace('_', ' ', $booking->status) }}</span></section>
@@ -11,14 +11,18 @@
 @endforeach
 </nav>
 
-<details class="worker-step" @if($stage === 'inspection') open @endif><summary><span><i class="bi bi-search"></i></span><div><small>STEP 1</small><strong>First inspection</strong><em>Tap the condition and record what you found</em></div><i class="bi bi-chevron-down"></i></summary>
+@if($stage === 'inspection')
+<details class="worker-step" open><summary><span><i class="bi bi-search"></i></span><div><small>STEP 1</small><strong>First inspection</strong><em>Tap the condition and record what you found</em></div><i class="bi bi-chevron-down"></i></summary>
 <form method="post" action="{{ route('worker.jobs.update', $booking) }}">@csrf<input type="hidden" name="action" value="inspection">
 <p class="tap-label">Overall condition</p><div class="condition-taps">@foreach(['good'=>'Good','attention'=>'Needs attention','urgent'=>'Urgent'] as $value=>$label)<label><input type="radio" name="inspection_condition" value="{{ $value }}" @checked($booking->inspection_condition === $value) required><span>{{ $label }}</span></label>@endforeach</div>
 <p class="tap-label">Issues found</p><div class="issue-taps">@foreach(['water_leak'=>'Water leak','electrical'=>'Electrical','ac'=>'AC','damage'=>'Damage','hygiene'=>'Hygiene','access'=>'Access','safety'=>'Safety','other'=>'Other'] as $value=>$label)<label><input type="checkbox" name="inspection_issues[]" value="{{ $value }}" @checked(in_array($value, $booking->inspection_issues ?? []))><span>{{ $label }}</span></label>@endforeach</div>
 <label class="worker-field">Short inspection report<textarea name="inspection_report" required placeholder="What is wrong and what work is needed?">{{ $booking->inspection_report }}</textarea></label><button class="worker-save">Save inspection & continue</button></form></details>
+@endif
 
-<details class="worker-step" @if($stage === 'estimate') open @endif><summary><span><i class="bi bi-receipt"></i></span><div><small>STEP 2</small><strong>Labour & parts estimate</strong><em>Quick quotation for office approval</em></div><i class="bi bi-chevron-down"></i></summary>
+@if($stage === 'estimate')
+<details class="worker-step" open><summary><span><i class="bi bi-receipt"></i></span><div><small>STEP 2</small><strong>Labour & parts estimate</strong><em>Quick quotation for company approval</em></div><i class="bi bi-chevron-down"></i></summary>
 <form method="post" action="{{ route('worker.jobs.update', $booking) }}">@csrf<input type="hidden" name="action" value="estimate"><div class="quote-grid"><label>Labour hours<input type="number" step="0.5" min="0" name="labour_hours" value="{{ $booking->labour_hours }}" required inputmode="decimal"></label><label>Labour AED<input type="number" step="0.01" min="0" name="labour_cost" value="{{ number_format($booking->labour_amount_minor / 100, 2, '.', '') }}" required inputmode="decimal"></label><label>Parts AED<input type="number" step="0.01" min="0" name="parts_cost" value="{{ number_format($booking->parts_amount_minor / 100, 2, '.', '') }}" required inputmode="decimal"></label><label class="quote-total">Estimated total<strong data-quote-total>AED {{ number_format(($booking->labour_amount_minor + $booking->parts_amount_minor) / 100, 2) }}</strong></label></div><label class="worker-field">Parts required<textarea name="parts_required" placeholder="Part name, quantity, model…">{{ $booking->parts_required }}</textarea></label><label class="worker-field">Estimate note<textarea name="estimate_note" placeholder="Optional note for the office">{{ $booking->estimate_note }}</textarea></label><button class="worker-save">Send estimate for approval</button></form></details>
+@endif
 
 @if($stage === 'admin_review')<section class="approval-wait"><i class="bi bi-hourglass-split"></i><div><strong>NextFix is reviewing your estimate</strong><span>We will send the quotation to {{ $booking->company->name }} after review.</span></div></section>@endif
 @if($stage === 'awaiting_customer_approval')<section class="approval-wait"><i class="bi bi-building-check"></i><div><strong>Waiting for company approval</strong><span>AED {{ number_format(($booking->labour_amount_minor + $booking->parts_amount_minor) / 100, 2) }} quotation sent to {{ $booking->company->name }}. Work unlocks after their approval.</span></div></section>@endif

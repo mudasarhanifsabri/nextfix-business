@@ -63,6 +63,7 @@ class WorkerJobController extends Controller
         }
 
         if ($action === 'inspection') {
+            abort_unless(in_array($booking->workflow_stage ?: 'inspection', ['inspection', 'inspect'], true), 422, 'The inspection is already submitted and locked.');
             $request->validate(['inspection_condition' => ['required'], 'inspection_report' => ['required', 'string', 'max:2000']]);
             $updates += ['workflow_stage' => 'estimate', 'inspection_condition' => $data['inspection_condition'], 'inspection_issues' => $data['inspection_issues'] ?? [], 'inspection_report' => $data['inspection_report']];
         } elseif ($action === 'estimate') {

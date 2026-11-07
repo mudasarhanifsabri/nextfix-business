@@ -36,7 +36,7 @@
     <div class="panel-head deployment-history-head"><div><p class="eyebrow">RELEASE HISTORY</p><h3>Deployment runs</h3></div><span>{{ $runs->total() }} total</span></div>
     <div class="table-wrap"><table><thead><tr><th>Version</th><th>Requested by</th><th>Status</th><th>Stage</th><th>Started</th><th>Finished</th></tr></thead><tbody>
     @forelse($runs as $run)
-        <tr><td><strong>{{ $run->version }}</strong><small>{{ $run->release_id }}</small></td><td>{{ $run->user->name }}</td><td><span class="status {{ $run->status === 'success' ? 'confirmed' : ($run->status === 'failed' ? 'pending' : 'in_progress') }}">{{ $run->status }}</span></td><td>{{ $run->stage }}</td><td>{{ $run->started_at?->format('d M Y, g:i A') ?? '—' }}</td><td>{{ $run->finished_at?->format('d M Y, g:i A') ?? '—' }}</td></tr>
+        <tr><td><strong>{{ $run->version }}</strong><small>{{ $run->release_id }}</small></td><td>{{ $run->user?->name ?? 'Former administrator' }}</td><td><span class="status {{ $run->status === 'success' ? 'confirmed' : ($run->status === 'failed' ? 'pending' : 'in_progress') }}">{{ $run->status }}</span></td><td>{{ $run->stage }}</td><td>{{ $run->started_at?->format('d M Y, g:i A') ?? '—' }}</td><td>{{ $run->finished_at?->format('d M Y, g:i A') ?? '—' }}</td></tr>
         <tr class="deployment-log-row"><td colspan="6"><details><summary>View deployment log</summary><pre>{{ $run->log }}</pre></details></td></tr>
     @empty
         <tr><td colspan="6"><div class="empty"><p>No deployment runs recorded.</p></div></td></tr>

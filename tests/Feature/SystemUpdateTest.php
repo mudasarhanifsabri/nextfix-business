@@ -41,4 +41,26 @@ class SystemUpdateTest extends TestCase
         $this->assertDatabaseHas('deployment_runs', ['release_id' => $commit, 'status' => 'queued']);
         Queue::assertPushed(RunApprovedDeployment::class, fn ($job) => DeploymentRun::find($job->deploymentRunId)?->release_id === $commit);
     }
+
+    public function test_updates_page_survives_a_partial_release_state_file(): void
+    {
+        $state = storage_path('framework/testing/partial-release-state.json');
+        file_put_contents($state, '{"version":');
+        config(['deployment.state_path' => $state]);
+        $this->assertSame(
+            ['version' => config('deployment.installed_version'), 'commit' => null],
+            (new LatestGitRelease)->installed(),
+        );
+
+        $this->mock(LatestGitRelease::class)
+            ->shouldReceive('inspect')->once()->with(true)->andThrow(new \RuntimeException('Git is temporarily busy'))
+            ->shouldReceive('installed')->once()->andReturn(['version' => '1.0.0-dev', 'commit' => null]);
+
+        $admin = User::factory()->create(['role' => 'nextfix_admin']);
+
+        $this->actingAs($admin)->get(route('admin.updates.index'))
+            ->assertOk()
+            ->assertSee('GitHub check unavailable')
+            ->assertSee('Git is temporarily busy');
+    }
 }

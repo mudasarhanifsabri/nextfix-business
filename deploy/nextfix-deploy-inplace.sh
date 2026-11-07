@@ -70,7 +70,9 @@ php artisan optimize:clear
 php artisan optimize
 
 mkdir -p "$(dirname "$STATE_FILE")"
+STATE_TMP="${STATE_FILE}.tmp.$$"
 printf '{"version":"%s","commit":"%s","deployed_at":"%s"}\n' \
-    "$VERSION" "$COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_FILE"
+    "$VERSION" "$COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STATE_TMP"
+mv -f "$STATE_TMP" "$STATE_FILE"
 
 echo "stage=complete version=$VERSION commit=$COMMIT"

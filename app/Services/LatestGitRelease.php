@@ -46,7 +46,13 @@ class LatestGitRelease
             return ['version' => config('deployment.installed_version'), 'commit' => null];
         }
 
-        $state = json_decode(File::get($path), true, flags: JSON_THROW_ON_ERROR);
+        try {
+            $state = json_decode(File::get($path), true, flags: JSON_THROW_ON_ERROR);
+        } catch (\Throwable) {
+            // The updates screen polls while deployment replaces this file.
+            // A partial or damaged state file must not take the admin panel down.
+            return ['version' => config('deployment.installed_version'), 'commit' => null];
+        }
 
         return is_array($state) ? $state : [];
     }

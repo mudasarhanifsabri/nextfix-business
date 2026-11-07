@@ -12,10 +12,12 @@ use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\WorkerJobController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\NomodWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
 Route::view('/offline', 'offline')->name('offline');
+Route::post('/webhooks/nomod', NomodWebhookController::class)->name('webhooks.nomod');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');

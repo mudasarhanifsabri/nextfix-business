@@ -32,6 +32,11 @@ class Booking extends Model
         return $this->belongsTo(Professional::class);
     }
 
+    public function quotationInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'quotation_invoice_id');
+    }
+
     public function getAmountAttribute(): string
     {
         return number_format($this->amount_minor / 100, 2);

@@ -8,6 +8,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\IntegrationController;
+use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -41,5 +42,7 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/admin/notifications/read-all', [NotificationController::class, 'readAll'])->name('admin.notifications.read-all');
     Route::get('/admin/notifications/{notification}', [NotificationController::class, 'read'])->name('admin.notifications.read');
     Route::get('/admin/operations', [OperationsController::class, 'index'])->name('admin.operations.index');
+    Route::post('/admin/operations/{booking}/assign', [OperationsController::class, 'assign'])->name('admin.operations.assign');
+    Route::resource('/admin/professionals', ProfessionalController::class)->only(['index', 'create', 'store', 'show'])->names('admin.professionals');
     Route::get('/admin/integrations', [IntegrationController::class, 'index'])->name('admin.integrations.index');
 });

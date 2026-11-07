@@ -21,6 +21,7 @@
                 <a class="{{ request()->routeIs('units.*') ? 'active' : '' }}" href="{{ route('units.index') }}"><span>◇</span> Units</a>
             @else
                 <a class="{{ request()->routeIs('admin.operations.*') ? 'active' : '' }}" href="{{ route('admin.operations.index') }}"><span>▣</span> Operations</a>
+                <a class="{{ request()->routeIs('admin.professionals.*') ? 'active' : '' }}" href="{{ route('admin.professionals.index') }}"><span>◉</span> Workforce</a>
                 <div class="nav-group {{ request()->routeIs('admin.companies.*') ? 'open' : '' }}">
                     <a class="nav-parent {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}"><span>◇</span> Companies <b>⌄</b></a>
                     <div class="nav-sub"><a class="{{ request()->routeIs('admin.companies.index') || request()->routeIs('admin.companies.show') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}">List</a><a class="{{ request()->routeIs('admin.companies.create') ? 'active' : '' }}" href="{{ route('admin.companies.create') }}">Add new</a></div>

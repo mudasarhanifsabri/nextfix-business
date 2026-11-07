@@ -10,7 +10,7 @@ class Booking extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['company_id', 'unit_id', 'reference', 'service_type', 'service_name', 'scheduled_at', 'status', 'payment_status', 'amount_minor', 'currency', 'notes'];
+    protected $fillable = ['company_id', 'unit_id', 'professional_id', 'reference', 'service_type', 'service_name', 'scheduled_at', 'status', 'payment_status', 'amount_minor', 'currency', 'notes'];
 
     protected function casts(): array
     {
@@ -25,6 +25,11 @@ class Booking extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function professional(): BelongsTo
+    {
+        return $this->belongsTo(Professional::class);
     }
 
     public function getAmountAttribute(): string

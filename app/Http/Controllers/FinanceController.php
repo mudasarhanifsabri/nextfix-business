@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\NomodPaymentReconciler;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class FinanceController extends Controller
 {
@@ -41,5 +43,20 @@ class FinanceController extends Controller
         $this->admin($request);
 
         return view('admin.finance.payments', ['payments' => Payment::with(['company', 'invoice'])->latest('paid_at')->paginate(20)]);
+    }
+
+    public function reconcile(Request $request, NomodPaymentReconciler $reconciler): RedirectResponse
+    {
+        $this->admin($request);
+        try {
+            $result = $reconciler->reconcile();
+            $message = $result['matched']
+                ? $result['matched'].' paid Nomod payment(s) reconciled successfully.'
+                : 'Nomod checked '.$result['checked'].' recent charge(s); no unmatched paid payment was found.';
+        } catch (\Throwable $exception) {
+            report($exception);
+            return back()->withErrors(['nomod' => 'Nomod sync failed. Check the API key and server log.']);
+        }
+        return back()->with('status', $message);
     }
 }

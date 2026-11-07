@@ -57,6 +57,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/admin/invoices/{invoice}', [FinanceController::class, 'invoice'])->name('admin.invoices.show');
     Route::get('/admin/invoices/{invoice}/pdf', [FinanceController::class, 'pdf'])->name('admin.invoices.pdf');
     Route::get('/admin/payments', [FinanceController::class, 'payments'])->name('admin.payments.index');
+    Route::post('/admin/payments/reconcile-nomod', [FinanceController::class, 'reconcile'])->name('admin.payments.reconcile-nomod');
     Route::get('/admin/notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
     Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
     Route::post('/admin/notifications/read-all', [NotificationController::class, 'readAll'])->name('admin.notifications.read-all');

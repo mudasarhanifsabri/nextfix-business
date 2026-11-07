@@ -8,6 +8,7 @@ use App\Models\IntegrationSetting;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class NomodWebhookTest extends TestCase
@@ -68,5 +69,27 @@ class NomodWebhookTest extends TestCase
     {
         config(['services.nomod.webhook_secret' => 'whsec_'.base64_encode(random_bytes(24))]);
         $this->postJson(route('webhooks.nomod'), ['type' => 'charge.completed'])->assertStatus(400);
+    }
+
+    public function test_admin_can_reconcile_a_paid_charge_when_webhook_was_missed(): void
+    {
+        $company = Company::create(['name' => 'Reconcile Homes']);
+        $admin = User::factory()->create(['role' => 'nextfix_admin']);
+        $unit = Unit::create(['company_id' => $company->id, 'building' => 'Marina', 'unit_number' => '9', 'address' => 'Dubai']);
+        $booking = Booking::create([
+            'company_id' => $company->id, 'unit_id' => $unit->id, 'reference' => 'NFB-RECONCILE-1',
+            'service_type' => 'maintenance', 'service_name' => 'AC inspection', 'scheduled_at' => now()->addDay(),
+            'status' => 'awaiting_inspection_payment', 'payment_status' => 'pending', 'amount_minor' => 15000,
+            'inspection_fee_minor' => 15000, 'currency' => 'AED',
+        ]);
+        config(['services.nomod.mode' => 'live', 'services.nomod.api_key' => 'secret-key', 'services.nomod.base_url' => 'https://api.nomod.com']);
+        Http::fake(['https://api.nomod.com/v1/charges*' => Http::response(['results' => [[
+            'id' => 'paid-charge-1', 'status' => 'paid', 'currency' => 'AED', 'total' => '150.00',
+            'success_url' => route('bookings.index', ['nf_booking' => $booking->id, 'nf_payment' => 'inspection']),
+        ]]], 200)]);
+
+        $this->actingAs($admin)->post(route('admin.payments.reconcile-nomod'))->assertRedirect()->assertSessionHas('status');
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paid', 'workflow_stage' => 'inspect']);
+        $this->assertDatabaseHas('payments', ['gateway_reference' => 'paid-charge-1', 'status' => 'completed']);
     }
 }

@@ -27,6 +27,11 @@
     "src": "resources/css/customer.css",
     "isEntry": true
   },
+  "resources/css/job-report.css": {
+    "file": "assets/job-report-DBkUm7zR.css",
+    "src": "resources/css/job-report.css",
+    "isEntry": true
+  },
   "resources/css/notifications.css": {
     "file": "assets/notifications-CgxLwgKE.css",
     "src": "resources/css/notifications.css",

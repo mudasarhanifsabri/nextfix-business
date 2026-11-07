@@ -9,6 +9,7 @@
 @php($completionReady = $completedCount === $checklistCount && $afterPhotos->isNotEmpty() && ($booking->service_type !== 'cleaning' || $beforePhotos->isNotEmpty()))
 <a class="worker-back" href="{{ route('worker.jobs.index') }}"><i class="bi bi-chevron-left"></i> My jobs</a>
 <section class="worker-job-hero"><div><p>{{ $booking->reference }}</p><h1>{{ $booking->service_name }}</h1><span><i class="bi bi-geo-alt"></i> {{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</span></div><span class="worker-status {{ $booking->status }}">{{ $booking->operational_status_label }}</span></section>
+<div class="report-toolbar"><span></span><a class="secondary" href="{{ route('jobs.report.show',$booking) }}"><i class="bi bi-file-earmark-check"></i> View job report</a></div>
 @if($booking->issuePhotos->isNotEmpty())<section class="customer-issue-evidence"><div><i class="bi bi-building"></i><span><strong>Company issue photos</strong><small>{{ $booking->issuePhotos->count() }} photos added with the booking</small></span></div><div class="evidence-gallery">@foreach($booking->issuePhotos as $photo)<a href="{{ route('worker.evidence.show', $photo) }}" target="_blank"><img src="{{ route('worker.evidence.show', $photo) }}" alt="Company issue photo {{ $loop->iteration }}"><time>{{ $photo->captured_at->timezone('Asia/Dubai')->format('d M · g:i A') }}</time></a>@endforeach</div></section>@endif
 
 <nav class="job-journey {{ $booking->service_type === 'cleaning' ? 'cleaning-journey' : '' }}" aria-label="Job progress">

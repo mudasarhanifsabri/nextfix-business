@@ -10,6 +10,7 @@ use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\WorkerJobController;
+use App\Http\Controllers\JobReportController;
 use App\Http\Controllers\WorkerProfileController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
@@ -43,6 +44,8 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
     Route::get('/bookings/{booking}/quotation.pdf', [BookingController::class, 'quotationPdf'])->name('bookings.quotation.pdf');
     Route::get('/bookings/{booking}/invoice.pdf', [BookingController::class, 'invoicePdf'])->name('bookings.invoice.pdf');
+    Route::get('/jobs/{booking}/report', [JobReportController::class, 'show'])->name('jobs.report.show');
+    Route::get('/jobs/{booking}/report.pdf', [JobReportController::class, 'pdf'])->name('jobs.report.pdf');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
     Route::get('/admin/system-updates', [SystemUpdateController::class, 'index'])->name('admin.updates.index');
     Route::post('/admin/system-updates', [SystemUpdateController::class, 'store'])->name('admin.updates.store');

@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\JobPhoto;
 use App\Models\User;
 use App\Notifications\AdminAlert;
+use App\Support\WorkChecklist;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -30,7 +31,7 @@ class WorkerJobController extends Controller
         $professional = $this->professional($request);
         abort_unless($booking->professional_id === $professional->id, 403);
         $booking->load(['company', 'unit', 'issuePhotos', 'inspectionPhotos', 'workPhotos']);
-        $checklist = config('workflows.'.$booking->service_type, config('workflows.maintenance'));
+        $checklist = WorkChecklist::for($booking);
 
         return view('worker.jobs.show', compact('professional', 'booking', 'checklist'));
     }
@@ -40,7 +41,8 @@ class WorkerJobController extends Controller
         $professional = $this->professional($request);
         abort_unless($booking->professional_id === $professional->id, 403);
         abort_if($booking->status === 'completed', 422, 'Completed jobs are locked and cannot be changed.');
-        $checklist = config('workflows.'.$booking->service_type, config('workflows.maintenance'));
+        $booking->loadMissing('unit');
+        $checklist = WorkChecklist::for($booking);
         $data = $request->validate([
             'completed_items' => ['nullable', 'array'],
             'completed_items.*' => ['string', Rule::in(array_keys($checklist))],
@@ -96,6 +98,9 @@ class WorkerJobController extends Controller
             $updates += ['status' => 'in_progress', 'hold_reason' => null, 'hold_note' => null, 'work_started_at' => $booking->work_started_at ?? now()];
         } elseif ($action === 'complete') {
             abort_unless($progress === 100, 422, 'Complete every checklist item before closing the job.');
+            if ($booking->service_type === 'cleaning') {
+                abort_unless($booking->photos()->where('category', 'before')->exists(), 422, 'Add a before-cleaning photo before closing the job.');
+            }
             abort_unless(
                 $booking->photos()->where('category', 'after')->exists(),
                 422,

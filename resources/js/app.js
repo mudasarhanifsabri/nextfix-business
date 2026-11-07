@@ -126,6 +126,27 @@ if (workerChecks) {
         }
     };
     workerChecks.addEventListener('change', updateWorkerProgress);
+    const autoSaveForm = workerChecks.closest('form[data-auto-save="1"]');
+    if (autoSaveForm) {
+        let autoSaveTimer;
+        const state = autoSaveForm.querySelector('[data-auto-save-state]');
+        workerChecks.addEventListener('change', () => {
+            window.clearTimeout(autoSaveTimer);
+            if (state) state.textContent = 'Saving…';
+            autoSaveTimer = window.setTimeout(async () => {
+                try {
+                    const response = await fetch(autoSaveForm.action, {
+                        method: 'POST', body: new FormData(autoSaveForm), credentials: 'same-origin',
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    });
+                    if (!response.ok) throw new Error('save failed');
+                    if (state) state.textContent = 'Saved ✓';
+                } catch (_) {
+                    if (state) state.textContent = 'Not saved — tap Save now';
+                }
+            }, 450);
+        });
+    }
     updateWorkerProgress();
 }
 

@@ -89,13 +89,17 @@ class OperationsManagementTest extends TestCase
         $professional = Professional::create(['user_id' => $worker->id, 'name' => 'Cleaning Worker', 'role' => 'cleaner', 'phone' => '+971500000090']);
         $company = Company::create(['name' => 'Guest Ready Homes']);
         $unit = Unit::create(['company_id' => $company->id, 'building' => 'Palm Residence', 'unit_number' => '44', 'address' => 'Dubai']);
-        $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-CLEAN-001', 'service_type' => 'cleaning', 'service_name' => 'Checkout cleaning', 'scheduled_at' => now()->addHour(), 'status' => 'confirmed', 'workflow_stage' => 'inspection']);
+        $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-CLEAN-001', 'service_type' => 'cleaning', 'service_name' => 'Checkout cleaning', 'scheduled_at' => now()->addHour(), 'status' => 'confirmed', 'workflow_stage' => 'work']);
 
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))
-            ->assertOk()->assertSee('Cleaning visit · no inspection quotation')
-            ->assertSee('Bedrooms cleaned and linen arranged')
-            ->assertSee('Guest supplies checked and replenished')
+            ->assertOk()->assertSee('Before photo')
+            ->assertSee('Bedroom 1')->assertSee('Guest supplies')
+            ->assertSee('Final guest-ready check')
+            ->assertDontSee('no inspection quotation')
             ->assertDontSee('First inspection')->assertDontSee('Labour & parts estimate');
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'complete', 'completed_items' => array_keys(\App\Support\WorkChecklist::for($booking)),
+        ])->assertStatus(422);
     }
 
     public function test_professional_login_redirects_to_worker_app(): void

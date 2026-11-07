@@ -46,7 +46,6 @@ class OperationsController extends Controller
             'days' => $days,
             'selectedDate' => $selectedDate,
             'selectedDayBookings' => $selectedDate ? (clone $query)->whereDate('scheduled_at', $selectedDate)->orderBy('scheduled_at')->get() : collect(),
-            'approvalBookings' => Booking::with(['company', 'unit', 'professional'])->where('workflow_stage', 'admin_review')->oldest('estimate_submitted_at')->get(),
             'todayCount' => Booking::whereDate('scheduled_at', today())->count(),
             'attentionCount' => Booking::whereIn('status', ['pending', 'awaiting_payment'])->count(),
             'activeCount' => Booking::whereIn('status', ['confirmed', 'assigned', 'on_the_way', 'in_progress'])->count(),

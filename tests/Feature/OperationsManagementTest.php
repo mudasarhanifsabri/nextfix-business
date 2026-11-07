@@ -116,12 +116,9 @@ class OperationsManagementTest extends TestCase
 
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'inspection', 'inspection_condition' => 'urgent', 'inspection_issues' => ['water_leak'], 'inspection_report' => 'Pipe is leaking.'])->assertRedirect();
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'estimate', 'labour_hours' => 2, 'labour_cost' => 150, 'parts_cost' => 75, 'parts_required' => 'Replacement valve'])->assertRedirect();
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'admin_review', 'labour_amount_minor' => 15000, 'parts_amount_minor' => 7500]);
-        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('NextFix is reviewing')->assertDontSee('Tap when done');
-
-        $this->actingAs($admin)->post(route('admin.operations.send-estimate', $booking))->assertRedirect();
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_customer_approval']);
         $this->assertDatabaseCount('notifications', 1);
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Waiting for company approval')->assertDontSee('Tap when done');
         $this->actingAs($manager)->get(route('bookings.index'))->assertOk()->assertSee('Quotations ready for review')->assertSee('AED 225.00');
         $this->actingAs($manager)->post(route('bookings.quotation-decision', $booking), ['decision' => 'approve'])->assertRedirect();
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_quote_payment', 'status' => 'awaiting_quote_payment']);

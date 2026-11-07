@@ -21,6 +21,10 @@ done
 cd "$REPOSITORY"
 echo "stage=preflight version=$VERSION run=$RUN_ID"
 
+# Shared hosting permission commands can change executable bits on tracked
+# placeholder files. Ignore mode-only differences but continue to block any
+# actual tracked content changes.
+git config core.fileMode false
 git diff --quiet && git diff --cached --quiet || {
     echo "Tracked server files contain local changes; deployment stopped to protect them."
     exit 25

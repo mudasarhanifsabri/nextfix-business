@@ -110,6 +110,7 @@ class OperationsManagementTest extends TestCase
         $admin = User::factory()->create(['role' => 'nextfix_admin']);
         $professional = Professional::create(['user_id' => $worker->id, 'name' => 'Inspector', 'role' => 'maintenance', 'phone' => '+971500000097']);
         $company = Company::create(['name' => 'Inspection Homes']);
+        $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
         $unit = Unit::create(['company_id' => $company->id, 'building' => 'Marina Tower', 'unit_number' => '88', 'address' => 'Dubai']);
         $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-INSPECT-1', 'service_type' => 'maintenance', 'service_name' => 'Leak repair', 'scheduled_at' => now(), 'status' => 'assigned']);
 
@@ -120,10 +121,28 @@ class OperationsManagementTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.operations.send-estimate', $booking))->assertRedirect();
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_customer_approval']);
-        $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
+        $this->assertDatabaseCount('notifications', 1);
         $this->actingAs($manager)->get(route('bookings.index'))->assertOk()->assertSee('Quotations ready for review')->assertSee('AED 225.00');
         $this->actingAs($manager)->post(route('bookings.quotation-decision', $booking), ['decision' => 'approve'])->assertRedirect();
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'work', 'status' => 'assigned']);
-        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Tap when done');
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_quote_payment', 'status' => 'awaiting_quote_payment']);
+        $this->assertDatabaseHas('invoices', ['company_id' => $company->id, 'subtotal_minor' => 22500, 'tax_minor' => 1125, 'amount_minor' => 23625]);
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertDontSee('Tap when done');
+    }
+
+    public function test_admin_can_set_company_specific_service_rates(): void
+    {
+        $admin = User::factory()->create(['role' => 'nextfix_admin']);
+        $company = Company::create(['name' => 'Rate Homes']);
+        $this->actingAs($admin)->post(route('admin.companies.rates', $company), ['inspection_rate'=>175,'checkout_cleaning_rate'=>280,'regular_cleaning_rate'=>210,'deep_cleaning_rate'=>420])->assertRedirect();
+        $this->assertDatabaseHas('companies', ['id'=>$company->id,'inspection_rate_minor'=>17500,'deep_cleaning_rate_minor'=>42000]);
+    }
+
+    public function test_maintenance_booking_uses_company_inspection_rate(): void
+    {
+        $company = Company::create(['name'=>'Fee Homes','inspection_rate_minor'=>18500]);
+        $manager = User::factory()->create(['role'=>'company_manager','company_id'=>$company->id]);
+        $unit = Unit::create(['company_id'=>$company->id,'building'=>'Fee Tower','unit_number'=>'2','address'=>'Dubai']);
+        $this->actingAs($manager)->post(route('bookings.store'), ['unit_id'=>$unit->id,'service_type'=>'maintenance','service_name'=>'AC inspection','scheduled_at'=>now()->addDay()->format('Y-m-d H:i:s')])->assertRedirect(route('bookings.index'));
+        $this->assertDatabaseHas('bookings', ['company_id'=>$company->id,'inspection_fee_minor'=>18500,'amount_minor'=>18500,'status'=>'awaiting_inspection_payment']);
     }
 }

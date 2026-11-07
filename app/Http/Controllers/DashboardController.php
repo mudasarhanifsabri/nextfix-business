@@ -36,6 +36,7 @@ class DashboardController extends Controller
             'upcoming' => $bookings->where('scheduled_at', '>=', now())->take(4),
             'pendingCount' => $bookings->where('payment_status', 'pending')->count(),
             'activeCount' => $bookings->whereIn('status', ['confirmed', 'assigned', 'on_the_way', 'in_progress'])->count(),
+            'quotationCount' => $bookings->where('workflow_stage', 'awaiting_customer_approval')->count(),
         ]);
     }
 }

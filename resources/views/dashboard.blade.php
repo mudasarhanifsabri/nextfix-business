@@ -1,5 +1,6 @@
 @extends('layouts.app', ['heading' => 'Home'])
 @section('content')
+@if($quotationCount)<a class="quotation-alert" href="{{ route('bookings.index') }}"><span><i class="bi bi-receipt-cutoff"></i></span><div><strong>{{ $quotationCount }} maintenance quotation{{ $quotationCount > 1 ? 's' : '' }} ready</strong><small>Review the inspection, fee credit and approve or request changes.</small></div><b>Review now <i class="bi bi-arrow-right"></i></b></a>@endif
 <section class="customer-hero" data-hero-slider>
     <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div>
     <div class="hero-slides">

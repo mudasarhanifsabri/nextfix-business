@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function (): void {
     Route::resource('/admin/companies', CompanyController::class)
         ->only(['index', 'create', 'store', 'show'])
         ->names('admin.companies');
+    Route::post('/admin/companies/{company}/rates', [CompanyController::class, 'rates'])->name('admin.companies.rates');
     Route::get('/admin/invoices', [FinanceController::class, 'invoices'])->name('admin.invoices.index');
     Route::get('/admin/invoices/{invoice}', [FinanceController::class, 'invoice'])->name('admin.invoices.show');
     Route::get('/admin/invoices/{invoice}/pdf', [FinanceController::class, 'pdf'])->name('admin.invoices.pdf');

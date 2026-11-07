@@ -83,4 +83,12 @@ class CompanyController extends Controller
 
         return view('admin.companies.show', compact('company'));
     }
+
+    public function rates(Request $request, Company $company): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+        $data = $request->validate(['inspection_rate' => ['required','numeric','min:0'], 'checkout_cleaning_rate' => ['required','numeric','min:0'], 'regular_cleaning_rate' => ['required','numeric','min:0'], 'deep_cleaning_rate' => ['required','numeric','min:0']]);
+        $company->update(collect($data)->mapWithKeys(fn ($value, $key) => [$key.'_minor' => (int) round($value * 100)])->all());
+        return back()->with('status', 'Company service rates updated.');
+    }
 }

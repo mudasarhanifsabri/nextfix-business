@@ -10,7 +10,7 @@ class Company extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'legal_name', 'trade_license_number', 'trn', 'industry', 'contact_name', 'email', 'phone', 'billing_email', 'billing_address', 'city', 'country', 'payment_terms', 'status'];
+    protected $fillable = ['name', 'legal_name', 'trade_license_number', 'trn', 'industry', 'contact_name', 'email', 'phone', 'billing_email', 'billing_address', 'city', 'country', 'payment_terms', 'status', 'inspection_rate_minor', 'checkout_cleaning_rate_minor', 'regular_cleaning_rate_minor', 'deep_cleaning_rate_minor'];
 
     public function users(): HasMany
     {

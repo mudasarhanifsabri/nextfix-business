@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Invoice;
 use App\Models\Unit;
+use App\Services\NomodPaymentLinks;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -33,11 +35,18 @@ class BookingController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
         $unit = Unit::where('company_id', $request->user()->company_id)->findOrFail($data['unit_id']);
-        Booking::create($data + [
+        $company = $request->user()->company;
+        $rateKey = match ($data['service_name']) { 'Deep cleaning' => 'deep_cleaning_rate_minor', 'Regular cleaning' => 'regular_cleaning_rate_minor', default => 'checkout_cleaning_rate_minor' };
+        $amount = $data['service_type'] === 'maintenance' ? $company->inspection_rate_minor : $company->{$rateKey};
+        $booking = Booking::create($data + [
             'company_id' => $request->user()->company_id, 'unit_id' => $unit->id,
             'reference' => 'NFB-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
-            'status' => 'pending', 'payment_status' => 'manual', 'amount_minor' => 0, 'currency' => 'AED',
+            'status' => $data['service_type'] === 'maintenance' ? 'awaiting_inspection_payment' : 'pending', 'payment_status' => 'pending', 'amount_minor' => $amount, 'inspection_fee_minor' => $data['service_type'] === 'maintenance' ? $amount : 0, 'currency' => 'AED',
         ]);
+        if ($data['service_type'] === 'maintenance') {
+            $url = rescue(fn () => app(NomodPaymentLinks::class)->create('Inspection '.$booking->reference, [['name'=>'Maintenance inspection fee','amount'=>number_format($amount/100,2,'.',''),'quantity'=>1]], 'Inspection fee is credited if the repair quotation is approved.', route('bookings.index'), route('bookings.index')), null, false);
+            $booking->update(['inspection_payment_url' => $url]);
+        }
 
         return redirect()->route('bookings.index')->with('status', 'Booking requested. We will confirm the schedule and price with you.');
     }
@@ -50,10 +59,19 @@ class BookingController extends Controller
 
         if ($data['decision'] === 'approve') {
             $booking->update(['workflow_stage' => 'work', 'status' => 'assigned', 'estimate_approved_at' => now(), 'customer_decision_at' => now(), 'customer_decision_note' => $data['decision_note'] ?? null]);
-            return back()->with('status', 'Quotation approved. The assigned professional can begin work.');
+            $credit = $booking->inspection_fee_paid_at ? $booking->inspection_fee_minor : 0;
+            $subtotal = max(0, $booking->labour_amount_minor + $booking->parts_amount_minor - $credit);
+            $tax = (int) round($subtotal * .05);
+            $invoice = Invoice::create(['company_id'=>$booking->company_id,'number'=>'INV-Q-'.now()->format('ymd').'-'.$booking->id,'public_token'=>hash('sha256',$booking->reference.now()),'issued_at'=>today(),'due_at'=>today()->addDays($booking->company->payment_terms ?: 7),'status'=>$subtotal + $tax > 0 ? 'sent' : 'paid','line_items'=>[['description'=>'Labour ('.$booking->labour_hours.' hours)','quantity'=>1,'unit_price_minor'=>$booking->labour_amount_minor],['description'=>'Parts: '.($booking->parts_required ?: 'As quoted'),'quantity'=>1,'unit_price_minor'=>$booking->parts_amount_minor],['description'=>'Inspection fee credit','quantity'=>1,'unit_price_minor'=>-$credit]],'subtotal_minor'=>$subtotal,'tax_minor'=>$tax,'amount_minor'=>$subtotal+$tax,'currency'=>'AED','notes'=>'Approved maintenance quotation for '.$booking->reference]);
+            $paid = ($subtotal + $tax) === 0;
+            $paymentUrl = $paid ? null : rescue(fn () => app(NomodPaymentLinks::class)->create('Quotation '.$booking->reference, [['name'=>'Approved maintenance work','amount'=>number_format(($subtotal+$tax)/100,2,'.',''),'quantity'=>1]], 'Inspection fee credit applied: AED '.number_format($credit/100,2), route('bookings.index'), route('bookings.index')), null, false);
+            $booking->update(['workflow_stage'=>$paid ? 'work' : 'awaiting_quote_payment','status'=>$paid ? 'assigned' : 'awaiting_quote_payment','estimate_approved_at'=>now(),'customer_decision_at'=>now(),'customer_decision_note'=>$data['decision_note'] ?? null,'quotation_invoice_id'=>$invoice->id,'quotation_payment_url'=>$paymentUrl]);
+            return back()->with('status', $paid ? 'Quotation approved. Work is authorized.' : 'Quotation approved. Pay the remaining balance to authorize work.');
         }
 
-        $booking->update(['workflow_stage' => 'estimate', 'status' => 'changes_requested', 'customer_decision_at' => now(), 'customer_decision_note' => $data['decision_note'] ?? 'Please revise the quotation.']);
+        $request->validate(['decision_note' => ['required', 'string', 'max:1000']]);
+        $reason = $data['decision_note'] ?? 'Please revise the quotation.';
+        $booking->update(['workflow_stage' => 'estimate', 'status' => 'changes_requested', 'customer_decision_at' => now(), 'customer_decision_note' => $reason]);
         return back()->with('status', 'Changes requested. NextFix will revise the quotation.');
     }
 }

@@ -81,4 +81,26 @@ class OperationsManagementTest extends TestCase
 
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'on_hold', 'hold_reason' => 'waiting_parts', 'progress' => 25]);
     }
+
+    public function test_professional_login_redirects_to_worker_app(): void
+    {
+        $worker = User::factory()->create([
+            'role' => 'professional',
+            'password' => 'worker-password',
+        ]);
+        Professional::create([
+            'user_id' => $worker->id,
+            'name' => 'Login Worker',
+            'role' => 'cleaner',
+            'phone' => '+971500000098',
+        ]);
+
+        $this->post(route('login.store'), [
+            'email' => $worker->email,
+            'password' => 'worker-password',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->get(route('dashboard'))->assertRedirect(route('worker.jobs.index'));
+        $this->get(route('worker.jobs.index'))->assertOk()->assertSee('Assigned jobs');
+    }
 }

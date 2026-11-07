@@ -16,7 +16,7 @@ class SystemUpdateController extends Controller
         $this->authorizeAdmin($request);
 
         try {
-            $release = $releases->inspect();
+            $release = $releases->inspect(fetch: true);
             $releaseError = null;
         } catch (\Throwable $error) {
             $release = null;

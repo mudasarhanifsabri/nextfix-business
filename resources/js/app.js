@@ -32,4 +32,6 @@ document.querySelectorAll('[data-hero-slider]').forEach((slider) => {
 
 if (document.querySelector('[data-deployment-progress]')) {
     window.setTimeout(() => window.location.reload(), 2500);
+} else if (document.querySelector('[data-github-update-check]')) {
+    window.setTimeout(() => window.location.reload(), 60000);
 }

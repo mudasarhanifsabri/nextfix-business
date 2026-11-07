@@ -13,14 +13,14 @@
 <body>
 <div class="app-shell">
     <aside class="sidebar">
-        <a href="{{ route('dashboard') }}" class="brand"><span class="brand-mark">N</span><span>NextFix<small>BUSINESS</small></span></a>
+        <a href="{{ route('dashboard') }}" class="brand brand-image"><img src="/images/brand/nextfix-square.png" alt="NextFix Home Services"><span>NextFix<small>BUSINESS</small></span></a>
         <nav aria-label="Primary navigation">
             <a class="{{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><span>⌂</span> Overview</a>
             @if(auth()->user()->role !== 'nextfix_admin')
                 <a class="{{ request()->routeIs('bookings.*') ? 'active' : '' }}" href="{{ route('bookings.index') }}"><span>▣</span> Bookings</a>
                 <a class="{{ request()->routeIs('units.*') ? 'active' : '' }}" href="{{ route('units.index') }}"><span>◇</span> Units</a>
             @else
-                <a href="{{ route('dashboard') }}#operations"><span>▣</span> Operations</a>
+                <a class="{{ request()->routeIs('admin.operations.*') ? 'active' : '' }}" href="{{ route('admin.operations.index') }}"><span>▣</span> Operations</a>
                 <div class="nav-group {{ request()->routeIs('admin.companies.*') ? 'open' : '' }}">
                     <a class="nav-parent {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}"><span>◇</span> Companies <b>⌄</b></a>
                     <div class="nav-sub"><a class="{{ request()->routeIs('admin.companies.index') || request()->routeIs('admin.companies.show') ? 'active' : '' }}" href="{{ route('admin.companies.index') }}">List</a><a class="{{ request()->routeIs('admin.companies.create') ? 'active' : '' }}" href="{{ route('admin.companies.create') }}">Add new</a></div>
@@ -28,6 +28,7 @@
                 <a class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}" href="{{ route('admin.invoices.index') }}"><span>▤</span> Invoices</a>
                 <a class="{{ request()->routeIs('admin.payments.*') ? 'active' : '' }}" href="{{ route('admin.payments.index') }}"><span>◉</span> Payments</a>
                 <a class="{{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}" href="{{ route('admin.notifications.index') }}"><span>●</span> Notifications</a>
+                <a class="{{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}"><span>⚙</span> Integrations</a>
                 <a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}"><span>↻</span> System updates</a>
             @endif
         </nav>

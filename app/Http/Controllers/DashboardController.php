@@ -22,7 +22,7 @@ class DashboardController extends Controller
                 'revenue' => Payment::where('status', 'completed')->sum('amount_minor'),
                 'outstanding' => Invoice::whereIn('status', ['sent', 'overdue'])->sum('amount_minor'),
                 'overdueCount' => Invoice::where('status', 'overdue')->count(),
-                'bookings' => Booking::with(['company', 'unit'])->latest('scheduled_at')->limit(8)->get(),
+                'bookings' => Booking::with(['company', 'unit'])->latest('scheduled_at')->limit(5)->get(),
             ]);
         }
 

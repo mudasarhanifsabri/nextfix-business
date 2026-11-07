@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/admin/invoices/{invoice}/pdf', [FinanceController::class, 'pdf'])->name('admin.invoices.pdf');
     Route::get('/admin/payments', [FinanceController::class, 'payments'])->name('admin.payments.index');
     Route::get('/admin/notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
     Route::post('/admin/notifications/read-all', [NotificationController::class, 'readAll'])->name('admin.notifications.read-all');
     Route::get('/admin/notifications/{notification}', [NotificationController::class, 'read'])->name('admin.notifications.read');
     Route::get('/admin/operations', [OperationsController::class, 'index'])->name('admin.operations.index');

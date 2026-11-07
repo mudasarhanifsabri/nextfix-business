@@ -47,6 +47,7 @@ class NomodWebhookTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paid', 'workflow_stage' => 'inspect']);
         $this->assertDatabaseCount('payments', 1);
         $this->assertDatabaseCount('nomod_webhook_events', 1);
+        $this->assertDatabaseCount('notifications', 2);
 
         $refundPayload = json_encode([
             'type' => 'charge.refunded', 'eventId' => 'evt-test-refund', 'objectId' => 'ch-test-1',
@@ -60,6 +61,7 @@ class NomodWebhookTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'refunded', 'status' => 'on_hold', 'workflow_stage' => 'payment_issue']);
         $this->assertDatabaseHas('payments', ['gateway_reference' => 'ch-test-1', 'status' => 'refunded']);
         $this->assertDatabaseCount('nomod_webhook_events', 2);
+        $this->assertDatabaseCount('notifications', 4);
     }
 
     public function test_webhook_rejects_invalid_signature(): void

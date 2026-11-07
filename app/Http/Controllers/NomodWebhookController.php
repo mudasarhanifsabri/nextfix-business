@@ -120,32 +120,38 @@ class NomodWebhookController extends Controller
         } else {
             $booking->update(['payment_status' => 'paid', 'status' => 'assigned', 'workflow_stage' => 'work']);
             $booking->quotationInvoice?->update(['status' => 'paid']);
+            $booking->professional?->user?->notifyNow(new AdminAlert(
+                'Payment confirmed · work unlocked',
+                $booking->reference.' is paid. You can begin the approved work.',
+                route('worker.jobs.show', $booking),
+                'success'
+            ), ['database']);
         }
 
-        User::where('company_id', $booking->company_id)->get()->each->notify(new AdminAlert(
+        User::where('company_id', $booking->company_id)->get()->each->notifyNow(new AdminAlert(
             'Payment confirmed',
             'AED '.number_format($amountMinor / 100, 2).' received for '.$booking->reference.'.',
             route('bookings.index'),
             'success'
-        ));
-        User::where('role', 'nextfix_admin')->get()->each->notify(new AdminAlert(
+        ), ['database']);
+        User::where('role', 'nextfix_admin')->get()->each->notifyNow(new AdminAlert(
             'Nomod payment received',
             'AED '.number_format($amountMinor / 100, 2).' received for '.$booking->reference.'.',
             route('admin.payments.index'),
             'success'
-        ));
+        ), ['database']);
     }
 
     private function updatePaymentState(array $payload, string $state, string $title, string $message, string $level, bool $holdWork = false): void
     {
         [$booking, $paymentType] = $this->bookingContext($payload);
         if (! $booking || ! $paymentType) {
-            User::where('role', 'nextfix_admin')->get()->each->notify(new AdminAlert(
+            User::where('role', 'nextfix_admin')->get()->each->notifyNow(new AdminAlert(
                 $title,
                 $message.' Nomod object '.($payload['objectId'] ?? 'unknown').' could not be matched to a NextFix booking.',
                 route('admin.payments.index'),
                 $level
-            ));
+            ), ['database']);
             return;
         }
 
@@ -164,8 +170,8 @@ class NomodWebhookController extends Controller
         }
 
         $fullMessage = $message.' Booking '.$booking->reference.'.';
-        User::where('company_id', $booking->company_id)->get()->each->notify(new AdminAlert($title, $fullMessage, route('bookings.index'), $level));
-        User::where('role', 'nextfix_admin')->get()->each->notify(new AdminAlert($title, $fullMessage, route('admin.payments.index'), $level));
+        User::where('company_id', $booking->company_id)->get()->each->notifyNow(new AdminAlert($title, $fullMessage, route('bookings.index'), $level), ['database']);
+        User::where('role', 'nextfix_admin')->get()->each->notifyNow(new AdminAlert($title, $fullMessage, route('admin.payments.index'), $level), ['database']);
     }
 
     private function bookingContext(array $payload): array

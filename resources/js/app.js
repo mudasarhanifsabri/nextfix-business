@@ -76,3 +76,40 @@ document.querySelectorAll('.quote-grid').forEach((quote) => {
     inputs.forEach((input) => input.addEventListener('input', update));
     update();
 });
+
+const notificationFeed = document.querySelector('[data-notification-feed]');
+if (notificationFeed) {
+    let lastNotification = notificationFeed.dataset.lastNotification || '';
+    const countBadge = notificationFeed.querySelector('[data-notification-count]');
+    const pollNotifications = async () => {
+        try {
+            const response = await fetch(notificationFeed.dataset.notificationFeed, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
+            if (!response.ok) return;
+            const data = await response.json();
+            countBadge.textContent = data.unread_count || '';
+            countBadge.hidden = !data.unread_count;
+            if (data.latest?.id && lastNotification && data.latest.id !== lastNotification) {
+                const toast = document.createElement('div');
+                toast.className = 'toast show border-0 shadow';
+                toast.setAttribute('role', 'alert');
+                const header = document.createElement('div');
+                header.className = 'toast-header';
+                header.innerHTML = `<span class="note-dot ${data.latest.level || 'info'}"></span><strong class="me-auto"></strong><button type="button" class="btn-close"></button>`;
+                header.querySelector('strong').textContent = data.latest.title;
+                header.querySelector('button').addEventListener('click', () => toast.remove());
+                const body = document.createElement('div');
+                body.className = 'toast-body';
+                body.textContent = data.latest.message;
+                const link = document.createElement('a');
+                link.href = data.latest.url; link.className = 'd-block mt-2'; link.textContent = 'View notification';
+                body.appendChild(link); toast.append(header, body);
+                document.querySelector('.toast-container')?.appendChild(toast);
+                window.setTimeout(() => toast.remove(), 12000);
+            }
+            if (data.latest?.id) lastNotification = data.latest.id;
+        } catch (_) {
+            // Keep the app usable when the device is temporarily offline.
+        }
+    };
+    window.setInterval(pollNotifications, 15000);
+}

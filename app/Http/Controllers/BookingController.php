@@ -70,12 +70,14 @@ class BookingController extends Controller
             $successUrl = route('bookings.index', ['nf_booking' => $booking->id, 'nf_payment' => 'quotation']);
             $paymentUrl = $paid ? null : rescue(fn () => app(NomodPaymentLinks::class)->create('Quotation '.$booking->reference, [['name'=>'Approved maintenance work','amount'=>number_format(($subtotal+$tax)/100,2,'.',''),'quantity'=>1]], 'NextFix booking '.$booking->reference.' quotation payment. Inspection credit AED '.number_format($credit/100,2).' applied.', $successUrl, route('bookings.index')), null, false);
             $booking->update(['workflow_stage'=>$paid ? 'work' : 'awaiting_quote_payment','status'=>$paid ? 'assigned' : 'awaiting_quote_payment','estimate_approved_at'=>now(),'customer_decision_at'=>now(),'customer_decision_note'=>$data['decision_note'] ?? null,'quotation_invoice_id'=>$invoice->id,'quotation_payment_url'=>$paymentUrl]);
+            $booking->professional?->user?->notifyNow(new \App\Notifications\AdminAlert('Quotation approved', $booking->reference.' was approved by '.$booking->company->name.'. '.($paid ? 'Work is ready.' : 'Waiting for payment.'), route('worker.jobs.show', $booking), 'success'), ['database']);
             return back()->with('status', $paid ? 'Quotation approved. Work is authorized.' : 'Quotation approved. Pay the remaining balance to authorize work.');
         }
 
         $request->validate(['decision_note' => ['required', 'string', 'max:1000']]);
         $reason = $data['decision_note'] ?? 'Please revise the quotation.';
         $booking->update(['workflow_stage' => 'estimate', 'status' => 'changes_requested', 'customer_decision_at' => now(), 'customer_decision_note' => $reason]);
+        $booking->professional?->user?->notifyNow(new \App\Notifications\AdminAlert('Quotation changes requested', $booking->company->name.' requested changes for '.$booking->reference.': '.$reason, route('worker.jobs.show', $booking), 'warning'), ['database']);
         return back()->with('status', 'Changes requested. NextFix will revise the quotation.');
     }
 

@@ -117,11 +117,12 @@ class OperationsManagementTest extends TestCase
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'inspection', 'inspection_condition' => 'urgent', 'inspection_issues' => ['water_leak'], 'inspection_report' => 'Pipe is leaking.'])->assertRedirect();
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'estimate', 'labour_hours' => 2, 'labour_cost' => 150, 'parts_cost' => 75, 'parts_required' => 'Replacement valve'])->assertRedirect();
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_customer_approval']);
-        $this->assertDatabaseCount('notifications', 1);
+        $this->assertDatabaseCount('notifications', 2);
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Waiting for company approval')->assertDontSee('Tap when done');
         $this->actingAs($manager)->get(route('bookings.index'))->assertOk()->assertSee('Quotations ready for review')->assertSee('AED 236.25');
         $this->actingAs($manager)->get(route('bookings.quotation.pdf', $booking))->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->actingAs($manager)->post(route('bookings.quotation-decision', $booking), ['decision' => 'approve'])->assertRedirect();
+        $this->actingAs($worker)->get(route('admin.notifications.index'))->assertOk()->assertSee('Work alerts')->assertSee('Quotation approved');
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_quote_payment', 'status' => 'awaiting_quote_payment']);
         $this->assertDatabaseHas('invoices', ['company_id' => $company->id, 'subtotal_minor' => 22500, 'tax_minor' => 1125, 'amount_minor' => 23625]);
         $this->actingAs($manager)->get(route('bookings.invoice.pdf', $booking->fresh()))->assertOk()->assertHeader('content-type', 'application/pdf');

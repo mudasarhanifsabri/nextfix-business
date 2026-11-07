@@ -41,6 +41,21 @@ class OperationsManagementTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'aisha@example.test', 'role' => 'professional']);
     }
 
+    public function test_admin_can_save_encrypted_integration_settings_after_reauthentication(): void
+    {
+        $admin = User::factory()->create(['role' => 'nextfix_admin', 'password' => 'password']);
+
+        $this->actingAs($admin)->post(route('admin.integrations.smtp'), [
+            'password_confirmation_admin' => 'password', 'host' => 'smtp.example.test', 'port' => 587,
+            'scheme' => 'tls', 'username' => 'mailer', 'smtp_password' => 'smtp-secret-value',
+            'from_address' => 'notifications@example.test', 'from_name' => 'NextFix',
+        ])->assertRedirect();
+
+        $stored = \Illuminate\Support\Facades\DB::table('integration_settings')->where('key', 'smtp.password')->value('value');
+        $this->assertNotSame('smtp-secret-value', $stored);
+        $this->actingAs($admin)->get(route('admin.integrations.index'))->assertOk()->assertDontSee('smtp-secret-value');
+    }
+
     public function test_company_manager_cannot_view_admin_operations(): void
     {
         $manager = User::factory()->create(['role' => 'company_manager']);

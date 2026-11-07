@@ -29,8 +29,10 @@
                 <a class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}" href="{{ route('admin.invoices.index') }}"><span>▤</span> Invoices</a>
                 <a class="{{ request()->routeIs('admin.payments.*') ? 'active' : '' }}" href="{{ route('admin.payments.index') }}"><span>◉</span> Payments</a>
                 <a class="{{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}" href="{{ route('admin.notifications.index') }}"><span>●</span> Notifications</a>
-                <a class="{{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}"><span>⚙</span> Integrations</a>
-                <a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}"><span>↻</span> System updates</a>
+                <div class="nav-group {{ request()->routeIs('admin.integrations.*', 'admin.updates.*') ? 'open' : '' }}">
+                    <a class="nav-parent {{ request()->routeIs('admin.integrations.*', 'admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}"><span>⚙</span> Administration <b>⌄</b></a>
+                    <div class="nav-sub"><a class="{{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}">Integrations</a><a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}">System updates</a></div>
+                </div>
             @endif
         </nav>
         <div class="sidebar-foot">

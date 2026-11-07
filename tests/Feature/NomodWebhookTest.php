@@ -47,6 +47,19 @@ class NomodWebhookTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'paid', 'workflow_stage' => 'inspect']);
         $this->assertDatabaseCount('payments', 1);
         $this->assertDatabaseCount('nomod_webhook_events', 1);
+
+        $refundPayload = json_encode([
+            'type' => 'charge.refunded', 'eventId' => 'evt-test-refund', 'objectId' => 'ch-test-1',
+            'data' => ['currency' => 'AED', 'total' => '150.00', 'successUrl' => route('bookings.index', ['nf_booking' => $booking->id, 'nf_payment' => 'inspection'])],
+        ], JSON_UNESCAPED_SLASHES);
+        $refundMessageId = 'msg-test-refund';
+        $refundSignature = base64_encode(hash_hmac('sha256', $refundMessageId.'.'.$timestamp.'.'.$refundPayload, $secretBytes, true));
+        $refundHeaders = ['HTTP_SVIX_ID' => $refundMessageId, 'HTTP_SVIX_TIMESTAMP' => $timestamp, 'HTTP_SVIX_SIGNATURE' => 'v1,'.$refundSignature, 'CONTENT_TYPE' => 'application/json'];
+        $this->call('POST', route('webhooks.nomod'), [], [], [], $refundHeaders, $refundPayload)->assertOk();
+
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'payment_status' => 'refunded', 'status' => 'on_hold', 'workflow_stage' => 'payment_issue']);
+        $this->assertDatabaseHas('payments', ['gateway_reference' => 'ch-test-1', 'status' => 'refunded']);
+        $this->assertDatabaseCount('nomod_webhook_events', 2);
     }
 
     public function test_webhook_rejects_invalid_signature(): void

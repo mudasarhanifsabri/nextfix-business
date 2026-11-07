@@ -40,9 +40,7 @@ class NomodWebhookController extends Controller
                     'payload' => $payload,
                 ]);
 
-                if ($payload['type'] === 'charge.completed') {
-                    $this->completePayment($payload);
-                }
+                $this->processEvent($payload);
 
                 $event->update(['processed_at' => now()]);
             });
@@ -52,6 +50,21 @@ class NomodWebhookController extends Controller
         }
 
         return response()->json(['received' => true]);
+    }
+
+    private function processEvent(array $payload): void
+    {
+        match ($payload['type']) {
+            'charge.completed' => $this->completePayment($payload),
+            'charge.created' => $this->updatePaymentState($payload, 'pending', 'Payment link opened', 'A customer started a Nomod payment.', 'info'),
+            'charge.authorised' => $this->updatePaymentState($payload, 'authorised', 'Payment authorised', 'Nomod authorised the payment and is awaiting capture.', 'info'),
+            'charge.failed' => $this->updatePaymentState($payload, 'failed', 'Payment failed', 'The Nomod payment failed. The customer can retry the payment link.', 'warning'),
+            'charge.cancelled' => $this->updatePaymentState($payload, 'cancelled', 'Payment cancelled', 'The Nomod payment was cancelled before completion.', 'warning'),
+            'charge.refunded' => $this->updatePaymentState($payload, 'refunded', 'Payment refunded', 'The Nomod payment was fully refunded. Work has been placed on hold.', 'warning', true),
+            'charge.partially_refunded' => $this->updatePaymentState($payload, 'partially_refunded', 'Payment partially refunded', 'The Nomod payment was partially refunded. Review is required.', 'warning', true),
+            'charge.dispute.created' => $this->updatePaymentState($payload, 'disputed', 'Payment dispute opened', 'A dispute was opened for this Nomod payment. Work has been placed on hold.', 'danger', true),
+            default => null,
+        };
     }
 
     private function signatureIsValid(Request $request, string $rawBody): bool
@@ -76,17 +89,11 @@ class NomodWebhookController extends Controller
 
     private function completePayment(array $payload): void
     {
-        $data = $payload['data'] ?? [];
-        $successUrl = (string) ($data['successUrl'] ?? $data['success_url'] ?? '');
-        parse_str((string) parse_url($successUrl, PHP_URL_QUERY), $query);
-        $bookingId = filter_var($query['nf_booking'] ?? null, FILTER_VALIDATE_INT);
-        $paymentType = $query['nf_payment'] ?? null;
-
-        if (! $bookingId || ! in_array($paymentType, ['inspection', 'quotation'], true)) {
+        [$booking, $paymentType] = $this->bookingContext($payload);
+        if (! $booking || ! $paymentType) {
             throw new \RuntimeException('Nomod payment is missing its NextFix booking reference.');
         }
-
-        $booking = Booking::query()->lockForUpdate()->findOrFail($bookingId);
+        $data = $payload['data'] ?? [];
         $invoice = $paymentType === 'quotation' ? $booking->quotation_invoice_id : null;
         $expectedMinor = $paymentType === 'inspection' ? $booking->inspection_fee_minor : $booking->quotationInvoice?->amount_minor;
         $currency = strtoupper((string) ($data['currency'] ?? ''));
@@ -127,5 +134,49 @@ class NomodWebhookController extends Controller
             route('admin.payments.index'),
             'success'
         ));
+    }
+
+    private function updatePaymentState(array $payload, string $state, string $title, string $message, string $level, bool $holdWork = false): void
+    {
+        [$booking, $paymentType] = $this->bookingContext($payload);
+        if (! $booking || ! $paymentType) {
+            User::where('role', 'nextfix_admin')->get()->each->notify(new AdminAlert(
+                $title,
+                $message.' Nomod object '.($payload['objectId'] ?? 'unknown').' could not be matched to a NextFix booking.',
+                route('admin.payments.index'),
+                $level
+            ));
+            return;
+        }
+
+        $bookingUpdates = ['payment_status' => $state];
+        if ($holdWork) {
+            $bookingUpdates += ['status' => 'on_hold', 'workflow_stage' => 'payment_issue', 'hold_reason' => $state, 'hold_note' => $message];
+        }
+        $booking->update($bookingUpdates);
+
+        $objectId = (string) ($payload['objectId'] ?? data_get($payload, 'data.id', ''));
+        if ($objectId !== '') {
+            Payment::where('gateway_reference', $objectId)->update(['status' => $state, 'notes' => $message]);
+        }
+        if ($paymentType === 'quotation' && in_array($state, ['refunded', 'partially_refunded', 'disputed'], true)) {
+            $booking->quotationInvoice?->update(['status' => $state]);
+        }
+
+        $fullMessage = $message.' Booking '.$booking->reference.'.';
+        User::where('company_id', $booking->company_id)->get()->each->notify(new AdminAlert($title, $fullMessage, route('bookings.index'), $level));
+        User::where('role', 'nextfix_admin')->get()->each->notify(new AdminAlert($title, $fullMessage, route('admin.payments.index'), $level));
+    }
+
+    private function bookingContext(array $payload): array
+    {
+        $data = $payload['data'] ?? [];
+        $successUrl = (string) ($data['successUrl'] ?? $data['success_url'] ?? '');
+        parse_str((string) parse_url($successUrl, PHP_URL_QUERY), $query);
+        $bookingId = filter_var($query['nf_booking'] ?? null, FILTER_VALIDATE_INT);
+        $paymentType = $query['nf_payment'] ?? null;
+        if (! $bookingId || ! in_array($paymentType, ['inspection', 'quotation'], true)) return [null, null];
+
+        return [Booking::query()->lockForUpdate()->find($bookingId), $paymentType];
     }
 }

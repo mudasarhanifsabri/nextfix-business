@@ -17,6 +17,11 @@
     "src": "resources/css/customer.css",
     "isEntry": true
   },
+  "resources/css/quote-flow.css": {
+    "file": "assets/quote-flow-CW_yj8nK.css",
+    "src": "resources/css/quote-flow.css",
+    "isEntry": true
+  },
   "resources/css/ultimate.css": {
     "file": "assets/ultimate-Gj4amn9j.css",
     "src": "resources/css/ultimate.css",

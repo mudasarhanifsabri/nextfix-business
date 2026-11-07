@@ -66,7 +66,7 @@ class WorkerJobController extends Controller
         } elseif ($action === 'estimate') {
             abort_unless($booking->workflow_stage === 'estimate', 422, 'Complete the inspection before submitting an estimate.');
             $request->validate(['labour_hours' => ['required', 'numeric', 'min:0'], 'labour_cost' => ['required', 'numeric', 'min:0'], 'parts_cost' => ['required', 'numeric', 'min:0']]);
-            $updates += ['workflow_stage' => 'awaiting_approval', 'status' => 'awaiting_approval', 'labour_hours' => $data['labour_hours'], 'labour_amount_minor' => (int) round($data['labour_cost'] * 100), 'parts_amount_minor' => (int) round($data['parts_cost'] * 100), 'parts_required' => $data['parts_required'] ?? null, 'estimate_note' => $data['estimate_note'] ?? null, 'estimate_submitted_at' => now()];
+            $updates += ['workflow_stage' => 'admin_review', 'status' => 'estimate_review', 'labour_hours' => $data['labour_hours'], 'labour_amount_minor' => (int) round($data['labour_cost'] * 100), 'parts_amount_minor' => (int) round($data['parts_cost'] * 100), 'parts_required' => $data['parts_required'] ?? null, 'estimate_note' => $data['estimate_note'] ?? null, 'estimate_submitted_at' => now()];
         } elseif ($action === 'hold') {
             abort_unless(filled($data['hold_reason'] ?? null), 422, 'Choose why the job is on hold.');
             $updates += ['status' => 'on_hold', 'hold_reason' => $data['hold_reason'], 'hold_note' => $data['hold_note'] ?? null];
@@ -83,7 +83,7 @@ class WorkerJobController extends Controller
 
         $message = match ($action) {
             'inspection' => 'Inspection saved. Add the estimate next.',
-            'estimate' => 'Estimate sent to the office for approval.',
+            'estimate' => 'Estimate sent to NextFix for review.',
             'hold' => 'Job saved on hold.',
             'complete' => 'Job completed.',
             default => 'Progress saved.',

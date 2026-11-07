@@ -1,12 +1,13 @@
 @extends('layouts.worker', ['title' => $booking->reference.' | NextFix'])
 @section('content')
 @php($stage = $booking->workflow_stage ?? 'inspection')
+@php($journeyStage = in_array($stage, ['admin_review', 'awaiting_customer_approval'], true) ? 'approval' : $stage)
 <a class="worker-back" href="{{ route('worker.jobs.index') }}"><i class="bi bi-chevron-left"></i> My jobs</a>
 <section class="worker-job-hero"><div><p>{{ $booking->reference }}</p><h1>{{ $booking->service_name }}</h1><span><i class="bi bi-geo-alt"></i> {{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</span></div><span class="worker-status {{ $booking->status }}">{{ str_replace('_', ' ', $booking->status) }}</span></section>
 
 <nav class="job-journey" aria-label="Job progress">
-@foreach(['inspection'=>'Inspect','estimate'=>'Estimate','awaiting_approval'=>'Approve','work'=>'Work','complete'=>'Done'] as $key=>$label)
-<span class="{{ array_search($key, array_keys(['inspection'=>1,'estimate'=>1,'awaiting_approval'=>1,'work'=>1,'complete'=>1])) <= array_search($stage, array_keys(['inspection'=>1,'estimate'=>1,'awaiting_approval'=>1,'work'=>1,'complete'=>1])) ? 'active' : '' }}"><i>{{ $loop->iteration }}</i>{{ $label }}</span>
+@foreach(['inspection'=>'Inspect','estimate'=>'Estimate','approval'=>'Company','work'=>'Work','complete'=>'Done'] as $key=>$label)
+<span class="{{ array_search($key, array_keys(['inspection'=>1,'estimate'=>1,'approval'=>1,'work'=>1,'complete'=>1])) <= array_search($journeyStage, array_keys(['inspection'=>1,'estimate'=>1,'approval'=>1,'work'=>1,'complete'=>1])) ? 'active' : '' }}"><i>{{ $loop->iteration }}</i>{{ $label }}</span>
 @endforeach
 </nav>
 
@@ -19,7 +20,8 @@
 <details class="worker-step" @if($stage === 'estimate') open @endif><summary><span><i class="bi bi-receipt"></i></span><div><small>STEP 2</small><strong>Labour & parts estimate</strong><em>Quick quotation for office approval</em></div><i class="bi bi-chevron-down"></i></summary>
 <form method="post" action="{{ route('worker.jobs.update', $booking) }}">@csrf<input type="hidden" name="action" value="estimate"><div class="quote-grid"><label>Labour hours<input type="number" step="0.5" min="0" name="labour_hours" value="{{ $booking->labour_hours }}" required inputmode="decimal"></label><label>Labour AED<input type="number" step="0.01" min="0" name="labour_cost" value="{{ number_format($booking->labour_amount_minor / 100, 2, '.', '') }}" required inputmode="decimal"></label><label>Parts AED<input type="number" step="0.01" min="0" name="parts_cost" value="{{ number_format($booking->parts_amount_minor / 100, 2, '.', '') }}" required inputmode="decimal"></label><label class="quote-total">Estimated total<strong data-quote-total>AED {{ number_format(($booking->labour_amount_minor + $booking->parts_amount_minor) / 100, 2) }}</strong></label></div><label class="worker-field">Parts required<textarea name="parts_required" placeholder="Part name, quantity, model…">{{ $booking->parts_required }}</textarea></label><label class="worker-field">Estimate note<textarea name="estimate_note" placeholder="Optional note for the office">{{ $booking->estimate_note }}</textarea></label><button class="worker-save">Send estimate for approval</button></form></details>
 
-@if($stage === 'awaiting_approval')<section class="approval-wait"><i class="bi bi-hourglass-split"></i><div><strong>Waiting for office approval</strong><span>AED {{ number_format(($booking->labour_amount_minor + $booking->parts_amount_minor) / 100, 2) }} estimate submitted. Work unlocks after approval.</span></div></section>@endif
+@if($stage === 'admin_review')<section class="approval-wait"><i class="bi bi-hourglass-split"></i><div><strong>NextFix is reviewing your estimate</strong><span>We will send the quotation to {{ $booking->company->name }} after review.</span></div></section>@endif
+@if($stage === 'awaiting_customer_approval')<section class="approval-wait"><i class="bi bi-building-check"></i><div><strong>Waiting for company approval</strong><span>AED {{ number_format(($booking->labour_amount_minor + $booking->parts_amount_minor) / 100, 2) }} quotation sent to {{ $booking->company->name }}. Work unlocks after their approval.</span></div></section>@endif
 
 @if(in_array($stage, ['work', 'complete'], true))
 @if($booking->status === 'on_hold')<section class="hold-banner"><i class="bi bi-pause-circle"></i><div><strong>Work paused</strong><span>{{ ucwords(str_replace('_', ' ', $booking->hold_reason)) }}@if($booking->hold_note) · {{ $booking->hold_note }}@endif</span></div><form method="post" action="{{ route('worker.jobs.update', $booking) }}">@csrf<input type="hidden" name="action" value="resume">@foreach($booking->completed_items ?? [] as $item)<input type="hidden" name="completed_items[]" value="{{ $item }}">@endforeach<button>Resume</button></form></section>@endif

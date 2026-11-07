@@ -29,7 +29,7 @@ class WorkerJobController extends Controller
     {
         $professional = $this->professional($request);
         abort_unless($booking->professional_id === $professional->id, 403);
-        $booking->load(['company', 'unit', 'inspectionPhotos']);
+        $booking->load(['company', 'unit', 'inspectionPhotos', 'workPhotos']);
         $checklist = config('workflows.'.$booking->service_type, config('workflows.maintenance'));
 
         return view('worker.jobs.show', compact('professional', 'booking', 'checklist'));
@@ -43,7 +43,7 @@ class WorkerJobController extends Controller
         $data = $request->validate([
             'completed_items' => ['nullable', 'array'],
             'completed_items.*' => ['string', Rule::in(array_keys($checklist))],
-            'action' => ['nullable', Rule::in(['inspection', 'estimate', 'save', 'hold', 'resume', 'complete'])],
+            'action' => ['nullable', Rule::in(['inspection', 'estimate', 'save', 'photo', 'hold', 'resume', 'complete'])],
             'inspection_condition' => ['nullable', Rule::in(['good', 'attention', 'urgent'])],
             'inspection_issues' => ['nullable', 'array'],
             'inspection_issues.*' => ['string', Rule::in(['water_leak', 'electrical', 'ac', 'damage', 'hygiene', 'access', 'safety', 'other'])],
@@ -55,15 +55,18 @@ class WorkerJobController extends Controller
             'estimate_note' => ['nullable', 'string', 'max:2000'],
             'inspection_photos' => ['nullable', 'array', 'max:8'],
             'inspection_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'work_photo_category' => ['nullable', Rule::in(['before', 'progress', 'after'])],
+            'work_photos' => ['nullable', 'array', 'max:8'],
+            'work_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             'hold_reason' => ['nullable', Rule::in(['wet_surface', 'waiting_parts', 'no_access', 'safety_issue', 'customer_request', 'other'])],
             'hold_note' => ['nullable', 'string', 'max:500'],
         ]);
-        $completed = array_values(array_unique($data['completed_items'] ?? []));
-        $progress = (int) round((count($completed) / max(count($checklist), 1)) * 100);
-        $updates = ['completed_items' => $completed, 'progress' => $progress];
         $action = $data['action'] ?? 'save';
+        $completed = $action === 'photo' ? ($booking->completed_items ?? []) : array_values(array_unique($data['completed_items'] ?? []));
+        $progress = (int) round((count($completed) / max(count($checklist), 1)) * 100);
+        $updates = $action === 'photo' ? [] : ['completed_items' => $completed, 'progress' => $progress];
 
-        if (in_array($action, ['save', 'hold', 'resume', 'complete'], true)) {
+        if (in_array($action, ['save', 'photo', 'hold', 'resume', 'complete'], true)) {
             abort_unless(in_array($booking->workflow_stage, ['work', 'complete'], true), 422, 'Work is locked until the estimate is approved.');
         }
 
@@ -79,6 +82,12 @@ class WorkerJobController extends Controller
             abort_unless($booking->workflow_stage === 'estimate', 422, 'Complete the inspection before submitting an estimate.');
             $request->validate(['labour_hours' => ['required', 'numeric', 'min:0'], 'labour_cost' => ['required', 'numeric', 'min:0'], 'parts_cost' => ['required', 'numeric', 'min:0']]);
             $updates += ['workflow_stage' => 'awaiting_customer_approval', 'status' => 'awaiting_customer_approval', 'labour_hours' => $data['labour_hours'], 'labour_amount_minor' => (int) round($data['labour_cost'] * 100), 'parts_amount_minor' => (int) round($data['parts_cost'] * 100), 'parts_required' => $data['parts_required'] ?? null, 'estimate_note' => $data['estimate_note'] ?? null, 'estimate_submitted_at' => now(), 'quotation_sent_at' => now()];
+        } elseif ($action === 'photo') {
+            $request->validate(['work_photo_category' => ['required'], 'work_photos' => ['required', 'array', 'min:1', 'max:8']]);
+            foreach ($request->file('work_photos', []) as $photo) {
+                $path = $photo->store('job-evidence/'.$booking->id, 'public');
+                JobPhoto::create(['booking_id' => $booking->id, 'professional_id' => $professional->id, 'path' => $path, 'original_name' => $photo->getClientOriginalName(), 'mime_type' => $photo->getMimeType(), 'size' => $photo->getSize(), 'category' => $data['work_photo_category'], 'captured_at' => now()]);
+            }
         } elseif ($action === 'hold') {
             abort_unless(filled($data['hold_reason'] ?? null), 422, 'Choose why the job is on hold.');
             $updates += ['status' => 'on_hold', 'hold_reason' => $data['hold_reason'], 'hold_note' => $data['hold_note'] ?? null];
@@ -122,6 +131,7 @@ class WorkerJobController extends Controller
         $message = match ($action) {
             'inspection' => 'Inspection saved. Add the estimate next.',
             'estimate' => 'Quotation sent to the company for approval.',
+            'photo' => 'Work photos added.',
             'hold' => 'Job saved on hold.',
             'complete' => 'Job completed.',
             default => 'Progress saved.',

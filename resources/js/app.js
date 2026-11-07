@@ -67,9 +67,10 @@ if (document.querySelector('[data-deployment-progress]')) {
 }
 
 const workerChecks = document.querySelector('.worker-check-items');
-const inspectionPhotos = document.querySelector('[data-inspection-photos]');
-if (inspectionPhotos) {
-    const preview = document.querySelector('[data-inspection-preview]');
+document.querySelectorAll('[data-inspection-photos],[data-photo-input]').forEach((inspectionPhotos) => {
+    const preview = inspectionPhotos.dataset.previewTarget
+        ? document.getElementById(inspectionPhotos.dataset.previewTarget)
+        : document.querySelector('[data-inspection-preview]');
     inspectionPhotos.addEventListener('change', () => {
         preview.replaceChildren();
         [...inspectionPhotos.files].slice(0, 8).forEach((file, index) => {
@@ -80,7 +81,7 @@ if (inspectionPhotos) {
             card.append(image, label); preview.appendChild(card);
         });
     });
-}
+});
 
 if (workerChecks) {
     const updateWorkerProgress = () => {

@@ -38,5 +38,15 @@ class WorkerMediaTest extends TestCase
         $response->assertOk()->assertSee('Photo evidence · 2');
         $photo = $booking->inspectionPhotos()->first();
         $this->actingAs($worker)->get(route('worker.evidence.show', $photo))->assertOk();
+
+        $booking->update(['workflow_stage' => 'work', 'payment_status' => 'paid', 'status' => 'assigned', 'completed_items' => ['arrival'], 'progress' => 13]);
+        $this->actingAs($worker)->get(route('worker.jobs.index'))->assertOk()->assertSee('PAID · READY FOR WORK');
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'photo', 'work_photo_category' => 'before',
+            'work_photos' => [UploadedFile::fake()->image('before.jpg'), UploadedFile::fake()->image('panel.jpg')],
+        ])->assertRedirect();
+        $this->assertDatabaseHas('job_photos', ['booking_id' => $booking->id, 'category' => 'before']);
+        $this->assertSame(['arrival'], $booking->fresh()->completed_items);
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Show the work')->assertSee('2 saved');
     }
 }

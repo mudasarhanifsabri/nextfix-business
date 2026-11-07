@@ -38,6 +38,20 @@ class Booking extends Model
         return $this->hasMany(JobPhoto::class)->where('category', 'inspection')->oldest('captured_at');
     }
 
+    public function workPhotos(): HasMany
+    {
+        return $this->hasMany(JobPhoto::class)->whereIn('category', ['before', 'progress', 'after'])->oldest('captured_at');
+    }
+
+    public function getOperationalStatusLabelAttribute(): string
+    {
+        if ($this->payment_status === 'paid' && $this->workflow_stage === 'work' && $this->status === 'assigned') {
+            return 'Paid · ready for work';
+        }
+
+        return ucwords(str_replace('_', ' ', $this->status));
+    }
+
     public function quotationInvoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class, 'quotation_invoice_id');

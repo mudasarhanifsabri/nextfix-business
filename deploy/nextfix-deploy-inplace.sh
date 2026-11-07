@@ -14,6 +14,12 @@ STATE_FILE="${NEXTFIX_RELEASE_STATE:-$REPOSITORY/storage/app/releases/current.js
 [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "Invalid deployment run"; exit 22; }
 [[ -n "$REPOSITORY" && -d "$REPOSITORY/.git" ]] || { echo "Git repository is unavailable"; exit 23; }
 
+# cPanel web workers often omit HOME even though the interactive Terminal has
+# it. Composer requires a writable home directory for cache and configuration.
+export HOME="${HOME:-$(dirname "$REPOSITORY")}"
+export COMPOSER_HOME="${COMPOSER_HOME:-$REPOSITORY/storage/app/composer}"
+mkdir -p "$COMPOSER_HOME"
+
 for command in git php; do
     command -v "$command" >/dev/null || { echo "Missing command: $command"; exit 24; }
 done

@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/admin/notifications/{notification}', [NotificationController::class, 'read'])->name('admin.notifications.read');
     Route::get('/admin/operations', [OperationsController::class, 'index'])->name('admin.operations.index');
     Route::post('/admin/operations/{booking}/assign', [OperationsController::class, 'assign'])->name('admin.operations.assign');
+    Route::post('/admin/operations/{booking}/approve', [OperationsController::class, 'approve'])->name('admin.operations.approve');
     Route::resource('/admin/professionals', ProfessionalController::class)->only(['index', 'create', 'store', 'show'])->names('admin.professionals');
     Route::get('/admin/integrations', [IntegrationController::class, 'index'])->name('admin.integrations.index');
     Route::post('/admin/integrations/smtp', [IntegrationController::class, 'smtp'])->name('admin.integrations.smtp');

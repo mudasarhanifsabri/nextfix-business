@@ -10,6 +10,10 @@
     <button class="primary">Apply filters</button><a class="secondary" href="{{ route('admin.operations.index') }}">Reset</a>
 </form>
 
+@if($approvalBookings->isNotEmpty())
+<section class="panel approval-queue"><div class="panel-head"><div><p class="eyebrow">ACTION REQUIRED</p><h3>Estimates awaiting approval</h3></div><span>{{ $approvalBookings->count() }} pending</span></div><div class="agenda-list">@foreach($approvalBookings as $booking)<article><span class="agenda-service maintenance"><i class="bi bi-receipt"></i></span><div><strong>{{ $booking->reference }} · {{ $booking->service_name }}</strong><span>{{ $booking->company->name }} · {{ $booking->labour_hours }}h labour · {{ $booking->parts_required ?: 'No parts listed' }}</span></div><strong>AED {{ number_format(($booking->labour_amount_minor + $booking->parts_amount_minor) / 100, 2) }}</strong><form method="post" action="{{ route('admin.operations.approve', $booking) }}">@csrf<button class="primary">Approve work</button></form></article>@endforeach</div></section>
+@endif
+
 <section class="panel operations-calendar">
     <div class="calendar-toolbar"><a href="{{ route('admin.operations.index', array_merge(request()->except('month', 'page', 'date'), ['month' => $month->subMonth()->format('Y-m')])) }}" aria-label="Previous month"><i class="bi bi-chevron-left"></i></a><div><p class="eyebrow">DISPATCH CALENDAR</p><h3>{{ $month->format('F Y') }}</h3><a class="calendar-today" href="{{ route('admin.operations.index', array_merge(request()->except('month', 'page', 'date'), ['month' => now()->format('Y-m'), 'date' => now()->format('Y-m-d')])) }}">Today</a></div><a href="{{ route('admin.operations.index', array_merge(request()->except('month', 'page', 'date'), ['month' => $month->addMonth()->format('Y-m')])) }}" aria-label="Next month"><i class="bi bi-chevron-right"></i></a></div>
     <div class="calendar-weekdays">@foreach(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as $weekday)<span>{{ $weekday }}</span>@endforeach</div>

@@ -45,6 +45,7 @@ class OperationsController extends Controller
             'days' => $days,
             'selectedDate' => $selectedDate,
             'selectedDayBookings' => $selectedDate ? (clone $query)->whereDate('scheduled_at', $selectedDate)->orderBy('scheduled_at')->get() : collect(),
+            'approvalBookings' => Booking::with(['company', 'unit', 'professional'])->where('workflow_stage', 'awaiting_approval')->oldest('estimate_submitted_at')->get(),
             'todayCount' => Booking::whereDate('scheduled_at', today())->count(),
             'attentionCount' => Booking::whereIn('status', ['pending', 'awaiting_payment'])->count(),
             'activeCount' => Booking::whereIn('status', ['confirmed', 'assigned', 'on_the_way', 'in_progress'])->count(),
@@ -58,6 +59,14 @@ class OperationsController extends Controller
         $booking->update(['professional_id' => $data['professional_id'] ?? null]);
 
         return back()->with('status', $booking->professional_id ? 'Professional assigned to '.$booking->reference.'.' : 'Assignment removed.');
+    }
+
+    public function approve(Request $request, Booking $booking): RedirectResponse
+    {
+        $this->authorizeAdmin($request);
+        abort_unless($booking->workflow_stage === 'awaiting_approval', 422, 'This estimate is not waiting for approval.');
+        $booking->update(['workflow_stage' => 'work', 'status' => 'assigned', 'estimate_approved_at' => now()]);
+        return back()->with('status', 'Estimate approved. The professional can begin work.');
     }
 
     private function authorizeAdmin(Request $request): void

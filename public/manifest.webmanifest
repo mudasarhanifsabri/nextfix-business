@@ -1,1 +1,1 @@
-{"name":"NextFix Business","short_name":"NextFix","start_url":"/dashboard","display":"standalone","background_color":"#f5f8fc","theme_color":"#1267e8","description":"Service operations for holiday-home companies"}
+{"id":"/work","name":"NextFix Worker","short_name":"NextFix Work","start_url":"/work/jobs","scope":"/","display":"standalone","display_override":["standalone","minimal-ui"],"orientation":"portrait","background_color":"#f3f7fc","theme_color":"#1267e8","description":"Fast field operations for NextFix cleaners and maintenance professionals"}

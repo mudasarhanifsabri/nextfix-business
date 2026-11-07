@@ -68,3 +68,11 @@ document.querySelectorAll('[data-swipe-form]').forEach((form) => {
         form.submit();
     });
 });
+
+document.querySelectorAll('.quote-grid').forEach((quote) => {
+    const inputs = [...quote.querySelectorAll('input[name="labour_cost"],input[name="parts_cost"]')];
+    const total = quote.querySelector('[data-quote-total]');
+    const update = () => total.textContent = `AED ${inputs.reduce((sum, input) => sum + (Number(input.value) || 0), 0).toFixed(2)}`;
+    inputs.forEach((input) => input.addEventListener('input', update));
+    update();
+});

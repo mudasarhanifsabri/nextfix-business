@@ -14,13 +14,18 @@
     "src": "resources/css/ultimate.css",
     "isEntry": true
   },
+  "resources/css/worker-flow.css": {
+    "file": "assets/worker-flow-C5qGRsw8.css",
+    "src": "resources/css/worker-flow.css",
+    "isEntry": true
+  },
   "resources/css/worker.css": {
     "file": "assets/worker-_btsOnQH.css",
     "src": "resources/css/worker.css",
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BupEu8J4.js",
+    "file": "assets/app-CmRSUdv-.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

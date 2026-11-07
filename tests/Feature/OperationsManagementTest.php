@@ -103,4 +103,21 @@ class OperationsManagementTest extends TestCase
         $this->get(route('dashboard'))->assertRedirect(route('worker.jobs.index'));
         $this->get(route('worker.jobs.index'))->assertOk()->assertSee('Assigned jobs');
     }
+
+    public function test_worker_can_submit_inspection_and_estimate_for_admin_approval(): void
+    {
+        $worker = User::factory()->create(['role' => 'professional']);
+        $admin = User::factory()->create(['role' => 'nextfix_admin']);
+        $professional = Professional::create(['user_id' => $worker->id, 'name' => 'Inspector', 'role' => 'maintenance', 'phone' => '+971500000097']);
+        $company = Company::create(['name' => 'Inspection Homes']);
+        $unit = Unit::create(['company_id' => $company->id, 'building' => 'Marina Tower', 'unit_number' => '88', 'address' => 'Dubai']);
+        $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-INSPECT-1', 'service_type' => 'maintenance', 'service_name' => 'Leak repair', 'scheduled_at' => now(), 'status' => 'assigned']);
+
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'inspection', 'inspection_condition' => 'urgent', 'inspection_issues' => ['water_leak'], 'inspection_report' => 'Pipe is leaking.'])->assertRedirect();
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'estimate', 'labour_hours' => 2, 'labour_cost' => 150, 'parts_cost' => 75, 'parts_required' => 'Replacement valve'])->assertRedirect();
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_approval', 'labour_amount_minor' => 15000, 'parts_amount_minor' => 7500]);
+
+        $this->actingAs($admin)->post(route('admin.operations.approve', $booking))->assertRedirect();
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'work', 'status' => 'assigned']);
+    }
 }

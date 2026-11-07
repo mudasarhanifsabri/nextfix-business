@@ -11,7 +11,7 @@ class Unit extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['company_id', 'building', 'unit_number', 'bedrooms', 'size_sqft', 'address', 'access_notes', 'parking_notes', 'is_active'];
+    protected $fillable = ['company_id', 'building', 'unit_number', 'rate_unit_type', 'bedrooms', 'size_sqft', 'address', 'access_notes', 'parking_notes', 'is_active'];
 
     protected function casts(): array
     {
@@ -26,5 +26,10 @@ class Unit extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function getRateUnitLabelAttribute(): string
+    {
+        return \App\Support\RateCatalogue::unitTypes()[$this->rate_unit_type] ?? ucfirst(str_replace('_', ' ', $this->rate_unit_type));
     }
 }

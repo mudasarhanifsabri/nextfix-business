@@ -55,15 +55,14 @@ class RateCatalogue
         return $codes;
     }
 
-    public static function bookingCode(string $serviceName, int $bedrooms): string
+    public static function bookingCode(string $serviceName, string $unitType): string
     {
-        $unit = match (true) { $bedrooms <= 0 => 'studio', $bedrooms >= 5 => '5_bhk', default => $bedrooms.'_bhk' };
         $service = match ($serviceName) {
             'Deep cleaning' => 'deep_materials',
             'Regular cleaning' => 'normal_materials',
             default => 'normal_linen',
         };
 
-        return "cleaning.{$unit}.{$service}";
+        return "cleaning.{$unitType}.{$service}";
     }
 }

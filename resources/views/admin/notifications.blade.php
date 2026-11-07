@@ -1,5 +1,29 @@
 @extends(auth()->user()->role === 'professional' ? 'layouts.worker' : 'layouts.app', auth()->user()->role === 'professional' ? ['title' => 'Alerts | NextFix Work'] : ['heading' => 'Notifications'])
 @section('content')
 <div class="alerts-head"><div><span class="alerts-symbol"><i class="bi bi-bell"></i></span><div><h2>{{ auth()->user()->role === 'professional' ? 'Work alerts' : 'Alerts' }}</h2><small>{{ $unreadCount ? $unreadCount.' unread' : 'All caught up' }}</small></div></div>@if($unreadCount)<form method="post" action="{{ route('admin.notifications.read-all') }}">@csrf<button class="alerts-read-all" aria-label="Mark all alerts read"><i class="bi bi-check2-all"></i><span>Read all</span></button></form>@endif</div>
-<section class="panel notification-list compact">@forelse($notifications as $note)@php($level=$note->data['level'] ?? 'info')@php($icon=match($level){'success'=>'bi-check2','warning'=>'bi-exclamation','error'=>'bi-x-lg',default=>'bi-bell'})<a class="notification-row {{ $note->read_at ? '' : 'unread' }}" href="{{ route('admin.notifications.read',$note) }}"><span class="note-icon {{ $level }}"><i class="bi {{ $icon }}"></i></span><div><strong>{{ $note->data['title'] ?? 'Notification' }}</strong>@if(!empty($note->data['message']))<p>{{ $note->data['message'] }}</p>@endif<time>{{ $note->created_at->diffForHumans(short: true) }}</time></div>@if(!$note->read_at)<i class="unread-pip" aria-label="Unread"></i>@endif</a>@empty<div class="alerts-empty"><span><i class="bi bi-check2"></i></span><strong>No new alerts</strong><small>Updates will appear here.</small></div>@endforelse@if($notifications->hasPages())<div class="pager compact-pager">{{ $notifications->links() }}</div>@endif</section>
+<section class="panel notification-list compact">
+    @forelse($notifications as $note)
+        @php
+            $level = $note->data['level'] ?? 'info';
+            $icon = match ($level) {
+                'success' => 'bi-check2',
+                'warning' => 'bi-exclamation',
+                'error' => 'bi-x-lg',
+                default => 'bi-bell',
+            };
+        @endphp
+        <a class="notification-row {{ $note->read_at ? '' : 'unread' }}" href="{{ route('admin.notifications.read', $note) }}">
+            <span class="note-icon {{ $level }}"><i class="bi {{ $icon }}"></i></span>
+            <div>
+                <strong>{{ $note->data['title'] ?? 'Notification' }}</strong>
+                @if(!empty($note->data['message']))<p>{{ $note->data['message'] }}</p>@endif
+                <time>{{ $note->created_at->diffForHumans(short: true) }}</time>
+            </div>
+            @if(!$note->read_at)<i class="unread-pip" aria-label="Unread"></i>@endif
+        </a>
+    @empty
+        <div class="alerts-empty"><span><i class="bi bi-check2"></i></span><strong>No new alerts</strong><small>Updates will appear here.</small></div>
+    @endforelse
+    @if($notifications->hasPages())<div class="pager compact-pager">{{ $notifications->links() }}</div>@endif
+</section>
 @endsection

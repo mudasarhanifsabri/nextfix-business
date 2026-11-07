@@ -34,7 +34,7 @@ class UltimateDemoSeeder extends Seeder
 
             for ($u = 1; $u <= 4; $u++) {
                 $unit = Unit::updateOrCreate(['company_id' => $company->id, 'building' => ['Marina Gate', 'Burj Vista', 'Creek Horizon', 'Palm Tower'][$u - 1], 'unit_number' => ($index + 2).str_pad((string) $u, 2, '0')], [
-                    'bedrooms' => ($u % 3) + 1, 'size_sqft' => 700 + ($u * 190), 'address' => ['Dubai Marina', 'Downtown Dubai', 'Dubai Creek Harbour', 'Palm Jumeirah'][$u - 1].', Dubai', 'is_active' => true,
+                    'bedrooms' => ($u % 3) + 1, 'rate_unit_type' => (($u % 3) + 1).'_bhk', 'size_sqft' => 700 + ($u * 190), 'address' => ['Dubai Marina', 'Downtown Dubai', 'Dubai Creek Harbour', 'Palm Jumeirah'][$u - 1].', Dubai', 'is_active' => true,
                 ]);
                 for ($b = 1; $b <= 3; $b++) {
                     Booking::updateOrCreate(['reference' => sprintf('NFB-%02d%02d-%02d%02d', $index + 1, $u, $b, 26)], [

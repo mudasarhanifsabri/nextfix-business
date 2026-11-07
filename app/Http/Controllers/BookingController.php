@@ -50,7 +50,7 @@ class BookingController extends Controller
         }
         $amount = $data['service_type'] === 'maintenance'
             ? $rateCard->maintenance_inspection_minor
-            : $rateCard->amount(RateCatalogue::bookingCode($data['service_name'], (int) $unit->bedrooms));
+            : $rateCard->amount(RateCatalogue::bookingCode($data['service_name'], $unit->rate_unit_type));
         if ($amount === null) {
             throw ValidationException::withMessages(['service_name' => 'This service does not have an approved rate for the selected unit. Ask NextFix to update your rate card.']);
         }

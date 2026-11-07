@@ -6,6 +6,7 @@ use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Support\RateCatalogue;
 
 class UnitController extends Controller
 {
@@ -16,7 +17,7 @@ class UnitController extends Controller
 
     public function create(): View
     {
-        return view('units.form', ['unit' => new Unit]);
+        return view('units.form', ['unit' => new Unit, 'unitTypes' => RateCatalogue::unitTypes()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -31,7 +32,7 @@ class UnitController extends Controller
     {
         $this->ensureOwner($request, $unit);
 
-        return view('units.form', compact('unit'));
+        return view('units.form', ['unit' => $unit, 'unitTypes' => RateCatalogue::unitTypes()]);
     }
 
     public function update(Request $request, Unit $unit): RedirectResponse
@@ -49,11 +50,15 @@ class UnitController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'building' => ['required', 'string', 'max:120'], 'unit_number' => ['required', 'string', 'max:40'],
-            'bedrooms' => ['required', 'integer', 'between:0,20'], 'size_sqft' => ['nullable', 'integer', 'min:1'],
+            'rate_unit_type' => ['required', 'in:'.implode(',', array_keys(RateCatalogue::unitTypes()))], 'size_sqft' => ['nullable', 'integer', 'min:1'],
             'address' => ['required', 'string', 'max:1000'], 'access_notes' => ['nullable', 'string', 'max:2000'],
             'parking_notes' => ['nullable', 'string', 'max:1000'], 'is_active' => ['boolean'],
-        ]) + ['is_active' => $request->boolean('is_active')];
+        ]);
+        $data['bedrooms'] = match ($data['rate_unit_type']) { 'studio' => 0, '3_bhk_maids' => 3, default => (int) $data['rate_unit_type'] };
+        $data['is_active'] = $request->boolean('is_active');
+
+        return $data;
     }
 }

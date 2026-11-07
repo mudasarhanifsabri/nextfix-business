@@ -29,3 +29,7 @@ document.querySelectorAll('[data-hero-slider]').forEach((slider) => {
         setInterval(() => show((current + 1) % slides.length), 5500);
     }
 });
+
+if (document.querySelector('[data-deployment-progress]')) {
+    window.setTimeout(() => window.location.reload(), 2500);
+}

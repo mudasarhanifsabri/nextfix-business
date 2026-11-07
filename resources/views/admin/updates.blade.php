@@ -6,5 +6,26 @@
 <form method="post" action="{{ route('admin.updates.store') }}">@csrf<label>Confirm administrator password<input type="password" name="password" required autocomplete="current-password"></label><button class="primary wide" @disabled(!$scriptReady || !$release['update_available'])>{{ $release['update_available'] ? 'Update all code from GitHub' : 'Already up to date' }}</button></form>
 @else<div class="empty"><h4>GitHub check unavailable</h4><p>{{ $releaseError }}</p></div>@endif</div></section>
 <section class="panel safeguards"><div class="panel-head"><div><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What one click does</h3></div></div><ul><li>✓ Fetches the latest GitHub main branch</li><li>✓ Locks the exact 40-character commit</li><li>✓ Refuses non-fast-forward or locally modified code</li><li>✓ Installs production Composer dependencies</li><li>✓ Runs database migrations and Laravel optimization</li><li>✓ Preserves the server-only .env and records deployment logs</li></ul></section></div>
+@php
+    $activeRun = $runs->first(fn ($item) => in_array($item->status, ['queued', 'running'], true));
+    $progressStages = [
+        'queued' => [8, 'Update queued'],
+        'preflight' => [16, 'Checking server'],
+        'fetch' => [30, 'Fetching GitHub'],
+        'activate' => [48, 'Activating new code'],
+        'dependencies' => [65, 'Installing dependencies'],
+        'migrate' => [80, 'Updating database'],
+        'optimize' => [94, 'Optimizing application'],
+        'complete' => [100, 'Update complete'],
+    ];
+    [$progressPercent, $progressLabel] = $progressStages[$activeRun?->stage ?? 'queued'] ?? [12, 'Preparing update'];
+@endphp
+@if($activeRun)
+<section class="panel deployment-progress" data-deployment-progress>
+    <div class="deployment-progress-head"><div><p class="eyebrow">LIVE DEPLOYMENT</p><h3>{{ $progressLabel }}</h3></div><strong>{{ $progressPercent }}%</strong></div>
+    <div class="deployment-progress-track" role="progressbar" aria-label="Deployment progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progressPercent }}"><span style="width: {{ $progressPercent }}%"></span></div>
+    <div class="deployment-progress-meta"><span>Commit {{ substr($activeRun->release_id, 0, 7) }}</span><span>The page refreshes automatically</span></div>
+</section>
+@endif
 <section class="panel history"><div class="panel-head"><div><p class="eyebrow">RELEASE HISTORY</p><h3>Deployment runs</h3></div></div><div class="table-wrap"><table><thead><tr><th>Version</th><th>Requested by</th><th>Status</th><th>Stage</th><th>Started</th><th>Finished</th></tr></thead><tbody>@forelse($runs as $run)<tr><td><strong>{{ $run->version }}</strong><small>{{ $run->release_id }}</small></td><td>{{ $run->user->name }}</td><td><span class="status {{ $run->status === 'success' ? 'confirmed' : ($run->status === 'failed' ? 'pending' : 'in_progress') }}">{{ $run->status }}</span></td><td>{{ $run->stage }}</td><td>{{ $run->started_at?->format('d M Y, g:i A') ?? '—' }}</td><td>{{ $run->finished_at?->format('d M Y, g:i A') ?? '—' }}</td></tr>@empty<tr><td colspan="6"><div class="empty"><p>No deployment runs recorded.</p></div></td></tr>@endforelse</tbody></table></div></section>
 @endsection

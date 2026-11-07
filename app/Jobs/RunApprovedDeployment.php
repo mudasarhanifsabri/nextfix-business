@@ -43,7 +43,9 @@ class RunApprovedDeployment implements ShouldQueue
             $process->setTimeout(config('deployment.timeout_seconds'));
             $process->run(function (string $type, string $output) use ($run): void {
                 $clean = preg_replace('/(token|password|secret|key)\s*[=:]\s*\S+/i', '$1=[REDACTED]', $output);
-                $run->update(['stage' => 'deploying', 'log' => mb_substr($run->log."\n".$clean, -12000)]);
+                preg_match_all('/stage=([a-z_]+)/', $clean, $matches);
+                $stage = $matches[1] ? end($matches[1]) : $run->stage;
+                $run->update(['stage' => $stage, 'log' => mb_substr($run->log."\n".$clean, -12000)]);
             });
             throw_unless($process->isSuccessful(), new \RuntimeException('Deployment runner exited with a failure.'));
             $run->update(['status' => 'success', 'stage' => 'complete', 'finished_at' => now()]);

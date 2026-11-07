@@ -10,6 +10,7 @@ use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\WorkerJobController;
+use App\Http\Controllers\WorkerProfileController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\NomodWebhookController;
@@ -59,4 +60,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/work/jobs', [WorkerJobController::class, 'index'])->name('worker.jobs.index');
     Route::get('/work/jobs/{booking}', [WorkerJobController::class, 'show'])->name('worker.jobs.show');
     Route::post('/work/jobs/{booking}', [WorkerJobController::class, 'update'])->name('worker.jobs.update');
+    Route::get('/work/evidence/{jobPhoto}', [WorkerJobController::class, 'evidence'])->name('worker.evidence.show');
+    Route::get('/work/profile', [WorkerProfileController::class, 'show'])->name('worker.profile.show');
+    Route::post('/work/profile', [WorkerProfileController::class, 'update'])->name('worker.profile.update');
+    Route::get('/work/profile/photo', [WorkerProfileController::class, 'photo'])->name('worker.profile.photo');
 });

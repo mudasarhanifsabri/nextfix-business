@@ -1,5 +1,6 @@
 import './bootstrap';
 import '../css/pwa.css';
+import '../css/worker-media.css';
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
@@ -65,6 +66,21 @@ if (document.querySelector('[data-deployment-progress]')) {
 }
 
 const workerChecks = document.querySelector('.worker-check-items');
+const inspectionPhotos = document.querySelector('[data-inspection-photos]');
+if (inspectionPhotos) {
+    const preview = document.querySelector('[data-inspection-preview]');
+    inspectionPhotos.addEventListener('change', () => {
+        preview.replaceChildren();
+        [...inspectionPhotos.files].slice(0, 8).forEach((file, index) => {
+            const card = document.createElement('span');
+            const image = document.createElement('img');
+            image.src = URL.createObjectURL(file); image.alt = `Evidence ${index + 1}`;
+            const label = document.createElement('b'); label.textContent = `${index + 1}`;
+            card.append(image, label); preview.appendChild(card);
+        });
+    });
+}
+
 if (workerChecks) {
     const updateWorkerProgress = () => {
         const boxes = [...workerChecks.querySelectorAll('input[type="checkbox"]')];

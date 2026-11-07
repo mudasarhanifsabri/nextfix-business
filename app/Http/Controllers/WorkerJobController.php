@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\JobPhoto;
 use App\Models\User;
 use App\Notifications\AdminAlert;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class WorkerJobController extends Controller
 {
@@ -26,7 +29,7 @@ class WorkerJobController extends Controller
     {
         $professional = $this->professional($request);
         abort_unless($booking->professional_id === $professional->id, 403);
-        $booking->load(['company', 'unit']);
+        $booking->load(['company', 'unit', 'inspectionPhotos']);
         $checklist = config('workflows.'.$booking->service_type, config('workflows.maintenance'));
 
         return view('worker.jobs.show', compact('professional', 'booking', 'checklist'));
@@ -50,6 +53,8 @@ class WorkerJobController extends Controller
             'parts_cost' => ['nullable', 'numeric', 'min:0', 'max:999999'],
             'parts_required' => ['nullable', 'string', 'max:2000'],
             'estimate_note' => ['nullable', 'string', 'max:2000'],
+            'inspection_photos' => ['nullable', 'array', 'max:8'],
+            'inspection_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             'hold_reason' => ['nullable', Rule::in(['wet_surface', 'waiting_parts', 'no_access', 'safety_issue', 'customer_request', 'other'])],
             'hold_note' => ['nullable', 'string', 'max:500'],
         ]);
@@ -66,6 +71,10 @@ class WorkerJobController extends Controller
             abort_unless(in_array($booking->workflow_stage ?: 'inspection', ['inspection', 'inspect'], true), 422, 'The inspection is already submitted and locked.');
             $request->validate(['inspection_condition' => ['required'], 'inspection_report' => ['required', 'string', 'max:2000']]);
             $updates += ['workflow_stage' => 'estimate', 'inspection_condition' => $data['inspection_condition'], 'inspection_issues' => $data['inspection_issues'] ?? [], 'inspection_report' => $data['inspection_report']];
+            foreach ($request->file('inspection_photos', []) as $photo) {
+                $path = $photo->store('job-evidence/'.$booking->id, 'public');
+                JobPhoto::create(['booking_id' => $booking->id, 'professional_id' => $professional->id, 'path' => $path, 'original_name' => $photo->getClientOriginalName(), 'mime_type' => $photo->getMimeType(), 'size' => $photo->getSize(), 'category' => 'inspection', 'captured_at' => now()]);
+            }
         } elseif ($action === 'estimate') {
             abort_unless($booking->workflow_stage === 'estimate', 422, 'Complete the inspection before submitting an estimate.');
             $request->validate(['labour_hours' => ['required', 'numeric', 'min:0'], 'labour_cost' => ['required', 'numeric', 'min:0'], 'parts_cost' => ['required', 'numeric', 'min:0']]);
@@ -118,6 +127,18 @@ class WorkerJobController extends Controller
             default => 'Progress saved.',
         };
         return back()->with('status', $message);
+    }
+
+    public function evidence(Request $request, JobPhoto $jobPhoto): BinaryFileResponse
+    {
+        $jobPhoto->load('booking');
+        $user = $request->user();
+        $allowed = $user?->role === 'nextfix_admin'
+            || ($user?->role === 'company_manager' && $user->company_id === $jobPhoto->booking->company_id)
+            || ($user?->role === 'professional' && $user->professional?->id === $jobPhoto->professional_id);
+        abort_unless($allowed, 403);
+        abort_unless(Storage::disk('public')->exists($jobPhoto->path), 404);
+        return response()->file(Storage::disk('public')->path($jobPhoto->path), ['Cache-Control' => 'private, max-age=3600']);
     }
 
     private function professional(Request $request)

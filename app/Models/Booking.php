@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Booking extends Model
 {
@@ -30,6 +31,11 @@ class Booking extends Model
     public function professional(): BelongsTo
     {
         return $this->belongsTo(Professional::class);
+    }
+
+    public function inspectionPhotos(): HasMany
+    {
+        return $this->hasMany(JobPhoto::class)->where('category', 'inspection')->oldest('captured_at');
     }
 
     public function quotationInvoice(): BelongsTo

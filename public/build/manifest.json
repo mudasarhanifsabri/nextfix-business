@@ -38,12 +38,12 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DBBZmPiD.js",
+    "file": "assets/app-DpciPa2v.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-DcTrLIMg.css"
+      "assets/app-DnjqHKrp.css"
     ]
   }
 }

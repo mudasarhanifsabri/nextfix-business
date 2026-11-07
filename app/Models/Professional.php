@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Professional extends Model
 {
-    protected $fillable = ['user_id', 'name', 'role', 'email', 'phone', 'status', 'skills', 'working_days', 'notes'];
+    protected $fillable = ['user_id', 'name', 'role', 'email', 'phone', 'status', 'skills', 'working_days', 'notes', 'profile_photo_path'];
 
     protected function casts(): array
     {

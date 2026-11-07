@@ -14,8 +14,13 @@
     "src": "resources/css/ultimate.css",
     "isEntry": true
   },
+  "resources/css/worker.css": {
+    "file": "assets/worker-_btsOnQH.css",
+    "src": "resources/css/worker.css",
+    "isEntry": true
+  },
   "resources/js/app.js": {
-    "file": "assets/app-BErbXrAH.js",
+    "file": "assets/app-BupEu8J4.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

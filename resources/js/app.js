@@ -35,3 +35,36 @@ if (document.querySelector('[data-deployment-progress]')) {
 } else if (document.querySelector('[data-github-update-check]')) {
     window.setTimeout(() => window.location.reload(), 60000);
 }
+
+const workerChecks = document.querySelector('.worker-check-items');
+if (workerChecks) {
+    const updateWorkerProgress = () => {
+        const boxes = [...workerChecks.querySelectorAll('input[type="checkbox"]')];
+        const complete = boxes.filter((box) => box.checked).length;
+        const percent = Math.round((complete / boxes.length) * 100);
+        const label = document.querySelector('[data-job-percent]');
+        const bar = document.querySelector('[data-job-bar]');
+        if (label) label.textContent = percent;
+        if (bar) bar.style.width = `${percent}%`;
+    };
+    workerChecks.addEventListener('change', updateWorkerProgress);
+    updateWorkerProgress();
+}
+
+document.querySelectorAll('[data-swipe-form]').forEach((form) => {
+    const slider = form.querySelector('input[type="range"]');
+    slider.addEventListener('change', () => {
+        if (Number(slider.value) < 95) {
+            slider.value = 0;
+            return;
+        }
+        const checked = document.querySelectorAll('.worker-check-items input:checked');
+        form.querySelectorAll('input[name="completed_items[]"]').forEach((input) => input.remove());
+        checked.forEach((box) => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden'; hidden.name = 'completed_items[]'; hidden.value = box.value;
+            form.appendChild(hidden);
+        });
+        form.submit();
+    });
+});

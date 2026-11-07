@@ -10,11 +10,11 @@ class Booking extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['company_id', 'unit_id', 'professional_id', 'reference', 'service_type', 'service_name', 'scheduled_at', 'status', 'payment_status', 'amount_minor', 'currency', 'notes'];
+    protected $fillable = ['company_id', 'unit_id', 'professional_id', 'reference', 'service_type', 'service_name', 'scheduled_at', 'status', 'payment_status', 'amount_minor', 'currency', 'notes', 'completed_items', 'progress', 'hold_reason', 'hold_note', 'work_started_at', 'work_completed_at'];
 
     protected function casts(): array
     {
-        return ['scheduled_at' => 'datetime'];
+        return ['scheduled_at' => 'datetime', 'completed_items' => 'array', 'work_started_at' => 'datetime', 'work_completed_at' => 'datetime'];
     }
 
     public function company(): BelongsTo

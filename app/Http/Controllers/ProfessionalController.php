@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Professional;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ProfessionalController extends Controller
@@ -35,14 +37,20 @@ class ProfessionalController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'role' => ['required', Rule::in(['cleaner', 'maintenance'])],
-            'email' => ['nullable', 'email', 'max:190', 'unique:professionals,email'],
+            'email' => ['required', 'email', 'max:190', 'unique:professionals,email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => ['required', 'string', 'max:40'],
             'status' => ['required', Rule::in(['available', 'busy', 'off_duty'])],
             'skills' => ['nullable', 'array'], 'skills.*' => ['string', 'max:60'],
             'working_days' => ['nullable', 'array'], 'working_days.*' => ['string', Rule::in(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
-        $professional = Professional::create($data);
+        $professional = DB::transaction(function () use ($data): Professional {
+            $user = User::create(['name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'], 'role' => 'professional', 'email_verified_at' => now()]);
+            unset($data['password'], $data['password_confirmation']);
+
+            return Professional::create($data + ['user_id' => $user->id]);
+        });
 
         return redirect()->route('admin.professionals.show', $professional)->with('status', 'Professional profile created.');
     }

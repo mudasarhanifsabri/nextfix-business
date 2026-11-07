@@ -9,6 +9,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\ProfessionalController;
+use App\Http\Controllers\WorkerJobController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -45,4 +46,7 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/admin/operations/{booking}/assign', [OperationsController::class, 'assign'])->name('admin.operations.assign');
     Route::resource('/admin/professionals', ProfessionalController::class)->only(['index', 'create', 'store', 'show'])->names('admin.professionals');
     Route::get('/admin/integrations', [IntegrationController::class, 'index'])->name('admin.integrations.index');
+    Route::get('/work/jobs', [WorkerJobController::class, 'index'])->name('worker.jobs.index');
+    Route::get('/work/jobs/{booking}', [WorkerJobController::class, 'show'])->name('worker.jobs.show');
+    Route::post('/work/jobs/{booking}', [WorkerJobController::class, 'update'])->name('worker.jobs.update');
 });

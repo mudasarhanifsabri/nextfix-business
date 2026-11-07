@@ -14,6 +14,9 @@ class DashboardController extends Controller
     public function __invoke(Request $request): View
     {
         $user = $request->user();
+        if ($user->role === 'professional') {
+            return redirect()->route('worker.jobs.index');
+        }
         if ($user->role === 'nextfix_admin') {
             return view('admin.dashboard', [
                 'companyCount' => Company::count(),

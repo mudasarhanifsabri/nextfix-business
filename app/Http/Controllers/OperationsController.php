@@ -15,7 +15,7 @@ class OperationsController extends Controller
     public function index(Request $request): View
     {
         $this->authorizeAdmin($request);
-        $request->validate(['month' => ['nullable', 'date_format:Y-m']]);
+        $request->validate(['month' => ['nullable', 'date_format:Y-m'], 'date' => ['nullable', 'date_format:Y-m-d']]);
         $month = CarbonImmutable::createFromFormat('Y-m', (string) $request->input('month', now()->format('Y-m')))
             ->startOfMonth();
 
@@ -30,6 +30,7 @@ class OperationsController extends Controller
 
         $calendarStart = $month->startOfWeek(CarbonImmutable::MONDAY);
         $calendarEnd = $month->endOfMonth()->endOfWeek(CarbonImmutable::SUNDAY);
+        $selectedDate = $request->filled('date') ? CarbonImmutable::createFromFormat('Y-m-d', (string) $request->input('date')) : null;
         $days = collect();
         for ($day = $calendarStart; $day->lte($calendarEnd); $day = $day->addDay()) {
             $days->push($day);
@@ -42,6 +43,8 @@ class OperationsController extends Controller
             'professionals' => Professional::where('status', '!=', 'off_duty')->orderBy('name')->get(['id', 'name', 'role', 'status']),
             'month' => $month,
             'days' => $days,
+            'selectedDate' => $selectedDate,
+            'selectedDayBookings' => $selectedDate ? (clone $query)->whereDate('scheduled_at', $selectedDate)->orderBy('scheduled_at')->get() : collect(),
             'todayCount' => Booking::whereDate('scheduled_at', today())->count(),
             'attentionCount' => Booking::whereIn('status', ['pending', 'awaiting_payment'])->count(),
             'activeCount' => Booking::whereIn('status', ['confirmed', 'assigned', 'on_the_way', 'in_progress'])->count(),

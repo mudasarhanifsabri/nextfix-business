@@ -20,6 +20,8 @@ class OperationsManagementTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.operations.index'))
             ->assertOk()->assertSee('Dispatch with clarity')->assertSee(now()->format('F Y'));
+        $this->actingAs($admin)->get(route('admin.operations.index', ['month' => now()->format('Y-m'), 'date' => now()->format('Y-m-d')]))
+            ->assertOk()->assertSee('SELECTED DAY')->assertSee(now()->format('l, d F Y'));
         $this->actingAs($admin)->get(route('admin.integrations.index'))
             ->assertOk()->assertSee('SMTP')->assertSee('Nomod');
         $this->actingAs($admin)->get(route('admin.professionals.index'))

@@ -16,4 +16,10 @@ class ExampleTest extends TestCase
 
         $response->assertRedirect('/dashboard');
     }
+
+    public function test_application_uses_dubai_gulf_standard_time(): void
+    {
+        $this->assertSame('Asia/Dubai', config('app.timezone'));
+        $this->assertSame('+04:00', now()->format('P'));
+    }
 }

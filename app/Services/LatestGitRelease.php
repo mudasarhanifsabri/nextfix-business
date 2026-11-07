@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
 use Symfony\Component\Process\Process;
@@ -30,7 +31,7 @@ class LatestGitRelease
         return [
             'release_id' => $commit,
             'commit' => $commit,
-            'version' => 'main-'.gmdate('Ymd-His', $timestamp).'-'.substr($commit, 0, 7),
+            'version' => 'main-'.CarbonImmutable::createFromTimestamp($timestamp, config('app.timezone'))->format('Ymd-His').'-'.substr($commit, 0, 7),
             'notes' => $notes,
             'branch' => $branch,
             'installed_commit' => $installed['commit'] ?? null,

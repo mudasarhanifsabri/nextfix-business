@@ -45,7 +45,7 @@ class UnitRateCategoryTest extends TestCase
             'booking_photos' => [UploadedFile::fake()->image('access.jpg')],
         ])->assertRedirect(route('bookings.index'));
 
-        $this->assertDatabaseHas('bookings', ['unit_id' => $unit->id, 'amount_minor' => 50000]);
+        $this->assertDatabaseHas('bookings', ['unit_id' => $unit->id, 'amount_minor' => 50000, 'workflow_stage' => 'work']);
         $this->assertDatabaseHas('job_photos', ['uploaded_by_user_id' => $manager->id, 'category' => 'booking_issue']);
     }
 }

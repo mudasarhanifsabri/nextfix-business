@@ -1,6 +1,6 @@
 @extends('layouts.worker', ['title' => $booking->reference.' | NextFix'])
 @section('content')
-@php($stage = ($booking->workflow_stage === 'inspect' ? 'inspection' : ($booking->workflow_stage ?? 'inspection')))
+@php($stage = $booking->service_type === 'cleaning' ? ($booking->status === 'completed' ? 'complete' : 'work') : ($booking->workflow_stage === 'inspect' ? 'inspection' : ($booking->workflow_stage ?? 'inspection')))
 @php($journeyStage = in_array($stage, ['admin_review', 'awaiting_customer_approval', 'awaiting_quote_payment'], true) ? 'approval' : $stage)
 @php($afterPhotos = $booking->workPhotos->where('category', 'after'))
 @php($completedCount = count($booking->completed_items ?? []))
@@ -10,9 +10,11 @@
 <section class="worker-job-hero"><div><p>{{ $booking->reference }}</p><h1>{{ $booking->service_name }}</h1><span><i class="bi bi-geo-alt"></i> {{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</span></div><span class="worker-status {{ $booking->status }}">{{ $booking->operational_status_label }}</span></section>
 @if($booking->issuePhotos->isNotEmpty())<section class="customer-issue-evidence"><div><i class="bi bi-building"></i><span><strong>Company issue photos</strong><small>{{ $booking->issuePhotos->count() }} photos added with the booking</small></span></div><div class="evidence-gallery">@foreach($booking->issuePhotos as $photo)<a href="{{ route('worker.evidence.show', $photo) }}" target="_blank"><img src="{{ route('worker.evidence.show', $photo) }}" alt="Company issue photo {{ $loop->iteration }}"><time>{{ $photo->captured_at->timezone('Asia/Dubai')->format('d M · g:i A') }}</time></a>@endforeach</div></section>@endif
 
-<nav class="job-journey" aria-label="Job progress">
-@foreach(['inspection'=>'Inspect','estimate'=>'Estimate','approval'=>'Company','work'=>'Work','complete'=>'Done'] as $key=>$label)
-<span class="{{ array_search($key, array_keys(['inspection'=>1,'estimate'=>1,'approval'=>1,'work'=>1,'complete'=>1])) <= array_search($journeyStage, array_keys(['inspection'=>1,'estimate'=>1,'approval'=>1,'work'=>1,'complete'=>1])) ? 'active' : '' }}"><i>{{ $loop->iteration }}</i>{{ $label }}</span>
+<nav class="job-journey {{ $booking->service_type === 'cleaning' ? 'cleaning-journey' : '' }}" aria-label="Job progress">
+@php($journey = $booking->service_type === 'cleaning' ? ['ready'=>'Ready','work'=>'Clean','complete'=>'Done'] : ['inspection'=>'Inspect','estimate'=>'Estimate','approval'=>'Company','work'=>'Work','complete'=>'Done'])
+@php($activeJourney = $booking->service_type === 'cleaning' && $journeyStage !== 'complete' ? 'work' : $journeyStage)
+@foreach($journey as $key=>$label)
+<span class="{{ array_search($key, array_keys($journey)) <= array_search($activeJourney, array_keys($journey)) ? 'active' : '' }}"><i>{{ $loop->iteration }}</i>{{ $label }}</span>
 @endforeach
 </nav>
 
@@ -39,6 +41,7 @@
 @if($booking->status === 'changes_requested')<section class="approval-wait"><i class="bi bi-chat-left-text"></i><div><strong>Company requested changes</strong><span>{{ $booking->customer_decision_note }}</span></div></section>@endif
 
 @if(in_array($stage, ['work', 'complete'], true))
+@if($booking->service_type === 'cleaning' && $booking->status !== 'completed')<section class="work-ready-banner cleaning-ready-banner"><i class="bi bi-stars"></i><div><strong>Cleaning visit · no inspection quotation</strong><span>Follow the guest-ready checklist, record anything pending, add final photos and swipe to finish.</span></div></section>@endif
 @if($booking->status === 'completed')
 <section class="work-ready-banner completed-record"><i class="bi bi-patch-check-fill"></i><div><strong>Job completed · record locked</strong><span>Completed {{ $booking->work_completed_at?->timezone('Asia/Dubai')->format('d M Y · g:i A') }}. Checklist and photo proof are now read-only.</span></div></section>
 <section class="worker-progress-card"><header><div><p>FINAL PROGRESS</p><h2>100%</h2></div><span>{{ $completedCount }} of {{ $checklistCount }} done</span></header><div class="worker-progress-track"><i style="width:100%"></i></div></section>

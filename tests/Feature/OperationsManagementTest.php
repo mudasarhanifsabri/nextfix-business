@@ -83,6 +83,21 @@ class OperationsManagementTest extends TestCase
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'on_hold', 'hold_reason' => 'waiting_parts', 'progress' => 25]);
     }
 
+    public function test_cleaning_job_uses_direct_cleaning_workflow_without_maintenance_estimate(): void
+    {
+        $worker = User::factory()->create(['role' => 'professional']);
+        $professional = Professional::create(['user_id' => $worker->id, 'name' => 'Cleaning Worker', 'role' => 'cleaner', 'phone' => '+971500000090']);
+        $company = Company::create(['name' => 'Guest Ready Homes']);
+        $unit = Unit::create(['company_id' => $company->id, 'building' => 'Palm Residence', 'unit_number' => '44', 'address' => 'Dubai']);
+        $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-CLEAN-001', 'service_type' => 'cleaning', 'service_name' => 'Checkout cleaning', 'scheduled_at' => now()->addHour(), 'status' => 'confirmed', 'workflow_stage' => 'inspection']);
+
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))
+            ->assertOk()->assertSee('Cleaning visit · no inspection quotation')
+            ->assertSee('Bedrooms cleaned and linen arranged')
+            ->assertSee('Guest supplies checked and replenished')
+            ->assertDontSee('First inspection')->assertDontSee('Labour & parts estimate');
+    }
+
     public function test_professional_login_redirects_to_worker_app(): void
     {
         $worker = User::factory()->create([

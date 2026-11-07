@@ -60,6 +60,7 @@ class BookingController extends Controller
         $booking = Booking::create($data + [
             'company_id' => $request->user()->company_id, 'unit_id' => $unit->id,
             'reference' => 'NFB-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
+            'workflow_stage' => $data['service_type'] === 'maintenance' ? 'inspection' : 'work',
             'status' => $data['service_type'] === 'maintenance' ? 'awaiting_inspection_payment' : 'pending', 'payment_status' => 'pending', 'amount_minor' => $amount, 'inspection_fee_minor' => $data['service_type'] === 'maintenance' ? $amount : 0, 'currency' => 'AED',
         ]);
         foreach ($request->file('booking_photos', []) as $photo) {

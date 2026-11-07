@@ -53,7 +53,10 @@ class SystemUpdateController extends Controller
             'stage' => 'queued',
             'log' => 'Deployment requested by an authorized administrator.',
         ]);
-        RunApprovedDeployment::dispatch($run->id);
+        // Shared cPanel hosting does not provide a permanent queue worker.
+        // Run after the response so the progress page loads immediately while
+        // the deployment continues in the same PHP worker.
+        RunApprovedDeployment::dispatchAfterResponse($run->id);
 
         return redirect()->route('admin.updates.index')->with('status', 'GitHub commit '.substr($run->release_id, 0, 7).' queued for deployment.');
     }

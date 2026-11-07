@@ -125,14 +125,16 @@ document.querySelectorAll('.quote-grid').forEach((quote) => {
 const notificationFeed = document.querySelector('[data-notification-feed]');
 if (notificationFeed) {
     let lastNotification = notificationFeed.dataset.lastNotification || '';
-    const countBadge = notificationFeed.querySelector('[data-notification-count]');
+    const countBadges = [...document.querySelectorAll('[data-notification-count]')];
     const pollNotifications = async () => {
         try {
             const response = await fetch(notificationFeed.dataset.notificationFeed, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
             if (!response.ok) return;
             const data = await response.json();
-            countBadge.textContent = data.unread_count || '';
-            countBadge.hidden = !data.unread_count;
+            countBadges.forEach((badge) => {
+                badge.textContent = data.unread_count > 9 ? '9+' : (data.unread_count || '');
+                badge.hidden = !data.unread_count;
+            });
             if (data.latest?.id && lastNotification && data.latest.id !== lastNotification) {
                 const toast = document.createElement('div');
                 toast.className = 'toast show border-0 shadow';
@@ -146,7 +148,7 @@ if (notificationFeed) {
                 body.className = 'toast-body';
                 body.textContent = data.latest.message;
                 const link = document.createElement('a');
-                link.href = data.latest.url; link.className = 'd-block mt-2'; link.textContent = 'View notification';
+                link.href = data.latest.url; link.className = 'd-block mt-2'; link.textContent = 'Open';
                 body.appendChild(link); toast.append(header, body);
                 document.querySelector('.toast-container')?.appendChild(toast);
                 window.setTimeout(() => toast.remove(), 12000);

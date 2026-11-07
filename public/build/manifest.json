@@ -17,6 +17,11 @@
     "src": "resources/css/customer.css",
     "isEntry": true
   },
+  "resources/css/notifications.css": {
+    "file": "assets/notifications-CgxLwgKE.css",
+    "src": "resources/css/notifications.css",
+    "isEntry": true
+  },
   "resources/css/quote-flow.css": {
     "file": "assets/quote-flow-BM61KBqr.css",
     "src": "resources/css/quote-flow.css",
@@ -38,7 +43,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-hrqeag69.js",
+    "file": "assets/app-CceSjedK.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

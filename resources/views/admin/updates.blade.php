@@ -7,7 +7,6 @@
 @else<div class="empty"><h4>GitHub check unavailable</h4><p>{{ $releaseError }}</p></div>@endif</div></section>
 <section class="panel safeguards"><div class="panel-head"><div><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What one click does</h3></div></div><ul><li>✓ Fetches the latest GitHub main branch</li><li>✓ Locks the exact 40-character commit</li><li>✓ Refuses non-fast-forward or locally modified code</li><li>✓ Installs production Composer dependencies</li><li>✓ Runs database migrations and Laravel optimization</li><li>✓ Preserves the server-only .env and records deployment logs</li></ul></section></div>
 @php
-    $activeRun = $runs->first(fn ($item) => in_array($item->status, ['queued', 'running'], true));
     $progressStages = [
         'queued' => [8, 'Update queued'],
         'preflight' => [16, 'Checking server'],
@@ -27,7 +26,6 @@
     <div class="deployment-progress-meta"><span>Commit {{ substr($activeRun->release_id, 0, 7) }}</span><span>The page refreshes automatically</span></div>
 </section>
 @endif
-@php($latestRun = $runs->first())
 @if(!$activeRun && $latestRun?->status === 'failed')
 <section class="panel deployment-error">
     <div><span class="deployment-error-icon">!</span><div><p class="eyebrow">LAST UPDATE FAILED</p><h3>{{ ucfirst($latestRun->stage) }}</h3><p>The code was left in its last safe state. Open the technical log below for the exact server error.</p></div></div>
@@ -35,7 +33,7 @@
 </section>
 @endif
 <section class="panel history">
-    <div class="panel-head"><div><p class="eyebrow">RELEASE HISTORY</p><h3>Deployment runs</h3></div></div>
+    <div class="panel-head deployment-history-head"><div><p class="eyebrow">RELEASE HISTORY</p><h3>Deployment runs</h3></div><span>{{ $runs->total() }} total</span></div>
     <div class="table-wrap"><table><thead><tr><th>Version</th><th>Requested by</th><th>Status</th><th>Stage</th><th>Started</th><th>Finished</th></tr></thead><tbody>
     @forelse($runs as $run)
         <tr><td><strong>{{ $run->version }}</strong><small>{{ $run->release_id }}</small></td><td>{{ $run->user->name }}</td><td><span class="status {{ $run->status === 'success' ? 'confirmed' : ($run->status === 'failed' ? 'pending' : 'in_progress') }}">{{ $run->status }}</span></td><td>{{ $run->stage }}</td><td>{{ $run->started_at?->format('d M Y, g:i A') ?? '—' }}</td><td>{{ $run->finished_at?->format('d M Y, g:i A') ?? '—' }}</td></tr>
@@ -44,5 +42,14 @@
         <tr><td colspan="6"><div class="empty"><p>No deployment runs recorded.</p></div></td></tr>
     @endforelse
     </tbody></table></div>
+    @if($runs->hasPages())
+    <nav class="deployment-pagination" aria-label="Deployment history pages">
+        <span>Page {{ $runs->currentPage() }} of {{ $runs->lastPage() }}</span>
+        <div>
+            @if($runs->onFirstPage())<span class="disabled">Previous</span>@else<a href="{{ $runs->previousPageUrl() }}">Previous</a>@endif
+            @if($runs->hasMorePages())<a href="{{ $runs->nextPageUrl() }}">Next</a>@else<span class="disabled">Next</span>@endif
+        </div>
+    </nav>
+    @endif
 </section>
 @endsection

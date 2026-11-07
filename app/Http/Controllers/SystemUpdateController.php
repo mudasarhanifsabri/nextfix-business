@@ -23,13 +23,17 @@ class SystemUpdateController extends Controller
             $releaseError = $error->getMessage();
         }
         $installed = $releases->installed();
+        $activeRun = DeploymentRun::with('user')->whereIn('status', ['queued', 'running'])->latest()->first();
+        $latestRun = DeploymentRun::with('user')->latest()->first();
 
         return view('admin.updates', [
             'installedVersion' => $installed['version'] ?? config('deployment.installed_version'),
             'release' => $release,
             'releaseError' => $releaseError,
             'scriptReady' => filled(config('deployment.script_path')) && is_file(config('deployment.script_path')),
-            'runs' => DeploymentRun::with('user')->latest()->limit(20)->get(),
+            'activeRun' => $activeRun,
+            'latestRun' => $latestRun,
+            'runs' => DeploymentRun::with('user')->latest()->paginate(5)->withQueryString(),
         ]);
     }
 

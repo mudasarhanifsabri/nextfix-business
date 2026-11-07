@@ -14,6 +14,7 @@ use App\Http\Controllers\WorkerProfileController;
 use App\Http\Controllers\SystemUpdateController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\NomodWebhookController;
+use App\Http\Controllers\RateCardController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -40,7 +41,10 @@ Route::middleware('auth')->group(function (): void {
     Route::resource('/admin/companies', CompanyController::class)
         ->only(['index', 'create', 'store', 'show'])
         ->names('admin.companies');
-    Route::post('/admin/companies/{company}/rates', [CompanyController::class, 'rates'])->name('admin.companies.rates');
+    Route::get('/admin/companies/{company}/rates', [RateCardController::class, 'admin'])->name('admin.companies.rates.show');
+    Route::post('/admin/companies/{company}/rates', [RateCardController::class, 'save'])->name('admin.companies.rates.save');
+    Route::get('/rates', [RateCardController::class, 'show'])->name('rates.show');
+    Route::post('/rates/decision', [RateCardController::class, 'decision'])->name('rates.decision');
     Route::get('/admin/invoices', [FinanceController::class, 'invoices'])->name('admin.invoices.index');
     Route::get('/admin/invoices/{invoice}', [FinanceController::class, 'invoice'])->name('admin.invoices.show');
     Route::get('/admin/invoices/{invoice}/pdf', [FinanceController::class, 'pdf'])->name('admin.invoices.pdf');

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Booking;
 use App\Models\Company;
+use App\Models\CompanyRateCard;
 use App\Models\Professional;
 use App\Models\Unit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -130,17 +131,26 @@ class OperationsManagementTest extends TestCase
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertDontSee('Tap when done');
     }
 
-    public function test_admin_can_set_company_specific_service_rates(): void
+    public function test_admin_can_send_full_rate_card_and_company_can_approve_it(): void
     {
         $admin = User::factory()->create(['role' => 'nextfix_admin']);
         $company = Company::create(['name' => 'Rate Homes']);
-        $this->actingAs($admin)->post(route('admin.companies.rates', $company), ['inspection_rate'=>175,'checkout_cleaning_rate'=>280,'regular_cleaning_rate'=>210,'deep_cleaning_rate'=>420])->assertRedirect();
-        $this->assertDatabaseHas('companies', ['id'=>$company->id,'inspection_rate_minor'=>17500,'deep_cleaning_rate_minor'=>42000]);
+        $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
+        $this->actingAs($admin)->post(route('admin.companies.rates.save', $company), [
+            'action' => 'submit', 'maintenance_inspection' => 175,
+            'rates' => ['cleaning' => ['1_bhk' => ['normal_linen' => 280]], 'extras' => ['basic_maintenance' => ['wc_clogged' => 150]]],
+            'cancellation_percent' => 50, 'transport_fee' => 50,
+        ])->assertRedirect();
+        $this->assertDatabaseHas('company_rate_cards', ['company_id' => $company->id, 'status' => 'pending_approval', 'maintenance_inspection_minor' => 17500]);
+        $this->actingAs($manager)->get(route('rates.show'))->assertOk()->assertSee('AED 175.00')->assertSee('Approve rates');
+        $this->actingAs($manager)->post(route('rates.decision'), ['decision' => 'approve'])->assertRedirect();
+        $this->assertDatabaseHas('company_rate_cards', ['company_id' => $company->id, 'status' => 'approved']);
     }
 
     public function test_maintenance_booking_uses_company_inspection_rate(): void
     {
-        $company = Company::create(['name'=>'Fee Homes','inspection_rate_minor'=>18500]);
+        $company = Company::create(['name'=>'Fee Homes']);
+        CompanyRateCard::create(['company_id'=>$company->id,'status'=>'approved','maintenance_inspection_minor'=>18500]);
         $manager = User::factory()->create(['role'=>'company_manager','company_id'=>$company->id]);
         $unit = Unit::create(['company_id'=>$company->id,'building'=>'Fee Tower','unit_number'=>'2','address'=>'Dubai']);
         $this->actingAs($manager)->post(route('bookings.store'), ['unit_id'=>$unit->id,'service_type'=>'maintenance','service_name'=>'AC inspection','scheduled_at'=>now()->addDay()->format('Y-m-d H:i:s')])->assertRedirect(route('bookings.index'));

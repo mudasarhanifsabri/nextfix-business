@@ -25,6 +25,7 @@
             @if(auth()->user()->role !== 'nextfix_admin')
                 <a class="{{ request()->routeIs('bookings.*') ? 'active' : '' }}" href="{{ route('bookings.index') }}"><span>▣</span> Bookings</a>
                 <a class="{{ request()->routeIs('units.*') ? 'active' : '' }}" href="{{ route('units.index') }}"><span>◇</span> Units</a>
+                <a class="{{ request()->routeIs('rates.*') ? 'active' : '' }}" href="{{ route('rates.show') }}"><span>◫</span> Rates</a>
             @else
                 <a class="{{ request()->routeIs('admin.operations.*') ? 'active' : '' }}" href="{{ route('admin.operations.index') }}"><span>▣</span> Operations</a>
                 <a class="{{ request()->routeIs('admin.professionals.*') ? 'active' : '' }}" href="{{ route('admin.professionals.index') }}"><span>◉</span> Workforce</a>
@@ -60,7 +61,7 @@
 <div class="toast-container position-fixed top-0 end-0 p-3">@if(session('status'))<div class="toast show border-0 shadow" role="alert"><div class="toast-header"><span class="note-dot success"></span><strong class="me-auto">NextFix</strong><button type="button" class="btn-close" data-bs-dismiss="toast"></button></div><div class="toast-body">{{ session('status') }}</div></div>@endif</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @if(auth()->user()->role !== 'nextfix_admin')
-<nav class="mobile-nav"><a href="{{ route('dashboard') }}"><i class="bi bi-house"></i><span>Home</span></a><a href="{{ route('bookings.index') }}"><i class="bi bi-calendar-check"></i><span>Bookings</span></a><a href="{{ route('units.index') }}"><i class="bi bi-buildings"></i><span>Units</span></a><a href="{{ route('admin.notifications.index') }}"><i class="bi bi-bell"></i><span>Alerts</span></a></nav>
+<nav class="mobile-nav"><a href="{{ route('dashboard') }}"><i class="bi bi-house"></i><span>Home</span></a><a href="{{ route('bookings.index') }}"><i class="bi bi-calendar-check"></i><span>Bookings</span></a><a href="{{ route('rates.show') }}"><i class="bi bi-receipt"></i><span>Rates</span></a><a href="{{ route('units.index') }}"><i class="bi bi-buildings"></i><span>Units</span></a><a href="{{ route('admin.notifications.index') }}"><i class="bi bi-bell"></i><span>Alerts</span></a></nav>
 @else
 <nav class="mobile-nav admin-mobile"><a href="{{ route('dashboard') }}"><i class="bi bi-grid"></i><span>Home</span></a><a href="{{ route('admin.operations.index') }}"><i class="bi bi-calendar3"></i><span>Jobs</span></a><a href="{{ route('admin.professionals.index') }}"><i class="bi bi-people"></i><span>Team</span></a><a href="{{ route('admin.companies.index') }}"><i class="bi bi-buildings"></i><span>Companies</span></a><a href="{{ route('admin.notifications.index') }}"><i class="bi bi-bell"></i><span>Alerts</span></a></nav>
 @endif

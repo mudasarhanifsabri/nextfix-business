@@ -6,10 +6,12 @@ use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\Unit;
 use App\Services\NomodPaymentLinks;
+use App\Support\RateCatalogue;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BookingController extends Controller
@@ -26,7 +28,11 @@ class BookingController extends Controller
 
     public function create(Request $request, string $service): View
     {
-        return view('bookings.create', ['service' => $service, 'units' => Unit::where('company_id', $request->user()->company_id)->where('is_active', true)->get()]);
+        return view('bookings.create', [
+            'service' => $service,
+            'units' => Unit::where('company_id', $request->user()->company_id)->where('is_active', true)->get(),
+            'rateCard' => $request->user()->company->rateCard,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -38,8 +44,16 @@ class BookingController extends Controller
         ]);
         $unit = Unit::where('company_id', $request->user()->company_id)->findOrFail($data['unit_id']);
         $company = $request->user()->company;
-        $rateKey = match ($data['service_name']) { 'Deep cleaning' => 'deep_cleaning_rate_minor', 'Regular cleaning' => 'regular_cleaning_rate_minor', default => 'checkout_cleaning_rate_minor' };
-        $amount = $data['service_type'] === 'maintenance' ? $company->inspection_rate_minor : $company->{$rateKey};
+        $rateCard = $company->rateCard;
+        if (!$rateCard || $rateCard->status !== 'approved') {
+            throw ValidationException::withMessages(['service_name' => 'Your company rate card must be approved before this service can be booked.']);
+        }
+        $amount = $data['service_type'] === 'maintenance'
+            ? $rateCard->maintenance_inspection_minor
+            : $rateCard->amount(RateCatalogue::bookingCode($data['service_name'], (int) $unit->bedrooms));
+        if ($amount === null) {
+            throw ValidationException::withMessages(['service_name' => 'This service does not have an approved rate for the selected unit. Ask NextFix to update your rate card.']);
+        }
         $booking = Booking::create($data + [
             'company_id' => $request->user()->company_id, 'unit_id' => $unit->id,
             'reference' => 'NFB-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),

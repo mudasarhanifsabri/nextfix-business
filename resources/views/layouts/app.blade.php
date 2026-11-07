@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <meta name="theme-color" content="#1267e8">
     <link rel="manifest" href="{{ auth()->user()->role === 'nextfix_admin' ? '/manifest-admin.webmanifest' : '/manifest-company.webmanifest' }}">
     <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/apple-touch-icon.png">

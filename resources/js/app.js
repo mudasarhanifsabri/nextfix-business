@@ -150,6 +150,80 @@ if (workerChecks) {
     updateWorkerProgress();
 }
 
+const cleaningChecklist = document.querySelector('.cleaning-checklist');
+if (cleaningChecklist) {
+    const beforeStep = document.querySelector('.cleaning-photo-step');
+    const progressCard = document.querySelector('.worker-progress-card');
+    const afterStep = document.querySelector('.work-evidence');
+    const holdStep = document.querySelector('.worker-hold');
+    const finishStep = document.querySelector('[data-swipe-form]');
+    const oldJourney = document.querySelector('.cleaning-journey');
+    const allChecks = [...cleaningChecklist.querySelectorAll('input[type="checkbox"]')];
+    const hasBefore = beforeStep?.querySelector('header>b')?.classList.contains('done') || false;
+    const hasAfter = Number(afterStep?.querySelector('.worker-section-head>span')?.textContent.match(/\d+/)?.[0] || 0) > 0;
+    const allAreasDone = allChecks.length > 0 && allChecks.every((box) => box.checked);
+    const panels = [[beforeStep], [progressCard, cleaningChecklist], [afterStep], [holdStep, finishStep]];
+    const labels = [['bi-camera','Before'],['bi-grid','Clean'],['bi-camera-fill','After'],['bi-check2-circle','Finish']];
+    let activeStep = !hasBefore ? 0 : !allAreasDone ? 1 : !hasAfter ? 2 : 3;
+    const nav = document.createElement('nav'); nav.className = 'cleaning-wizard-nav'; nav.setAttribute('aria-label','Cleaning steps');
+    labels.forEach(([icon,label], index) => {
+        const button = document.createElement('button'); button.type = 'button';
+        button.innerHTML = `<i class="bi ${icon}"></i><span>${label}</span>`;
+        button.addEventListener('click', () => { if (index <= activeStep || (index === 1 && hasBefore)) showStep(index); });
+        nav.appendChild(button);
+    });
+    oldJourney?.classList.add('cleaning-wizard-hidden');
+    oldJourney?.after(nav);
+    const requirements = () => [hasBefore, allChecks.every((box) => box.checked), hasAfter, true];
+    const showStep = (index) => {
+        activeStep = index;
+        panels.forEach((group, groupIndex) => group.forEach((node) => node?.classList.toggle('cleaning-wizard-hidden', groupIndex !== index)));
+        [...nav.children].forEach((button, buttonIndex) => {
+            button.classList.toggle('active', buttonIndex === index);
+            button.classList.toggle('done', requirements()[buttonIndex] && buttonIndex < index);
+        });
+        document.querySelector('.cleaning-wizard-actions')?.remove();
+        const visible = panels[index].filter(Boolean).at(-1);
+        if (!visible || index === 3) return;
+        const actions = document.createElement('div'); actions.className = 'cleaning-wizard-actions';
+        const back = document.createElement('button'); back.type = 'button'; back.textContent = index ? '← Back' : 'My jobs';
+        back.addEventListener('click', () => index ? showStep(index - 1) : (window.location.href = document.querySelector('.worker-back')?.href || '/work/jobs'));
+        const next = document.createElement('button'); next.type = 'button'; next.className = 'primary-next';
+        next.textContent = index === 2 ? 'Continue to finish →' : 'Next →'; next.disabled = !requirements()[index];
+        next.addEventListener('click', () => showStep(index + 1)); actions.append(back, next); visible.after(actions);
+    };
+    showStep(activeStep);
+    cleaningChecklist.addEventListener('change', () => window.setTimeout(() => showStep(1), 20));
+
+    const installCamera = (form, title) => {
+        if (!form) return;
+        const input = form.querySelector('input[type="file"]');
+        if (!input) return;
+        input.removeAttribute('capture'); input.multiple = true; form.classList.add('cleaning-camera-active');
+        const launch = document.createElement('button'); launch.type = 'button'; launch.className = 'camera-session-button';
+        launch.innerHTML = `<i class="bi bi-camera-fill"></i><span>${title}</span>`; form.prepend(launch);
+        input.addEventListener('change', () => { if (input.files.length) form.requestSubmit(); });
+        launch.addEventListener('click', async () => {
+            if (!navigator.mediaDevices?.getUserMedia) { input.click(); return; }
+            const overlay = document.createElement('section'); overlay.className = 'nf-camera';
+            overlay.innerHTML = `<header><strong>${title}</strong><button type="button" aria-label="Close">×</button></header><div class="nf-camera-stage"><video autoplay playsinline muted></video><div class="nf-camera-guide"></div></div><footer><div class="nf-camera-shots"></div><div class="nf-camera-controls"><button type="button" class="nf-camera-fallback">Gallery</button><button type="button" class="nf-camera-capture" aria-label="Take photo"></button><button type="button" class="nf-camera-done" disabled>Done</button></div></footer>`;
+            document.body.appendChild(overlay); document.body.style.overflow = 'hidden';
+            const video = overlay.querySelector('video'); const shots = overlay.querySelector('.nf-camera-shots');
+            const done = overlay.querySelector('.nf-camera-done'); const files = []; let stream;
+            const close = () => { stream?.getTracks().forEach((track) => track.stop()); overlay.remove(); document.body.style.overflow = ''; };
+            const render = () => { shots.replaceChildren(); files.forEach((file,index) => { const card=document.createElement('span'); card.className='nf-camera-shot'; const img=document.createElement('img'); img.src=URL.createObjectURL(file); const remove=document.createElement('button'); remove.type='button'; remove.textContent='×'; remove.addEventListener('click',()=>{files.splice(index,1);render();}); card.append(img,remove); shots.appendChild(card); }); done.disabled=!files.length; };
+            overlay.querySelector('header button').addEventListener('click', close);
+            overlay.querySelector('.nf-camera-fallback').addEventListener('click', () => { close(); input.click(); });
+            try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); video.srcObject = stream; }
+            catch (_) { close(); input.click(); return; }
+            overlay.querySelector('.nf-camera-capture').addEventListener('click', () => { const canvas=document.createElement('canvas'); canvas.width=video.videoWidth||1280; canvas.height=video.videoHeight||960; canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height); canvas.toBlob((blob)=>{ if(!blob)return; files.push(new File([blob],`nextfix-${Date.now()}-${files.length+1}.jpg`,{type:'image/jpeg'})); render(); },'image/jpeg',.86); });
+            done.addEventListener('click', async () => { done.disabled=true; done.textContent='Uploading…'; const payload=new FormData(form); payload.delete(input.name); files.forEach((file)=>payload.append(input.name,file)); try { const response=await fetch(form.action,{method:'POST',body:payload,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}}); if(!response.ok)throw new Error(); close(); window.location.reload(); } catch(_){ done.disabled=false; done.textContent='Try again'; } });
+        });
+    };
+    installCamera(beforeStep?.querySelector('form'), 'Take before photos');
+    installCamera(afterStep?.querySelector('form'), 'Take after photos');
+}
+
 document.querySelectorAll('[data-swipe-form]').forEach((form) => {
     const slider = form.querySelector('input[type="range"]');
     slider.addEventListener('input', () => form.style.setProperty('--swipe', `${slider.value}%`));

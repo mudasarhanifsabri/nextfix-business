@@ -52,6 +52,11 @@
     "src": "resources/css/worker-actions.css",
     "isEntry": true
   },
+  "resources/css/worker-camera.css": {
+    "file": "assets/worker-camera-B6SnvFVG.css",
+    "src": "resources/css/worker-camera.css",
+    "isEntry": true
+  },
   "resources/css/worker-cleaning.css": {
     "file": "assets/worker-cleaning-CITBGDgh.css",
     "src": "resources/css/worker-cleaning.css",
@@ -78,7 +83,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-kjVnys83.js",
+    "file": "assets/app-CAo_ZtIF.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

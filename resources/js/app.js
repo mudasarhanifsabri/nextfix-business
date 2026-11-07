@@ -1,8 +1,27 @@
 import './bootstrap';
+import '../css/pwa.css';
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
 }
+
+let installPrompt;
+const installButtons = [...document.querySelectorAll('[data-install-app]')];
+const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault(); installPrompt = event;
+    installButtons.forEach((button) => { button.hidden = false; });
+});
+window.addEventListener('appinstalled', () => installButtons.forEach((button) => { button.hidden = true; }));
+if (isIos && !isStandalone) installButtons.forEach((button) => { button.hidden = false; });
+installButtons.forEach((button) => button.addEventListener('click', async () => {
+    if (installPrompt) {
+        installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; button.hidden = true;
+    } else if (isIos) {
+        window.alert('To install: tap the Share button in Safari, then choose “Add to Home Screen”.');
+    }
+}));
 
 document.querySelectorAll('[data-counter]').forEach((element) => {
     const target = Number(element.textContent);

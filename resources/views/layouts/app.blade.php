@@ -4,7 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#1267e8">
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="{{ auth()->user()->role === 'nextfix_admin' ? '/manifest-admin.webmanifest' : '/manifest-company.webmanifest' }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ auth()->user()->role === 'nextfix_admin' ? 'NextFix Admin' : 'NextFix' }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <title>{{ $title ?? 'NextFix Business' }}</title>
     @vite(['resources/css/app.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/css/quote-flow.css', 'resources/js/app.js'])
@@ -35,6 +40,7 @@
             @endif
         </nav>
         <div class="sidebar-foot">
+            <button class="install-app-button" data-install-app hidden><i class="bi bi-download"></i> Install app</button>
             <div class="user-chip"><span>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span><div><strong>{{ auth()->user()->name }}</strong><small>{{ str_replace('_', ' ', auth()->user()->role) }}</small></div></div>
             <form method="post" action="{{ route('logout') }}">@csrf<button class="text-button">Sign out</button></form>
         </div>

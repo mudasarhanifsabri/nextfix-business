@@ -12,15 +12,22 @@ class NotificationController extends Controller
     public function feed(Request $request): JsonResponse
     {
         $latest = $request->user()->notifications()->latest()->first();
+        $title = $latest?->data['title'] ?? 'Notification';
+        $url = $latest?->data['url'] ?? '';
+        $sound = $request->user()->role === 'professional' && $title === 'New job assigned'
+            ? 'job'
+            : (str_contains($url, '/chat') ? 'message' : 'default');
 
         return response()->json([
             'unread_count' => $request->user()->unreadNotifications()->count(),
             'latest' => $latest ? [
                 'id' => $latest->id,
-                'title' => $latest->data['title'] ?? 'Notification',
+                'title' => $title,
                 'message' => $latest->data['message'] ?? '',
                 'level' => $latest->data['level'] ?? 'info',
                 'url' => route('admin.notifications.read', $latest),
+                'sound' => $sound,
+                'created_at' => $latest->created_at?->toIso8601String(),
             ] : null,
         ]);
     }

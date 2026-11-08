@@ -375,10 +375,135 @@ document.querySelectorAll('.quote-grid').forEach((quote) => {
     update();
 });
 
+document.querySelectorAll('[data-rate-browser]').forEach((browser) => {
+    const buttons = [...browser.querySelectorAll('[data-rate-unit]')];
+    const panels = [...browser.querySelectorAll('[data-rate-panel]')];
+    const activate = (unit) => {
+        buttons.forEach((button) => {
+            const active = button.dataset.rateUnit === unit;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        panels.forEach((panel) => { panel.hidden = panel.dataset.ratePanel !== unit; });
+    };
+    buttons.forEach((button) => button.addEventListener('click', () => activate(button.dataset.rateUnit)));
+    activate(browser.dataset.activeUnit || buttons[0]?.dataset.rateUnit);
+});
+
+document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
+    let rates = {};
+    try { rates = JSON.parse(form.dataset.bookingRates || '{}'); } catch (_) {}
+    const unit = form.querySelector('select[name="unit_id"]');
+    const cards = [...form.querySelectorAll('[data-rate-code]')];
+    const empty = form.querySelector('[data-no-contracted-service]');
+    const unitLabel = form.querySelector('[data-booking-unit-label]');
+    const summaryTitle = form.querySelector('[data-booking-summary-title]');
+    const summaryCopy = form.querySelector('[data-booking-summary-copy]');
+    const submit = form.querySelector('button[type="submit"]');
+    const activeRates = form.dataset.ratesActive === '1';
+    const format = (minor) => `AED ${(Number(minor) / 100).toLocaleString('en-AE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const updateSummary = () => {
+        const selected = cards.find((card) => card.querySelector('input').checked && !card.hidden);
+        if (!selected) {
+            summaryTitle.textContent = 'No service selected';
+            summaryCopy.textContent = 'Choose one of the approved cleaning services above.';
+            if (submit) submit.disabled = true;
+            return;
+        }
+        const input = selected.querySelector('input');
+        const price = selected.querySelector('[data-rate-price]').textContent;
+        summaryTitle.textContent = `${input.value} · ${price}`;
+        summaryCopy.textContent = 'This is the approved contract price for the selected property.';
+        if (submit) submit.disabled = !activeRates;
+    };
+    const updateServices = () => {
+        const selectedUnit = rates[String(unit?.value || '')] || {};
+        const services = selectedUnit.services || {};
+        let available = 0;
+        cards.forEach((card) => {
+            const amount = services[card.dataset.rateCode];
+            const isAvailable = amount !== null && amount !== '' && amount !== undefined && Number.isFinite(Number(amount));
+            card.hidden = !isAvailable;
+            const input = card.querySelector('input');
+            input.disabled = !isAvailable;
+            if (!isAvailable) input.checked = false;
+            else {
+                available += 1;
+                card.querySelector('[data-rate-price]').textContent = format(amount);
+            }
+        });
+        if (!cards.some((card) => !card.hidden && card.querySelector('input').checked)) {
+            const first = cards.find((card) => !card.hidden);
+            if (first) first.querySelector('input').checked = true;
+        }
+        if (unitLabel) unitLabel.textContent = selectedUnit.unit_label ? `· ${selectedUnit.unit_label}` : '';
+        if (empty) empty.hidden = available > 0;
+        updateSummary();
+    };
+    unit?.addEventListener('change', updateServices);
+    cards.forEach((card) => card.querySelector('input').addEventListener('change', updateSummary));
+    updateServices();
+});
+
 const notificationFeed = document.querySelector('[data-notification-feed]');
 if (notificationFeed) {
     let lastNotification = notificationFeed.dataset.lastNotification || '';
     const countBadges = [...document.querySelectorAll('[data-notification-count]')];
+    const soundButtons = [...document.querySelectorAll('[data-alert-sound]')];
+    let soundEnabled = localStorage.getItem('nextfix-alert-sound') !== 'off';
+    let audioContext;
+    const updateSoundButtons = () => soundButtons.forEach((button) => {
+        button.classList.toggle('enabled', soundEnabled);
+        button.classList.toggle('muted', !soundEnabled);
+        button.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+        button.setAttribute('aria-label', soundEnabled ? 'Mute alert sounds' : 'Enable alert sounds');
+        const icon = button.querySelector('i');
+        if (icon) icon.className = soundEnabled ? 'bi bi-volume-up' : 'bi bi-volume-mute';
+    });
+    const primeSound = async () => {
+        if (!soundEnabled) return null;
+        audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') await audioContext.resume();
+        return audioContext;
+    };
+    const playTone = async (kind = 'default') => {
+        const context = await primeSound().catch(() => null);
+        if (!context) return;
+        const isJob = kind === 'job';
+        const notes = isJob ? [[0,880,.22],[.28,1046,.22],[.56,1318,.28],[.92,1046,.2],[1.18,1318,.38]] : (kind === 'message' ? [[0,740,.12],[.16,988,.16]] : [[0,660,.12],[.18,880,.18]]);
+        const now = context.currentTime;
+        notes.forEach(([delay, frequency, duration]) => {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = isJob ? 'square' : 'sine';
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.0001, now + delay);
+            gain.gain.exponentialRampToValueAtTime(isJob ? .15 : .08, now + delay + .015);
+            gain.gain.exponentialRampToValueAtTime(.0001, now + delay + duration);
+            oscillator.connect(gain).connect(context.destination);
+            oscillator.start(now + delay); oscillator.stop(now + delay + duration + .03);
+        });
+        navigator.vibrate?.(isJob ? [280,120,280,120,520] : [100,70,140]);
+    };
+    const showSystemNotification = (latest) => {
+        if (!('Notification' in window) || Notification.permission !== 'granted' || document.visibilityState === 'visible') return;
+        const notice = new Notification(latest.title, {body: latest.message, icon: '/images/pwa/icon-192.png', tag: `nextfix-${latest.id}`, renotify: latest.sound === 'job'});
+        notice.addEventListener('click', () => { window.focus(); window.location.href = latest.url; });
+    };
+    soundButtons.forEach((button) => button.addEventListener('click', async () => {
+        soundEnabled = !soundEnabled;
+        localStorage.setItem('nextfix-alert-sound', soundEnabled ? 'on' : 'off');
+        updateSoundButtons();
+        if (soundEnabled) {
+            await primeSound().catch(() => null);
+            if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission().catch(() => null);
+            playTone('message');
+        }
+    }));
+    const unlock = () => { primeSound().catch(() => null); document.removeEventListener('pointerdown', unlock); document.removeEventListener('keydown', unlock); };
+    document.addEventListener('pointerdown', unlock, {passive:true});
+    document.addEventListener('keydown', unlock);
+    updateSoundButtons();
     const pollNotifications = async () => {
         try {
             const response = await fetch(notificationFeed.dataset.notificationFeed, {headers: {'Accept': 'application/json'}, credentials: 'same-origin'});
@@ -405,17 +530,21 @@ if (notificationFeed) {
                 body.appendChild(link); toast.append(header, body);
                 document.querySelector('.toast-container')?.appendChild(toast);
                 window.setTimeout(() => toast.remove(), 12000);
+                if (soundEnabled) playTone(data.latest.sound || 'default');
+                showSystemNotification(data.latest);
             }
             if (data.latest?.id) lastNotification = data.latest.id;
         } catch (_) {
             // Keep the app usable when the device is temporarily offline.
         }
     };
-    window.setInterval(pollNotifications, 15000);
+    window.setInterval(pollNotifications, document.body.classList.contains('worker-app') ? 5000 : 10000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollNotifications(); });
 }
 
 const bookingChat = document.querySelector('[data-chat-feed]');
 if (bookingChat) {
+    document.body.classList.add('chat-open');
     const stream = bookingChat.querySelector('[data-chat-stream]');
     const form = bookingChat.querySelector('[data-chat-form]');
     const body = form.querySelector('textarea[name="body"]');
@@ -427,17 +556,36 @@ if (bookingChat) {
     const record = form.querySelector('[data-chat-record]');
     let lastId = Number(stream.querySelector('[data-message-id]:last-of-type')?.dataset.messageId || 0);
     let recorder; let recordStarted; let recordTimer; let recordedChunks = [];
+    let previewUrl;
     const csrf = form.querySelector('input[name="_token"]').value;
     const scrollDown = (smooth = false) => stream.scrollTo({top: stream.scrollHeight, behavior: smooth ? 'smooth' : 'auto'});
     const escapeHtml = (value = '') => { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; };
+    const formatDuration = (seconds) => `${Math.floor((seconds || 0) / 60)}:${String(Math.floor((seconds || 0) % 60)).padStart(2, '0')}`;
+    const initAudioCard = (card) => {
+        if (card.dataset.ready) return;
+        card.dataset.ready = '1';
+        const audio = card.querySelector('audio'); const play = card.querySelector('[data-audio-play]'); const icon = play.querySelector('i');
+        const track = card.querySelector('[data-audio-track]'); const progress = card.querySelector('[data-audio-progress]'); const time = card.querySelector('[data-audio-time]');
+        const resetIcon = () => { icon.className = audio.paused ? 'bi bi-play-fill' : 'bi bi-pause-fill'; };
+        const showDuration = () => { time.textContent = formatDuration(audio.duration); };
+        audio.addEventListener('loadedmetadata', showDuration);
+        if (audio.readyState >= 1) showDuration();
+        audio.addEventListener('timeupdate', () => { progress.style.width = `${audio.duration ? (audio.currentTime / audio.duration) * 100 : 0}%`; time.textContent = formatDuration(audio.currentTime); });
+        audio.addEventListener('play', () => { document.querySelectorAll('.chat-audio audio').forEach((other) => { if (other !== audio) other.pause(); }); resetIcon(); });
+        audio.addEventListener('pause', resetIcon); audio.addEventListener('ended', () => { audio.currentTime = 0; resetIcon(); });
+        play.addEventListener('click', () => audio.paused ? audio.play().catch(() => {}) : audio.pause());
+        track.addEventListener('click', (event) => { if (audio.duration) audio.currentTime = ((event.clientX - track.getBoundingClientRect().left) / track.clientWidth) * audio.duration; });
+    };
+    const audioMarkup = (url) => `<div class="chat-audio" data-audio-card><button type="button" data-audio-play aria-label="Play voice message"><i class="bi bi-play-fill"></i></button><div><div class="chat-wave" data-audio-track>${'<i></i>'.repeat(18)}<span data-audio-progress></span></div><small><b data-audio-time>0:00</b><em>Voice message</em></small></div><audio preload="metadata" src="${url}"></audio></div>`;
     const messageNode = (item) => {
         const article = document.createElement('article'); article.className = `chat-message${item.mine ? ' mine' : ''}`; article.dataset.messageId = item.id;
         const sender = `<div class="chat-sender"><strong>${escapeHtml(item.sender)}</strong><span>${escapeHtml(item.sender_role)}</span></div>`;
         let media = '';
-        if (item.type === 'image') media = `<a class="chat-image" href="${item.file_url}" target="_blank"><img src="${item.file_url}" alt="Shared photo"></a>`;
-        if (item.type === 'audio') media = `<audio controls preload="metadata" src="${item.file_url}"></audio>`;
-        if (item.type === 'file') media = `<a class="chat-file" href="${item.file_url}" target="_blank"><i class="bi bi-paperclip"></i><span>${escapeHtml(item.file_name || 'Attachment')}</span></a>`;
+        if (item.type === 'image') media = `<a class="chat-image" href="${item.file_url}" target="_blank"><img src="${item.file_url}" alt="Shared photo"><span><i class="bi bi-arrows-fullscreen"></i></span></a>`;
+        if (item.type === 'audio') media = audioMarkup(item.file_url);
+        if (item.type === 'file') media = `<a class="chat-file" href="${item.file_url}" target="_blank"><i class="bi bi-file-earmark-text"></i><span><strong>${escapeHtml(item.file_name || 'Attachment')}</strong><small>${item.file_size ? `${Math.ceil(item.file_size / 1024)} KB` : 'Open attachment'}</small></span><b><i class="bi bi-download"></i></b></a>`;
         article.innerHTML = `${sender}<div class="chat-bubble">${media}${item.body ? `<p>${escapeHtml(item.body)}</p>` : ''}<time>${escapeHtml(item.time)}</time></div>`;
+        article.querySelectorAll('[data-audio-card]').forEach(initAudioCard);
         return article;
     };
     const append = (item, smooth = true) => {
@@ -456,21 +604,39 @@ if (bookingChat) {
     });
     form.addEventListener('submit', async (event) => {
         event.preventDefault(); if (!body.value.trim() && !attachment.files.length) return; const payload = new FormData(form); form.querySelector('.chat-send').disabled = true;
-        try { const data = await send(payload); append(data.message); body.value = ''; attachment.value = ''; preview.hidden = true; preview.textContent = ''; }
+        try { const data = await send(payload); append(data.message); body.value = ''; attachment.value = ''; preview.hidden = true; preview.replaceChildren(); if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; }
         catch (message) { error.textContent = message; error.hidden = false; }
         finally { form.querySelector('.chat-send').disabled = false; }
     });
-    attachment.addEventListener('change', () => { const file = attachment.files[0]; preview.textContent = file ? `${file.type.startsWith('image/') ? 'Photo' : 'Attachment'} · ${file.name}` : ''; preview.hidden = !file; });
+    const renderAttachmentPreview = (file) => {
+        preview.replaceChildren();
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = file ? URL.createObjectURL(file) : null;
+        preview.hidden = !file;
+        if (!file) return;
+        const card = document.createElement('div'); card.className = 'chat-preview-card';
+        const visual = file.type.startsWith('image/') ? document.createElement('img') : document.createElement('i');
+        if (visual.tagName === 'IMG') visual.src = previewUrl; else visual.className = file.type.startsWith('audio/') ? 'bi bi-mic-fill' : 'bi bi-file-earmark-text';
+        const meta = document.createElement('span'); const title = document.createElement('strong'); const size = document.createElement('small');
+        title.textContent = file.type.startsWith('audio/') ? 'Voice message ready' : file.name; size.textContent = `${Math.max(1, Math.ceil(file.size / 1024))} KB · ready to send`; meta.append(title, size);
+        const remove = document.createElement('button'); remove.type = 'button'; remove.setAttribute('aria-label', 'Remove attachment'); remove.innerHTML = '<i class="bi bi-x-lg"></i>';
+        remove.addEventListener('click', () => { attachment.value = ''; renderAttachmentPreview(null); });
+        card.append(visual, meta, remove);
+        if (file.type.startsWith('audio/')) { const player = document.createElement('audio'); player.controls = true; player.src = previewUrl; card.appendChild(player); }
+        preview.appendChild(card);
+    };
+    attachment.addEventListener('change', () => renderAttachmentPreview(attachment.files[0] || null));
     bookingChat.querySelectorAll('[data-quick-reply]').forEach((button) => button.addEventListener('click', () => { body.value = button.dataset.quickReply; body.focus(); }));
     body.addEventListener('input', () => { body.style.height = 'auto'; body.style.height = `${Math.min(body.scrollHeight,120)}px`; });
     record.addEventListener('click', async () => {
         if (recorder?.state === 'recording') { recorder.stop(); return; }
         try {
             const media = await navigator.mediaDevices.getUserMedia({audio:true}); recordedChunks = []; recorder = new MediaRecorder(media); recorder.addEventListener('dataavailable', (event) => { if (event.data.size) recordedChunks.push(event.data); });
-            recorder.addEventListener('stop', () => { media.getTracks().forEach((track) => track.stop()); clearInterval(recordTimer); record.classList.remove('recording'); record.querySelector('i').className='bi bi-mic'; record.querySelector('span').hidden=true; const blob=new Blob(recordedChunks,{type:recorder.mimeType || 'audio/webm'}); const file=new File([blob],`voice-${Date.now()}.webm`,{type:blob.type}); const transfer=new DataTransfer(); transfer.items.add(file); attachment.files=transfer.files; preview.textContent=`Voice message · ${Math.ceil(blob.size/1024)} KB`; preview.hidden=false; });
+            recorder.addEventListener('stop', () => { media.getTracks().forEach((track) => track.stop()); clearInterval(recordTimer); record.classList.remove('recording'); record.querySelector('i').className='bi bi-mic'; record.querySelector('span').hidden=true; const blob=new Blob(recordedChunks,{type:recorder.mimeType || 'audio/webm'}); const file=new File([blob],`voice-${Date.now()}.webm`,{type:blob.type}); const transfer=new DataTransfer(); transfer.items.add(file); attachment.files=transfer.files; renderAttachmentPreview(file); });
             recorder.start(); recordStarted=Date.now(); record.classList.add('recording'); record.querySelector('i').className='bi bi-stop-fill'; const timer=record.querySelector('span'); timer.hidden=false; recordTimer=setInterval(()=>{const seconds=Math.floor((Date.now()-recordStarted)/1000);timer.textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`; if(seconds>=120)recorder.stop();},250);
         } catch (_) { error.textContent='Microphone permission is required for voice messages.'; error.hidden=false; }
     });
+    bookingChat.querySelectorAll('[data-audio-card]').forEach(initAudioCard);
     scrollDown(); window.setInterval(poll, 3000); document.addEventListener('visibilitychange', poll);
 }
 

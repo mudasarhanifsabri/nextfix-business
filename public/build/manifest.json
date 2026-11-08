@@ -18,7 +18,7 @@
     "isEntry": true
   },
   "resources/css/chat.css": {
-    "file": "assets/chat-B5OVHMHR.css",
+    "file": "assets/chat-Ct3uqILg.css",
     "src": "resources/css/chat.css",
     "isEntry": true
   },
@@ -43,7 +43,7 @@
     "isEntry": true
   },
   "resources/css/notifications.css": {
-    "file": "assets/notifications-CgxLwgKE.css",
+    "file": "assets/notifications-DdgA3UMs.css",
     "src": "resources/css/notifications.css",
     "isEntry": true
   },
@@ -53,7 +53,7 @@
     "isEntry": true
   },
   "resources/css/quote-flow.css": {
-    "file": "assets/quote-flow-BM61KBqr.css",
+    "file": "assets/quote-flow-AXW_CX3v.css",
     "src": "resources/css/quote-flow.css",
     "isEntry": true
   },
@@ -128,7 +128,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-D1mT47xs.js",
+    "file": "assets/app-DJwFp159.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

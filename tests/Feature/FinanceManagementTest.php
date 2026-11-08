@@ -32,4 +32,17 @@ class FinanceManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.notifications.read', $notification))->assertRedirect(route('dashboard'));
         $this->assertNotNull($notification->fresh()->read_at);
     }
+
+    public function test_worker_new_job_feed_requests_the_loud_job_alert(): void
+    {
+        $worker = User::factory()->create(['role' => 'professional']);
+        $worker->notifyNow(new AdminAlert('New job assigned', 'A new service is ready.', '/work/jobs/123'));
+
+        $this->actingAs($worker)
+            ->getJson(route('notifications.feed'))
+            ->assertOk()
+            ->assertJsonPath('unread_count', 1)
+            ->assertJsonPath('latest.title', 'New job assigned')
+            ->assertJsonPath('latest.sound', 'job');
+    }
 }

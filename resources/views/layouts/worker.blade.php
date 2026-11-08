@@ -8,7 +8,7 @@
         @if(!empty($screenBack))<a class="worker-screen-back" href="{{ $screenBack }}" aria-label="Back"><i class="bi bi-chevron-left"></i></a>@endif
         <span><small>NextFix Work</small><strong>{{ $screenTitle }}</strong></span>
     </div>
-    <div class="worker-top-actions" data-notification-feed="{{ url('/notifications/feed') }}" data-last-notification="{{ auth()->user()->notifications()->latest()->value('id') }}"><button data-install-app hidden aria-label="Install NextFix Work"><i class="bi bi-download"></i></button><a class="worker-bell" href="{{ route('admin.notifications.index') }}" aria-label="Notifications"><i class="bi bi-bell"></i><b data-notification-count @if(!$unreadCount) hidden @endif>{{ $unreadCount > 9 ? '9+' : $unreadCount }}</b></a></div>
+    <div class="worker-top-actions" data-notification-feed="{{ url('/notifications/feed') }}" data-last-notification="{{ auth()->user()->notifications()->latest()->value('id') }}"><button data-install-app hidden aria-label="Install NextFix Work"><i class="bi bi-download"></i></button><button type="button" data-alert-sound aria-label="Enable loud job alerts" title="Job alert sound"><i class="bi bi-volume-up"></i></button><a class="worker-bell" href="{{ route('admin.notifications.index') }}" aria-label="Notifications"><i class="bi bi-bell"></i><b data-notification-count @if(!$unreadCount) hidden @endif>{{ $unreadCount > 9 ? '9+' : $unreadCount }}</b></a></div>
 </header>
 <main>@if(session('status'))<div class="worker-toast">{{ session('status') }}</div>@endif @yield('content')</main>
 <div class="toast-container position-fixed top-0 end-0 p-3"></div>

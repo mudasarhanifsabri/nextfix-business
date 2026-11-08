@@ -55,14 +55,16 @@ class RateCatalogue
         return $codes;
     }
 
-    public static function bookingCode(string $serviceName, string $unitType): string
+    public static function bookingCode(string $serviceName, string $unitType): ?string
     {
-        $service = match ($serviceName) {
+        $service = array_search($serviceName, self::cleaningTypes(), true);
+        $service = $service !== false ? $service : match ($serviceName) {
+            'Checkout cleaning' => 'normal_linen',
             'Deep cleaning' => 'deep_materials',
             'Regular cleaning' => 'normal_materials',
-            default => 'normal_linen',
+            default => null,
         };
 
-        return "cleaning.{$unitType}.{$service}";
+        return $service ? "cleaning.{$unitType}.{$service}" : null;
     }
 }

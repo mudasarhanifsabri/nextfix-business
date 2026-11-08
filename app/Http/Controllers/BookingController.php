@@ -29,10 +29,27 @@ class BookingController extends Controller
 
     public function create(Request $request, string $service): View
     {
+        $units = Unit::where('company_id', $request->user()->company_id)->where('is_active', true)->get();
+        $rateCard = $request->user()->company->rateCard;
+        $bookingRates = $units->mapWithKeys(function (Unit $unit) use ($rateCard): array {
+            $services = [];
+            foreach (RateCatalogue::cleaningTypes() as $code => $label) {
+                $services[$code] = $rateCard?->amount("cleaning.{$unit->rate_unit_type}.{$code}");
+            }
+
+            return [(string) $unit->id => [
+                'unit_type' => $unit->rate_unit_type,
+                'unit_label' => $unit->rate_unit_label,
+                'services' => $services,
+            ]];
+        })->all();
+
         return view('bookings.create', [
             'service' => $service,
-            'units' => Unit::where('company_id', $request->user()->company_id)->where('is_active', true)->get(),
-            'rateCard' => $request->user()->company->rateCard,
+            'units' => $units,
+            'rateCard' => $rateCard,
+            'bookingRates' => $bookingRates,
+            'cleaningTypes' => RateCatalogue::cleaningTypes(),
         ]);
     }
 
@@ -51,9 +68,12 @@ class BookingController extends Controller
         if (!$rateCard || $rateCard->status !== 'approved') {
             throw ValidationException::withMessages(['service_name' => 'Your company rate card must be approved before this service can be booked.']);
         }
+        $cleaningCode = $data['service_type'] === 'cleaning'
+            ? RateCatalogue::bookingCode($data['service_name'], $unit->rate_unit_type)
+            : null;
         $amount = $data['service_type'] === 'maintenance'
             ? $rateCard->maintenance_inspection_minor
-            : $rateCard->amount(RateCatalogue::bookingCode($data['service_name'], $unit->rate_unit_type));
+            : ($cleaningCode ? $rateCard->amount($cleaningCode) : null);
         if ($amount === null) {
             throw ValidationException::withMessages(['service_name' => 'This service does not have an approved rate for the selected unit. Ask NextFix to update your rate card.']);
         }

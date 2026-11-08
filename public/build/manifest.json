@@ -17,18 +17,13 @@
     "src": "resources/css/booking-evidence.css",
     "isEntry": true
   },
-  "resources/css/booking-workspace.css": {
-    "file": "assets/booking-workspace-kwCZh815.css",
-    "src": "resources/css/booking-workspace.css",
-    "isEntry": true
-  },
   "resources/css/chat.css": {
     "file": "assets/chat-B5OVHMHR.css",
     "src": "resources/css/chat.css",
     "isEntry": true
   },
   "resources/css/company-mobile.css": {
-    "file": "assets/company-mobile-bML-tKYF.css",
+    "file": "assets/company-mobile-DWwRW-Sp.css",
     "src": "resources/css/company-mobile.css",
     "isEntry": true
   },
@@ -38,7 +33,7 @@
     "isEntry": true
   },
   "resources/css/job-report.css": {
-    "file": "assets/job-report-DBkUm7zR.css",
+    "file": "assets/job-report-DxktCt3w.css",
     "src": "resources/css/job-report.css",
     "isEntry": true
   },
@@ -97,6 +92,11 @@
     "src": "resources/css/worker-completion.css",
     "isEntry": true
   },
+  "resources/css/worker-dashboard.css": {
+    "file": "assets/worker-dashboard-DcCinRWz.css",
+    "src": "resources/css/worker-dashboard.css",
+    "isEntry": true
+  },
   "resources/css/worker-flow.css": {
     "file": "assets/worker-flow-Bif4Dfbp.css",
     "src": "resources/css/worker-flow.css",
@@ -113,7 +113,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BuIGBQ9T.js",
+    "file": "assets/app-CVwezdA3.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

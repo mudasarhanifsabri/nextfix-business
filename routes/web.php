@@ -44,9 +44,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/bookings/create/{service}', [BookingController::class, 'create'])
         ->whereIn('service', ['cleaning', 'maintenance'])->name('bookings.create');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
-    Route::get('/booking/{booking:reference}', [BookingController::class, 'show'])->name('bookings.show.reference');
     Route::get('/booking/{booking:reference}/chat', [BookingChatController::class, 'show'])->name('chat.show.reference');
-    Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
     Route::get('/bookings/{booking}/chat', [BookingChatController::class, 'show'])->name('chat.show');
     Route::get('/bookings/{booking}/chat/feed', [BookingChatController::class, 'feed'])->name('chat.feed');
     Route::post('/bookings/{booking}/chat', [BookingChatController::class, 'store'])->name('chat.store');

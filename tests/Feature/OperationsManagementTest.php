@@ -121,7 +121,7 @@ class OperationsManagementTest extends TestCase
         ])->assertRedirect(route('dashboard'));
 
         $this->get(route('dashboard'))->assertRedirect(route('worker.jobs.index'));
-        $this->get(route('worker.jobs.index'))->assertOk()->assertSee('Assigned jobs');
+        $this->get(route('worker.jobs.index'))->assertOk()->assertSee('Active jobs');
     }
 
     public function test_worker_can_submit_inspection_and_estimate_for_admin_approval(): void

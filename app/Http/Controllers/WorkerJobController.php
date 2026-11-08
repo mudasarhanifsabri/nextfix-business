@@ -19,11 +19,17 @@ class WorkerJobController extends Controller
     public function index(Request $request): View
     {
         $professional = $this->professional($request);
-        $jobs = Booking::with(['company', 'unit'])->where('professional_id', $professional->id)
-            ->orderByRaw("CASE WHEN status = 'completed' THEN 1 ELSE 0 END")
+        $base = Booking::with(['company', 'unit'])->where('professional_id', $professional->id);
+        $jobs = (clone $base)->whereNotIn('status', ['completed', 'cancelled'])
             ->orderBy('scheduled_at')->paginate(10);
+        $completedJobs = (clone $base)->where('status', 'completed')
+            ->latest('work_completed_at')->limit(8)->get();
+        $todayCount = (clone $base)->whereNotIn('status', ['completed', 'cancelled'])
+            ->whereDate('scheduled_at', now()->toDateString())->count();
+        $activeCount = (clone $base)->whereNotIn('status', ['completed', 'cancelled'])->count();
+        $attentionCount = (clone $base)->whereIn('status', ['on_hold', 'changes_requested'])->count();
 
-        return view('worker.jobs.index', compact('professional', 'jobs'));
+        return view('worker.jobs.index', compact('professional', 'jobs', 'completedJobs', 'todayCount', 'activeCount', 'attentionCount'));
     }
 
     public function show(Request $request, Booking $booking): View

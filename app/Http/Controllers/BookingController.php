@@ -27,14 +27,6 @@ class BookingController extends Controller
         ]);
     }
 
-    public function show(Request $request, Booking $booking): View
-    {
-        $this->authorizeBookingDocument($request, $booking);
-        $booking->load(['company', 'unit', 'professional', 'photos', 'quotationInvoice.payments', 'messages.user']);
-
-        return view('bookings.show', compact('booking'));
-    }
-
     public function create(Request $request, string $service): View
     {
         return view('bookings.create', [

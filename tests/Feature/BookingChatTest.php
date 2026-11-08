@@ -30,16 +30,4 @@ class BookingChatTest extends TestCase
         $this->actingAs($outsider)->get(route('chat.show',$booking))->assertForbidden();
     }
 
-    public function test_booking_workspace_is_visible_only_to_participants(): void
-    {
-        $company = Company::create(['name'=>'Host One']);
-        $other = Company::create(['name'=>'Host Two']);
-        $unit = Unit::create(['company_id'=>$company->id,'building'=>'Tower','unit_number'=>'1','address'=>'Dubai']);
-        $manager = User::factory()->create(['company_id'=>$company->id,'role'=>'company_manager']);
-        $outsider = User::factory()->create(['company_id'=>$other->id,'role'=>'company_manager']);
-        $booking = Booking::create(['company_id'=>$company->id,'unit_id'=>$unit->id,'reference'=>'NFB-WORKSPACE-1','service_type'=>'cleaning','service_name'=>'Cleaning','scheduled_at'=>now()->addDay(),'status'=>'pending','payment_status'=>'pending','currency'=>'AED']);
-
-        $this->actingAs($manager)->get(route('bookings.show',$booking))->assertOk()->assertSee('Booking workspace')->assertSee('Documents and payment');
-        $this->actingAs($outsider)->get(route('bookings.show',$booking))->assertForbidden();
-    }
 }

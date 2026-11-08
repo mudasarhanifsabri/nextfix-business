@@ -371,21 +371,12 @@ if (bookingChat) {
     scrollDown(); window.setInterval(poll, 3000); document.addEventListener('visibilitychange', poll);
 }
 
-document.querySelectorAll('[data-workspace-tabs]').forEach((tabs) => {
-    const panels = [...document.querySelectorAll('[data-workspace-panel]')];
-    tabs.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => {
-        tabs.querySelectorAll('[data-tab]').forEach((item) => item.classList.toggle('active', item === button));
-        panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.workspacePanel === button.dataset.tab));
-    }));
-});
-
 document.querySelectorAll('.table-wrap tbody tr').forEach((row) => {
     const reference = row.querySelector('td:first-child strong')?.textContent.trim();
     const actions = row.querySelector('.document-actions') || row.querySelector('td:last-child');
     if (!reference?.startsWith('NFB-') || !actions) return;
-    const view = document.createElement('a'); view.className = 'icon-document'; view.href = `/booking/${encodeURIComponent(reference)}`; view.title = 'Booking workspace'; view.setAttribute('aria-label','Booking workspace'); view.innerHTML = '<i class="bi bi-eye"></i>';
     const chat = document.createElement('a'); chat.className = 'icon-document'; chat.href = `/booking/${encodeURIComponent(reference)}/chat`; chat.title = 'Job chat'; chat.setAttribute('aria-label','Job chat'); chat.innerHTML = '<i class="bi bi-chat-dots"></i>';
-    actions.prepend(chat); actions.prepend(view);
+    actions.prepend(chat);
 });
 
 document.querySelectorAll('[data-gallery]').forEach((gallery) => {
@@ -395,7 +386,7 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
     document.body.appendChild(lightbox); const image = lightbox.querySelector('img'); const caption = lightbox.querySelector('footer strong'); const count = lightbox.querySelector('footer span');
     const show = (index) => { current = (index + items.length) % items.length; image.src = items[current].dataset.src; caption.textContent = items[current].dataset.caption || ''; count.textContent = `${current + 1} of ${items.length}`; lightbox.hidden = false; document.body.style.overflow = 'hidden'; };
     const close = () => { lightbox.hidden = true; image.src = ''; document.body.style.overflow = ''; };
-    items.forEach((item,index) => item.addEventListener('click', () => show(index))); lightbox.querySelector('.gallery-close').addEventListener('click', close); lightbox.querySelector('.gallery-prev').addEventListener('click', () => show(current-1)); lightbox.querySelector('.gallery-next').addEventListener('click', () => show(current+1));
+    items.forEach((item,index) => item.addEventListener('click', (event) => { event.preventDefault(); show(index); })); lightbox.querySelector('.gallery-close').addEventListener('click', close); lightbox.querySelector('.gallery-prev').addEventListener('click', () => show(current-1)); lightbox.querySelector('.gallery-next').addEventListener('click', () => show(current+1));
     lightbox.addEventListener('touchstart', (event) => touchX = event.touches[0].clientX, {passive:true}); lightbox.addEventListener('touchend', (event) => { const delta=event.changedTouches[0].clientX-touchX; if(Math.abs(delta)>45) show(current+(delta<0?1:-1)); }, {passive:true});
     document.addEventListener('keydown', (event) => { if(lightbox.hidden)return; if(event.key==='Escape')close(); if(event.key==='ArrowLeft')show(current-1); if(event.key==='ArrowRight')show(current+1); });
 });

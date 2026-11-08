@@ -2,7 +2,13 @@
 @section('content')
 @php($completed = collect($booking->completed_items ?? []))
 @php($photoGroups = ['booking_issue'=>'Company issue','inspection'=>'Inspection','before'=>'Before','progress'=>'Progress','after'=>'After'])
-<div class="report-toolbar"><a class="secondary" href="{{ auth()->user()->role === 'professional' ? route('worker.jobs.show',$booking) : (auth()->user()->role === 'nextfix_admin' ? route('admin.operations.index') : route('bookings.index')) }}"><i class="bi bi-arrow-left"></i> Back</a><a class="secondary" href="{{ route('chat.show',$booking) }}"><i class="bi bi-chat-dots-fill"></i> Chat</a><a class="primary" href="{{ route('jobs.report.pdf',$booking) }}"><i class="bi bi-file-earmark-pdf"></i> Report PDF</a></div>
+<div class="report-toolbar">
+    @if(auth()->user()->role !== 'professional')
+        <a class="secondary" href="{{ auth()->user()->role === 'nextfix_admin' ? route('admin.operations.index') : route('bookings.index') }}"><i class="bi bi-arrow-left"></i> Back</a>
+    @endif
+    <a class="secondary" href="{{ route('chat.show',$booking) }}"><i class="bi bi-chat-dots-fill"></i> Chat</a>
+    <a class="primary" href="{{ route('jobs.report.pdf',$booking) }}"><i class="bi bi-file-earmark-pdf"></i> Report PDF</a>
+</div>
 <section class="report-hero"><div><p>VERIFIED SERVICE RECORD</p><h2>{{ $booking->service_name }}</h2><small>{{ $booking->reference }} · {{ $booking->company->name }} · {{ $booking->unit->building }} / Unit {{ $booking->unit->unit_number }}</small></div><span class="report-badge">{{ $booking->operational_status_label }}</span></section>
 <div class="report-grid"><div class="report-stat"><small>Scheduled</small><strong>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('d M Y, g:i A') }}</strong></div><div class="report-stat"><small>Professional</small><strong>{{ $booking->professional?->name ?: 'Not assigned' }}</strong></div><div class="report-stat"><small>Progress</small><strong>{{ $booking->progress }}%</strong></div><div class="report-stat"><small>Payment</small><strong>{{ ucwords(str_replace('_',' ',$booking->payment_status)) }}</strong></div></div>
 <div class="report-documents"><a href="{{ route('jobs.report.pdf',$booking) }}"><i class="bi bi-file-earmark-check"></i><span><strong>Job report</strong><small>Complete service record</small></span></a>@if($booking->estimate_submitted_at)<a href="{{ route('bookings.quotation.pdf',$booking) }}"><i class="bi bi-file-earmark-text"></i><span><strong>Quotation</strong><small>Labour and parts</small></span></a>@endif @if($booking->quotation_invoice_id)<a href="{{ route('bookings.invoice.pdf',$booking) }}"><i class="bi bi-receipt"></i><span><strong>{{ $booking->payment_status === 'paid' ? 'Paid invoice' : 'Invoice' }}</strong><small>{{ $booking->quotationInvoice?->number }}</small></span></a>@endif</div>

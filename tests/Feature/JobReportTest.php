@@ -28,6 +28,11 @@ class JobReportTest extends TestCase
             $this->actingAs($user)->get(route('jobs.report.show', $booking))->assertOk()->assertSee('NFB-REPORT-1');
             $this->actingAs($user)->get(route('jobs.report.pdf', $booking))->assertOk()->assertHeader('content-type', 'application/pdf');
         }
+
+        $this->actingAs($worker)
+            ->get(route('jobs.report.show', $booking))
+            ->assertOk()
+            ->assertDontSee('bi-arrow-left"></i> Back', false);
     }
 
     public function test_unrelated_company_and_worker_cannot_view_report(): void

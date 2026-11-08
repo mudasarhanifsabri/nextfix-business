@@ -100,11 +100,16 @@
     .worker-nav span{font-size:8px}
     .native-home-hero{padding:21px 19px}
     .native-home-hero h1{font-size:25px}
-    .native-job-card{padding:13px}
-    .native-job-card__body{grid-template-columns:59px 34px minmax(0,1fr) 13px;gap:8px}
-    .native-date-tile{min-height:75px}
-    .native-job-card .worker-service-icon{width:34px;height:34px}
+    .native-job-card{padding:12px}
+    .native-job-card__chips{margin-bottom:8px}
+    .native-job-card__body{grid-template-columns:48px 32px minmax(0,1fr) 12px;gap:8px}
+    .native-date-tile{min-height:59px;border-radius:13px}
+    .native-date-tile small{font-size:7px}
+    .native-date-tile strong{font-size:19px}
+    .native-date-tile span{margin-top:3px;font-size:6px}
+    .native-job-card .worker-service-icon{width:32px;height:32px;border-radius:10px}
     .native-job-card__copy strong{font-size:13px}
+    .native-job-card__footer{margin-top:9px;padding-top:8px}
     .worker-job-hero{padding:17px}
 }
 

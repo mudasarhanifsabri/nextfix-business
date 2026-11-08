@@ -1,4 +1,4 @@
-@extends(auth()->user()->role === 'professional' ? 'layouts.worker' : 'layouts.app', auth()->user()->role === 'professional' ? ['title' => 'Job report | NextFix'] : ['heading' => 'Job report'])
+@extends(auth()->user()->role === 'professional' ? 'layouts.worker' : 'layouts.app', auth()->user()->role === 'professional' ? ['title' => 'Job report | NextFix', 'screenTitle' => 'Service report', 'screenBack' => route('worker.jobs.index', ['view' => 'completed'])] : ['heading' => 'Job report'])
 @section('content')
 @php($completed = collect($booking->completed_items ?? []))
 @php($photoGroups = ['booking_issue'=>'Company issue','inspection'=>'Inspection','before'=>'Before','progress'=>'Progress','after'=>'After'])

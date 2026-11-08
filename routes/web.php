@@ -84,6 +84,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/admin/integrations', [IntegrationController::class, 'index'])->name('admin.integrations.index');
     Route::post('/admin/integrations/smtp', [IntegrationController::class, 'smtp'])->name('admin.integrations.smtp');
     Route::post('/admin/integrations/nomod', [IntegrationController::class, 'nomod'])->name('admin.integrations.nomod');
+    Route::get('/work/home', [WorkerJobController::class, 'home'])->name('worker.home');
     Route::get('/work/jobs', [WorkerJobController::class, 'index'])->name('worker.jobs.index');
     Route::get('/work/jobs/{booking}', [WorkerJobController::class, 'show'])->name('worker.jobs.show');
     Route::post('/work/jobs/{booking}', [WorkerJobController::class, 'update'])->name('worker.jobs.update');

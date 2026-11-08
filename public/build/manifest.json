@@ -112,6 +112,11 @@
     "src": "resources/css/worker-media.css",
     "isEntry": true
   },
+  "resources/css/worker-native.css": {
+    "file": "assets/worker-native-wSnFlbTW.css",
+    "src": "resources/css/worker-native.css",
+    "isEntry": true
+  },
   "resources/css/worker.css": {
     "file": "assets/worker-SCAAmVBl.css",
     "src": "resources/css/worker.css",

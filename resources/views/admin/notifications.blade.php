@@ -1,4 +1,4 @@
-@extends(auth()->user()->role === 'professional' ? 'layouts.worker' : 'layouts.app', auth()->user()->role === 'professional' ? ['title' => 'Alerts | NextFix Work'] : ['heading' => 'Notifications'])
+@extends(auth()->user()->role === 'professional' ? 'layouts.worker' : 'layouts.app', auth()->user()->role === 'professional' ? ['title' => 'Alerts | NextFix Work', 'screenTitle' => 'Alerts'] : ['heading' => 'Notifications'])
 @section('content')
 <div class="alerts-head"><div><span class="alerts-symbol"><i class="bi bi-bell"></i></span><div><h2>{{ auth()->user()->role === 'professional' ? 'Work alerts' : 'Alerts' }}</h2><small>{{ $unreadCount ? $unreadCount.' unread' : 'All caught up' }}</small></div></div>@if($unreadCount)<form method="post" action="{{ route('admin.notifications.read-all') }}">@csrf<button class="alerts-read-all" aria-label="Mark all alerts read"><i class="bi bi-check2-all"></i><span>Read all</span></button></form>@endif</div>
 <section class="panel notification-list compact">

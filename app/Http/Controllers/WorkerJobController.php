@@ -16,20 +16,43 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class WorkerJobController extends Controller
 {
+    public function home(Request $request): View
+    {
+        $professional = $this->professional($request);
+        $base = Booking::with(['company', 'unit'])->where('professional_id', $professional->id);
+        $active = (clone $base)->whereNotIn('status', ['completed', 'cancelled'])
+            ->orderBy('scheduled_at');
+        $nextJob = (clone $active)->first();
+        $upcomingJobs = (clone $active)->when($nextJob, fn ($query) => $query->whereKeyNot($nextJob->id))
+            ->limit(2)->get();
+        $todayCount = (clone $active)->whereDate('scheduled_at', now()->toDateString())->count();
+        $activeCount = (clone $active)->count();
+        $attentionCount = (clone $active)->whereIn('status', ['on_hold', 'changes_requested'])->count();
+        $completedCount = (clone $base)->where('status', 'completed')->count();
+
+        return view('worker.home', compact(
+            'professional',
+            'nextJob',
+            'upcomingJobs',
+            'todayCount',
+            'activeCount',
+            'attentionCount',
+            'completedCount'
+        ));
+    }
+
     public function index(Request $request): View
     {
         $professional = $this->professional($request);
         $base = Booking::with(['company', 'unit'])->where('professional_id', $professional->id);
-        $jobs = (clone $base)->whereNotIn('status', ['completed', 'cancelled'])
-            ->orderBy('scheduled_at')->paginate(10);
-        $completedJobs = (clone $base)->where('status', 'completed')
-            ->latest('work_completed_at')->limit(8)->get();
-        $todayCount = (clone $base)->whereNotIn('status', ['completed', 'cancelled'])
-            ->whereDate('scheduled_at', now()->toDateString())->count();
+        $view = $request->string('view')->value() === 'completed' ? 'completed' : 'active';
         $activeCount = (clone $base)->whereNotIn('status', ['completed', 'cancelled'])->count();
-        $attentionCount = (clone $base)->whereIn('status', ['on_hold', 'changes_requested'])->count();
+        $completedCount = (clone $base)->where('status', 'completed')->count();
+        $jobs = $view === 'completed'
+            ? (clone $base)->where('status', 'completed')->latest('work_completed_at')->paginate(10)->withQueryString()
+            : (clone $base)->whereNotIn('status', ['completed', 'cancelled'])->orderBy('scheduled_at')->paginate(10)->withQueryString();
 
-        return view('worker.jobs.index', compact('professional', 'jobs', 'completedJobs', 'todayCount', 'activeCount', 'attentionCount'));
+        return view('worker.jobs.index', compact('professional', 'jobs', 'view', 'activeCount', 'completedCount'));
     }
 
     public function show(Request $request, Booking $booking): View

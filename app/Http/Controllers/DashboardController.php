@@ -16,7 +16,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         if ($user->role === 'professional') {
-            return redirect()->route('worker.jobs.index');
+            return redirect()->route('worker.home');
         }
         if ($user->role === 'nextfix_admin') {
             return view('admin.dashboard', [

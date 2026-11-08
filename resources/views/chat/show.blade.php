@@ -1,4 +1,4 @@
-@extends(auth()->user()->role === 'professional' ? 'layouts.worker' : 'layouts.app', ['heading' => 'Job chat', 'title' => $booking->reference.' chat | NextFix'])
+@extends(auth()->user()->role === 'professional' ? 'layouts.worker' : 'layouts.app', auth()->user()->role === 'professional' ? ['title' => $booking->reference.' chat | NextFix', 'screenTitle' => 'Job chat', 'screenBack' => route('worker.jobs.show', $booking)] : ['heading' => 'Job chat', 'title' => $booking->reference.' chat | NextFix'])
 @section('content')
 <main class="booking-chat" data-chat-feed="{{ route('chat.feed', $booking) }}" data-chat-store="{{ route('chat.store', $booking) }}">
 <header class="chat-job-head"><a href="{{ route('jobs.report.show', $booking) }}"><i class="bi bi-chevron-left"></i></a><div><small>{{ $booking->reference }}</small><strong>{{ $booking->service_name }}</strong><span>{{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</span></div><span class="chat-live"><i></i> Job chat</span></header>

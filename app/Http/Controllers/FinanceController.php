@@ -9,6 +9,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Hash;
 
 class FinanceController extends Controller
 {
@@ -58,5 +59,32 @@ class FinanceController extends Controller
             return back()->withErrors(['nomod' => 'Nomod sync failed. Check the API key and server log.']);
         }
         return back()->with('status', $message);
+    }
+
+    public function refund(Request $request, Payment $payment): RedirectResponse
+    {
+        $this->admin($request);
+        abort_unless(in_array($payment->status, ['completed', 'paid', 'partially_refunded'], true), 422, 'Only a settled payment can be refunded.');
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:'.($payment->amount_minor / 100)],
+            'reason' => ['required', 'string', 'max:500'],
+            'password_confirmation_admin' => ['required', 'string'],
+        ]);
+        abort_unless(Hash::check($data['password_confirmation_admin'], $request->user()->password), 422, 'Administrator password is incorrect.');
+        $minor = (int) round(((float) $data['amount']) * 100);
+        $manual = $payment->method !== 'nomod';
+        $payment->update([
+            'refund_amount_minor' => $minor,
+            'refund_reason' => $data['reason'],
+            'refund_requested_at' => now(),
+            'refunded_at' => $manual ? now() : null,
+            'status' => $manual ? ($minor >= $payment->amount_minor ? 'refunded' : 'partially_refunded') : 'refund_pending',
+            'notes' => trim(($payment->notes ? $payment->notes."\n" : '').'Refund requested by '.$request->user()->name.' · '.$data['reason']),
+        ]);
+        if ($manual && $payment->invoice) $payment->invoice->update(['status' => $minor >= $payment->amount_minor ? 'refunded' : 'partially_refunded']);
+
+        return back()->with('status', $manual
+            ? 'Manual refund recorded.'
+            : 'Refund request recorded. Process it in Nomod; the webhook will confirm the final status automatically.');
     }
 }

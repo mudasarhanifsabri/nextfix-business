@@ -13,6 +13,22 @@ window.addEventListener('pageshow', (event) => {
     if (event.persisted) window.location.reload();
 });
 
+if (['/bookings', '/admin/operations'].includes(window.location.pathname)) {
+    document.querySelectorAll('.table-wrap tbody tr').forEach((row) => {
+        const cell = row.cells?.[0];
+        const strong = cell?.querySelector('strong');
+        const reference = strong?.textContent.trim();
+        if (!reference?.startsWith('NFB-') || cell.querySelector('.job-report-eye')) return;
+        const link = document.createElement('a');
+        link.className = 'job-report-eye';
+        link.href = `/jobs/reference/${encodeURIComponent(reference)}/report`;
+        link.title = 'View job report';
+        link.setAttribute('aria-label', `View report ${reference}`);
+        link.innerHTML = '<i class="bi bi-eye"></i>';
+        strong.after(link);
+    });
+}
+
 let installPrompt;
 const installButtons = [...document.querySelectorAll('[data-install-app]')];
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);

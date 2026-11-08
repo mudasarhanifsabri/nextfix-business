@@ -37,6 +37,11 @@
     "src": "resources/css/notifications.css",
     "isEntry": true
   },
+  "resources/css/operations-refunds.css": {
+    "file": "assets/operations-refunds-DZvRHNtX.css",
+    "src": "resources/css/operations-refunds.css",
+    "isEntry": true
+  },
   "resources/css/quote-flow.css": {
     "file": "assets/quote-flow-BM61KBqr.css",
     "src": "resources/css/quote-flow.css",
@@ -98,7 +103,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BQlgbMuP.js",
+    "file": "assets/app-BiZ4SoVV.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

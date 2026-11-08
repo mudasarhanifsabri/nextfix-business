@@ -310,3 +310,92 @@ if (notificationFeed) {
     };
     window.setInterval(pollNotifications, 15000);
 }
+
+const bookingChat = document.querySelector('[data-chat-feed]');
+if (bookingChat) {
+    const stream = bookingChat.querySelector('[data-chat-stream]');
+    const form = bookingChat.querySelector('[data-chat-form]');
+    const body = form.querySelector('textarea[name="body"]');
+    const attachment = form.querySelector('input[name="attachment"]');
+    const preview = form.querySelector('[data-chat-preview]');
+    const upload = form.querySelector('[data-chat-upload]');
+    const uploadBar = upload.querySelector('i');
+    const error = form.querySelector('[data-chat-error]');
+    const record = form.querySelector('[data-chat-record]');
+    let lastId = Number(stream.querySelector('[data-message-id]:last-of-type')?.dataset.messageId || 0);
+    let recorder; let recordStarted; let recordTimer; let recordedChunks = [];
+    const csrf = form.querySelector('input[name="_token"]').value;
+    const scrollDown = (smooth = false) => stream.scrollTo({top: stream.scrollHeight, behavior: smooth ? 'smooth' : 'auto'});
+    const escapeHtml = (value = '') => { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; };
+    const messageNode = (item) => {
+        const article = document.createElement('article'); article.className = `chat-message${item.mine ? ' mine' : ''}`; article.dataset.messageId = item.id;
+        const sender = `<div class="chat-sender"><strong>${escapeHtml(item.sender)}</strong><span>${escapeHtml(item.sender_role)}</span></div>`;
+        let media = '';
+        if (item.type === 'image') media = `<a class="chat-image" href="${item.file_url}" target="_blank"><img src="${item.file_url}" alt="Shared photo"></a>`;
+        if (item.type === 'audio') media = `<audio controls preload="metadata" src="${item.file_url}"></audio>`;
+        if (item.type === 'file') media = `<a class="chat-file" href="${item.file_url}" target="_blank"><i class="bi bi-paperclip"></i><span>${escapeHtml(item.file_name || 'Attachment')}</span></a>`;
+        article.innerHTML = `${sender}<div class="chat-bubble">${media}${item.body ? `<p>${escapeHtml(item.body)}</p>` : ''}<time>${escapeHtml(item.time)}</time></div>`;
+        return article;
+    };
+    const append = (item, smooth = true) => {
+        if (stream.querySelector(`[data-message-id="${item.id}"]`)) return;
+        stream.querySelector('[data-chat-empty]')?.remove(); stream.appendChild(messageNode(item)); lastId = Math.max(lastId, Number(item.id)); scrollDown(smooth);
+    };
+    const poll = async () => {
+        if (document.hidden) return;
+        try { const response = await fetch(`${bookingChat.dataset.chatFeed}?after=${lastId}`, {headers:{Accept:'application/json'}, credentials:'same-origin'}); if (!response.ok) return; const data = await response.json(); data.messages.forEach((item) => append(item)); } catch (_) {}
+    };
+    const send = (payload) => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest(); xhr.open('POST', bookingChat.dataset.chatStore); xhr.withCredentials = true; xhr.setRequestHeader('Accept','application/json'); xhr.setRequestHeader('X-CSRF-TOKEN', csrf); upload.hidden = false; error.hidden = true;
+        xhr.upload.addEventListener('progress', (event) => { if (event.lengthComputable) uploadBar.style.width = `${Math.max(4, Math.round(event.loaded/event.total*100))}%`; });
+        xhr.addEventListener('load', () => { upload.hidden = true; uploadBar.style.width = '0'; if (xhr.status >= 200 && xhr.status < 300) { resolve(JSON.parse(xhr.responseText)); return; } try { reject(JSON.parse(xhr.responseText).message); } catch (_) { reject('Message could not be sent.'); } });
+        xhr.addEventListener('error', () => { upload.hidden = true; reject('Connection lost. Tap send to retry.'); }); xhr.send(payload);
+    });
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault(); if (!body.value.trim() && !attachment.files.length) return; const payload = new FormData(form); form.querySelector('.chat-send').disabled = true;
+        try { const data = await send(payload); append(data.message); body.value = ''; attachment.value = ''; preview.hidden = true; preview.textContent = ''; }
+        catch (message) { error.textContent = message; error.hidden = false; }
+        finally { form.querySelector('.chat-send').disabled = false; }
+    });
+    attachment.addEventListener('change', () => { const file = attachment.files[0]; preview.textContent = file ? `${file.type.startsWith('image/') ? 'Photo' : 'Attachment'} · ${file.name}` : ''; preview.hidden = !file; });
+    bookingChat.querySelectorAll('[data-quick-reply]').forEach((button) => button.addEventListener('click', () => { body.value = button.dataset.quickReply; body.focus(); }));
+    body.addEventListener('input', () => { body.style.height = 'auto'; body.style.height = `${Math.min(body.scrollHeight,120)}px`; });
+    record.addEventListener('click', async () => {
+        if (recorder?.state === 'recording') { recorder.stop(); return; }
+        try {
+            const media = await navigator.mediaDevices.getUserMedia({audio:true}); recordedChunks = []; recorder = new MediaRecorder(media); recorder.addEventListener('dataavailable', (event) => { if (event.data.size) recordedChunks.push(event.data); });
+            recorder.addEventListener('stop', () => { media.getTracks().forEach((track) => track.stop()); clearInterval(recordTimer); record.classList.remove('recording'); record.querySelector('i').className='bi bi-mic'; record.querySelector('span').hidden=true; const blob=new Blob(recordedChunks,{type:recorder.mimeType || 'audio/webm'}); const file=new File([blob],`voice-${Date.now()}.webm`,{type:blob.type}); const transfer=new DataTransfer(); transfer.items.add(file); attachment.files=transfer.files; preview.textContent=`Voice message · ${Math.ceil(blob.size/1024)} KB`; preview.hidden=false; });
+            recorder.start(); recordStarted=Date.now(); record.classList.add('recording'); record.querySelector('i').className='bi bi-stop-fill'; const timer=record.querySelector('span'); timer.hidden=false; recordTimer=setInterval(()=>{const seconds=Math.floor((Date.now()-recordStarted)/1000);timer.textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`; if(seconds>=120)recorder.stop();},250);
+        } catch (_) { error.textContent='Microphone permission is required for voice messages.'; error.hidden=false; }
+    });
+    scrollDown(); window.setInterval(poll, 3000); document.addEventListener('visibilitychange', poll);
+}
+
+document.querySelectorAll('[data-workspace-tabs]').forEach((tabs) => {
+    const panels = [...document.querySelectorAll('[data-workspace-panel]')];
+    tabs.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => {
+        tabs.querySelectorAll('[data-tab]').forEach((item) => item.classList.toggle('active', item === button));
+        panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.workspacePanel === button.dataset.tab));
+    }));
+});
+
+document.querySelectorAll('.table-wrap tbody tr').forEach((row) => {
+    const reference = row.querySelector('td:first-child strong')?.textContent.trim();
+    const actions = row.querySelector('.document-actions') || row.querySelector('td:last-child');
+    if (!reference?.startsWith('NFB-') || !actions) return;
+    const view = document.createElement('a'); view.className = 'icon-document'; view.href = `/booking/${encodeURIComponent(reference)}`; view.title = 'Booking workspace'; view.setAttribute('aria-label','Booking workspace'); view.innerHTML = '<i class="bi bi-eye"></i>';
+    const chat = document.createElement('a'); chat.className = 'icon-document'; chat.href = `/booking/${encodeURIComponent(reference)}/chat`; chat.title = 'Job chat'; chat.setAttribute('aria-label','Job chat'); chat.innerHTML = '<i class="bi bi-chat-dots"></i>';
+    actions.prepend(chat); actions.prepend(view);
+});
+
+document.querySelectorAll('[data-gallery]').forEach((gallery) => {
+    const items = [...gallery.querySelectorAll('[data-gallery-item]')]; let current = 0; let touchX = 0;
+    const lightbox = document.createElement('section'); lightbox.className = 'gallery-lightbox'; lightbox.hidden = true;
+    lightbox.innerHTML = '<button class="gallery-close" aria-label="Close">×</button><button class="gallery-prev" aria-label="Previous"><i class="bi bi-chevron-left"></i></button><img alt="Booking evidence"><button class="gallery-next" aria-label="Next"><i class="bi bi-chevron-right"></i></button><footer><strong></strong><span></span></footer>';
+    document.body.appendChild(lightbox); const image = lightbox.querySelector('img'); const caption = lightbox.querySelector('footer strong'); const count = lightbox.querySelector('footer span');
+    const show = (index) => { current = (index + items.length) % items.length; image.src = items[current].dataset.src; caption.textContent = items[current].dataset.caption || ''; count.textContent = `${current + 1} of ${items.length}`; lightbox.hidden = false; document.body.style.overflow = 'hidden'; };
+    const close = () => { lightbox.hidden = true; image.src = ''; document.body.style.overflow = ''; };
+    items.forEach((item,index) => item.addEventListener('click', () => show(index))); lightbox.querySelector('.gallery-close').addEventListener('click', close); lightbox.querySelector('.gallery-prev').addEventListener('click', () => show(current-1)); lightbox.querySelector('.gallery-next').addEventListener('click', () => show(current+1));
+    lightbox.addEventListener('touchstart', (event) => touchX = event.touches[0].clientX, {passive:true}); lightbox.addEventListener('touchend', (event) => { const delta=event.changedTouches[0].clientX-touchX; if(Math.abs(delta)>45) show(current+(delta<0?1:-1)); }, {passive:true});
+    document.addEventListener('keydown', (event) => { if(lightbox.hidden)return; if(event.key==='Escape')close(); if(event.key==='ArrowLeft')show(current-1); if(event.key==='ArrowRight')show(current+1); });
+});

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingChatController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinanceController;
@@ -43,6 +44,13 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/bookings/create/{service}', [BookingController::class, 'create'])
         ->whereIn('service', ['cleaning', 'maintenance'])->name('bookings.create');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+    Route::get('/booking/{booking:reference}', [BookingController::class, 'show'])->name('bookings.show.reference');
+    Route::get('/booking/{booking:reference}/chat', [BookingChatController::class, 'show'])->name('chat.show.reference');
+    Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+    Route::get('/bookings/{booking}/chat', [BookingChatController::class, 'show'])->name('chat.show');
+    Route::get('/bookings/{booking}/chat/feed', [BookingChatController::class, 'feed'])->name('chat.feed');
+    Route::post('/bookings/{booking}/chat', [BookingChatController::class, 'store'])->name('chat.store');
+    Route::get('/chat/files/{message}', [BookingChatController::class, 'file'])->name('chat.file');
     Route::get('/bookings/{booking}/quotation.pdf', [BookingController::class, 'quotationPdf'])->name('bookings.quotation.pdf');
     Route::get('/bookings/{booking}/invoice.pdf', [BookingController::class, 'invoicePdf'])->name('bookings.invoice.pdf');
     Route::get('/jobs/reference/{booking:reference}/report', [JobReportController::class, 'show'])->name('jobs.report.reference');

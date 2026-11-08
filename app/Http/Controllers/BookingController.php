@@ -27,6 +27,14 @@ class BookingController extends Controller
         ]);
     }
 
+    public function show(Request $request, Booking $booking): View
+    {
+        $this->authorizeBookingDocument($request, $booking);
+        $booking->load(['company', 'unit', 'professional', 'photos', 'quotationInvoice.payments', 'messages.user']);
+
+        return view('bookings.show', compact('booking'));
+    }
+
     public function create(Request $request, string $service): View
     {
         return view('bookings.create', [
@@ -134,6 +142,11 @@ class BookingController extends Controller
 
     private function authorizeBookingDocument(Request $request, Booking $booking): void
     {
-        abort_unless($request->user()->role === 'nextfix_admin' || $booking->company_id === $request->user()->company_id, 403);
+        abort_unless(
+            $request->user()->role === 'nextfix_admin'
+            || $booking->company_id === $request->user()->company_id
+            || ($request->user()->role === 'professional' && $request->user()->professional?->id === $booking->professional_id),
+            403
+        );
     }
 }

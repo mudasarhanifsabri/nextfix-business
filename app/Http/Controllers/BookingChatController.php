@@ -42,6 +42,7 @@ class BookingChatController extends Controller
         $data = $request->validate([
             'body' => ['nullable', 'string', 'max:4000'],
             'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf,mp3,m4a,mp4,webm,ogg,wav', 'max:15360'],
+            'attachment_kind' => ['nullable', 'in:audio'],
         ]);
         abort_unless(filled($data['body'] ?? null) || $request->hasFile('attachment'), 422, 'Write a message or add an attachment.');
 
@@ -49,8 +50,12 @@ class BookingChatController extends Controller
         $type = 'text';
         $path = null;
         if ($file) {
-            $type = str_starts_with((string) $file->getMimeType(), 'image/') ? 'image'
-                : (str_starts_with((string) $file->getMimeType(), 'audio/') ? 'audio' : 'file');
+            $mime = strtolower((string) $file->getMimeType());
+            $clientMime = strtolower((string) $file->getClientMimeType());
+            $recordedVoice = ($data['attachment_kind'] ?? null) === 'audio'
+                || str_starts_with(strtolower($file->getClientOriginalName()), 'voice-');
+            $type = str_starts_with($mime, 'image/') || str_starts_with($clientMime, 'image/') ? 'image'
+                : ($recordedVoice || str_starts_with($mime, 'audio/') || str_starts_with($clientMime, 'audio/') ? 'audio' : 'file');
             $path = $file->store('booking-chat/'.$booking->id, 'local');
         }
         $message = BookingMessage::create([
@@ -77,8 +82,11 @@ class BookingChatController extends Controller
         abort_unless($message->path && Storage::disk('local')->exists($message->path), 404);
 
         $safeName = str_replace(['"', "\r", "\n"], '', basename($message->original_name ?: 'attachment'));
+        $contentType = $message->displayType() === 'audio' && str_ends_with(strtolower($safeName), '.webm')
+            ? 'audio/webm'
+            : ($message->mime_type ?: 'application/octet-stream');
         return response()->file(Storage::disk('local')->path($message->path), [
-            'Content-Type' => $message->mime_type ?: 'application/octet-stream',
+            'Content-Type' => $contentType,
             'Content-Disposition' => 'inline; filename="'.$safeName.'"',
             'Cache-Control' => 'private, max-age=3600',
         ]);
@@ -106,7 +114,7 @@ class BookingChatController extends Controller
             'sender_role' => match ($message->user->role) {
                 'professional' => 'NextFix worker', 'nextfix_admin' => 'NextFix support', default => 'Company',
             },
-            'type' => $message->type,
+            'type' => $message->displayType(),
             'body' => $message->body,
             'file_url' => $message->path ? route('chat.file', $message) : null,
             'file_name' => $message->original_name,
@@ -125,7 +133,7 @@ class BookingChatController extends Controller
                     ->orWhere(fn ($company) => $company->where('role', 'company_manager')->where('company_id', $booking->company_id));
                 if ($booking->professional?->user_id) $query->orWhere('id', $booking->professional->user_id);
             })->get();
-        $preview = $message->body ?: match ($message->type) {'image' => 'Sent a photo', 'audio' => 'Sent a voice message', default => 'Sent an attachment'};
+        $preview = $message->body ?: match ($message->displayType()) {'image' => 'Sent a photo', 'audio' => 'Sent a voice message', default => 'Sent an attachment'};
         foreach ($participants as $participant) {
             $participant->notifyNow(new AdminAlert(
                 $sender->name.' · '.$booking->reference,

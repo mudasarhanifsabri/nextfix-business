@@ -83,6 +83,13 @@
 .worker-profile-signout{margin-top:12px}
 .worker-profile-signout button{width:100%;padding:13px;border:1px solid #f0cfd5;border-radius:13px;background:#fff;color:#c4324a;font-weight:800}
 
+/* Chat owns the complete visual viewport. Keep the regular worker header on
+   every other screen and remove inherited main padding only while chatting. */
+.worker-app.chat-open{height:100dvh;overflow:hidden}
+.worker-app.chat-open>.worker-top,.worker-app.chat-open>.worker-nav{display:none!important}
+.worker-app.chat-open>main{width:100%;max-width:none;margin:0;padding:0!important}
+.worker-app.chat-open .booking-chat{inset:0;width:100vw;max-width:none;height:var(--chat-viewport-height,100dvh);margin:0;padding:0;box-sizing:border-box}
+
 /* The detail view keeps the proven workflow, but its first card now reads like
    a native service-detail screen. */
 .worker-job-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:20px;border-radius:22px;box-shadow:0 10px 30px rgba(16,35,63,.06)}

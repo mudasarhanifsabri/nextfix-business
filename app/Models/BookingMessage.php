@@ -24,4 +24,18 @@ class BookingMessage extends Model
     {
         return $this->belongsToMany(User::class, 'booking_message_reads')->withPivot('read_at');
     }
+
+    public function displayType(): string
+    {
+        if ($this->type !== 'file') {
+            return $this->type;
+        }
+
+        $name = strtolower((string) $this->original_name);
+        $mime = strtolower((string) $this->mime_type);
+        $isRecordedVoice = str_starts_with($name, 'voice-')
+            && preg_match('/\.(webm|ogg|mp3|m4a|wav)$/', $name);
+
+        return str_starts_with($mime, 'audio/') || $isRecordedVoice ? 'audio' : 'file';
+    }
 }

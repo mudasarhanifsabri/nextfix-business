@@ -549,6 +549,7 @@ if (bookingChat) {
     const form = bookingChat.querySelector('[data-chat-form]');
     const body = form.querySelector('textarea[name="body"]');
     const attachment = form.querySelector('input[name="attachment"]');
+    const attachmentKind = form.querySelector('input[name="attachment_kind"]');
     const preview = form.querySelector('[data-chat-preview]');
     const upload = form.querySelector('[data-chat-upload]');
     const uploadBar = upload.querySelector('i');
@@ -558,6 +559,10 @@ if (bookingChat) {
     let recorder; let recordStarted; let recordTimer; let recordedChunks = [];
     let previewUrl;
     const csrf = form.querySelector('input[name="_token"]').value;
+    const syncChatViewport = () => bookingChat.style.setProperty('--chat-viewport-height', `${window.visualViewport?.height || window.innerHeight}px`);
+    syncChatViewport();
+    window.addEventListener('resize', syncChatViewport);
+    window.visualViewport?.addEventListener('resize', syncChatViewport);
     const scrollDown = (smooth = false) => stream.scrollTo({top: stream.scrollHeight, behavior: smooth ? 'smooth' : 'auto'});
     const escapeHtml = (value = '') => { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; };
     const formatDuration = (seconds) => `${Math.floor((seconds || 0) / 60)}:${String(Math.floor((seconds || 0) % 60)).padStart(2, '0')}`;
@@ -604,7 +609,7 @@ if (bookingChat) {
     });
     form.addEventListener('submit', async (event) => {
         event.preventDefault(); if (!body.value.trim() && !attachment.files.length) return; const payload = new FormData(form); form.querySelector('.chat-send').disabled = true;
-        try { const data = await send(payload); append(data.message); body.value = ''; attachment.value = ''; preview.hidden = true; preview.replaceChildren(); if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; }
+        try { const data = await send(payload); append(data.message); body.value = ''; attachment.value = ''; attachmentKind.value = ''; preview.hidden = true; preview.replaceChildren(); if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; }
         catch (message) { error.textContent = message; error.hidden = false; }
         finally { form.querySelector('.chat-send').disabled = false; }
     });
@@ -620,19 +625,19 @@ if (bookingChat) {
         const meta = document.createElement('span'); const title = document.createElement('strong'); const size = document.createElement('small');
         title.textContent = file.type.startsWith('audio/') ? 'Voice message ready' : file.name; size.textContent = `${Math.max(1, Math.ceil(file.size / 1024))} KB · ready to send`; meta.append(title, size);
         const remove = document.createElement('button'); remove.type = 'button'; remove.setAttribute('aria-label', 'Remove attachment'); remove.innerHTML = '<i class="bi bi-x-lg"></i>';
-        remove.addEventListener('click', () => { attachment.value = ''; renderAttachmentPreview(null); });
+        remove.addEventListener('click', () => { attachment.value = ''; attachmentKind.value = ''; renderAttachmentPreview(null); });
         card.append(visual, meta, remove);
         if (file.type.startsWith('audio/')) { const player = document.createElement('audio'); player.controls = true; player.src = previewUrl; card.appendChild(player); }
         preview.appendChild(card);
     };
-    attachment.addEventListener('change', () => renderAttachmentPreview(attachment.files[0] || null));
+    attachment.addEventListener('change', () => { const file = attachment.files[0] || null; attachmentKind.value = file?.type.startsWith('audio/') ? 'audio' : ''; renderAttachmentPreview(file); });
     bookingChat.querySelectorAll('[data-quick-reply]').forEach((button) => button.addEventListener('click', () => { body.value = button.dataset.quickReply; body.focus(); }));
     body.addEventListener('input', () => { body.style.height = 'auto'; body.style.height = `${Math.min(body.scrollHeight,120)}px`; });
     record.addEventListener('click', async () => {
         if (recorder?.state === 'recording') { recorder.stop(); return; }
         try {
             const media = await navigator.mediaDevices.getUserMedia({audio:true}); recordedChunks = []; recorder = new MediaRecorder(media); recorder.addEventListener('dataavailable', (event) => { if (event.data.size) recordedChunks.push(event.data); });
-            recorder.addEventListener('stop', () => { media.getTracks().forEach((track) => track.stop()); clearInterval(recordTimer); record.classList.remove('recording'); record.querySelector('i').className='bi bi-mic'; record.querySelector('span').hidden=true; const blob=new Blob(recordedChunks,{type:recorder.mimeType || 'audio/webm'}); const file=new File([blob],`voice-${Date.now()}.webm`,{type:blob.type}); const transfer=new DataTransfer(); transfer.items.add(file); attachment.files=transfer.files; renderAttachmentPreview(file); });
+            recorder.addEventListener('stop', () => { media.getTracks().forEach((track) => track.stop()); clearInterval(recordTimer); record.classList.remove('recording'); record.querySelector('i').className='bi bi-mic'; record.querySelector('span').hidden=true; const blob=new Blob(recordedChunks,{type:recorder.mimeType || 'audio/webm'}); const file=new File([blob],`voice-${Date.now()}.webm`,{type:blob.type}); const transfer=new DataTransfer(); transfer.items.add(file); attachment.files=transfer.files; attachmentKind.value='audio'; renderAttachmentPreview(file); });
             recorder.start(); recordStarted=Date.now(); record.classList.add('recording'); record.querySelector('i').className='bi bi-stop-fill'; const timer=record.querySelector('span'); timer.hidden=false; recordTimer=setInterval(()=>{const seconds=Math.floor((Date.now()-recordStarted)/1000);timer.textContent=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`; if(seconds>=120)recorder.stop();},250);
         } catch (_) { error.textContent='Microphone permission is required for voice messages.'; error.hidden=false; }
     });

@@ -1,0 +1,22 @@
+/* Keep each installed app's navigation visible on normal screens.
+   The chat view deliberately takes over the full viewport, so only that view
+   hides the footer navigation. */
+@media (max-width: 800px) {
+    body:not(:has(.booking-chat)) .worker-nav,
+    body:not(:has(.booking-chat)) .mobile-nav {
+        display: grid !important;
+    }
+
+    .worker-nav,
+    .mobile-nav {
+        z-index: 80;
+        min-height: calc(70px + env(safe-area-inset-bottom));
+        height: calc(70px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -10px 30px rgba(16, 35, 63, .08);
+    }
+
+    .worker-app main {
+        padding-bottom: calc(94px + env(safe-area-inset-bottom));
+    }
+}

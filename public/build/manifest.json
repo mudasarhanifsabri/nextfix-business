@@ -37,6 +37,11 @@
     "src": "resources/css/job-report.css",
     "isEntry": true
   },
+  "resources/css/navigation-fix.css": {
+    "file": "assets/navigation-fix-BwVFtc8-.css",
+    "src": "resources/css/navigation-fix.css",
+    "isEntry": true
+  },
   "resources/css/notifications.css": {
     "file": "assets/notifications-CgxLwgKE.css",
     "src": "resources/css/notifications.css",

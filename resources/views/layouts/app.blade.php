@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="{{ auth()->user()->role === 'nextfix_admin' ? 'NextFix Admin' : 'NextFix' }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <title>{{ $title ?? 'NextFix Business' }}</title>
-    @vite(['resources/css/app.css', 'resources/css/chat.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/css/company-mobile.css', 'resources/css/booking-evidence.css', 'resources/css/quote-flow.css', 'resources/css/job-report.css', 'resources/css/operations-refunds.css', 'resources/css/notifications.css', 'resources/css/units.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/chat.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/css/company-mobile.css', 'resources/css/booking-evidence.css', 'resources/css/quote-flow.css', 'resources/css/job-report.css', 'resources/css/operations-refunds.css', 'resources/css/notifications.css', 'resources/css/units.css', 'resources/css/navigation-fix.css', 'resources/js/app.js'])
 </head>
 <body class="{{ auth()->user()->role === 'company_manager' ? 'company-app' : 'admin-app' }}">@php($unreadCount = auth()->user()->unreadNotifications()->count())
 @include('partials.pwa-splash')

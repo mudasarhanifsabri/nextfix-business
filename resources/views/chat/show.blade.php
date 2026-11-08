@@ -17,11 +17,11 @@
                 @php($messageType = $message->displayType())
                 <div class="chat-bubble">
                     @if($messageType === 'image')
-                        <a class="chat-image" href="{{ route('chat.file', $message) }}" target="_blank"><img src="{{ route('chat.file', $message) }}" alt="Photo shared by {{ $message->user->name }}"><span><i class="bi bi-arrows-fullscreen"></i></span></a>
+                        <a class="chat-image" href="{{ route('chat.file', $message) }}" data-chat-image data-file-name="{{ $message->original_name ?: 'Photo' }}"><img src="{{ route('chat.file', $message) }}" alt="Photo shared by {{ $message->user->name }}"><span><i class="bi bi-arrows-fullscreen"></i></span></a>
                     @elseif($messageType === 'audio')
                         <div class="chat-audio" data-audio-card><button type="button" data-audio-play aria-label="Play voice message"><i class="bi bi-play-fill"></i></button><div><div class="chat-wave" data-audio-track>@for($i=0;$i<18;$i++)<i></i>@endfor<span data-audio-progress></span></div><small><b data-audio-time>0:00</b><em>Voice message</em></small></div><audio preload="metadata" src="{{ route('chat.file', $message) }}"></audio></div>
                     @elseif($message->type === 'file')
-                        <a class="chat-file" href="{{ route('chat.file', $message) }}" target="_blank"><i class="bi bi-file-earmark-text"></i><span><strong>{{ $message->original_name }}</strong><small>{{ $message->size ? number_format($message->size / 1024).' KB' : 'Open attachment' }}</small></span><b><i class="bi bi-download"></i></b></a>
+                        <a class="chat-file" href="{{ route('chat.file', $message) }}" data-chat-download data-file-name="{{ $message->original_name ?: 'attachment' }}"><i class="bi bi-file-earmark-text"></i><span><strong>{{ $message->original_name }}</strong><small>{{ $message->size ? number_format($message->size / 1024).' KB · tap to download' : 'Tap to download' }}</small></span><b><i class="bi bi-download"></i></b></a>
                     @endif
                     @if($message->body)<p>{{ $message->body }}</p>@endif
                     <time>{{ $message->created_at->timezone('Asia/Dubai')->format('g:i A') }}</time>
@@ -43,5 +43,11 @@
         <div class="chat-preview" data-chat-preview hidden></div>
         <p class="chat-error" data-chat-error hidden></p>
     </form>
+    <section class="chat-media-viewer" data-chat-media-viewer hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Chat photo viewer">
+        <header><div><strong data-chat-viewer-title>Photo</strong><span data-chat-viewer-count></span></div><button type="button" data-chat-viewer-download aria-label="Download photo"><i class="bi bi-download"></i></button><button type="button" data-chat-viewer-close aria-label="Close photo"><i class="bi bi-x-lg"></i></button></header>
+        <button type="button" class="chat-media-prev" data-chat-viewer-prev aria-label="Previous photo"><i class="bi bi-chevron-left"></i></button>
+        <img data-chat-viewer-image alt="Shared chat photo">
+        <button type="button" class="chat-media-next" data-chat-viewer-next aria-label="Next photo"><i class="bi bi-chevron-right"></i></button>
+    </section>
 </section>
 @endsection

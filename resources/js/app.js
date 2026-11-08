@@ -555,9 +555,13 @@ if (bookingChat) {
     const uploadBar = upload.querySelector('i');
     const error = form.querySelector('[data-chat-error]');
     const record = form.querySelector('[data-chat-record]');
+    const mediaViewer = bookingChat.querySelector('[data-chat-media-viewer]');
+    const viewerImage = mediaViewer.querySelector('[data-chat-viewer-image]');
+    const viewerTitle = mediaViewer.querySelector('[data-chat-viewer-title]');
+    const viewerCount = mediaViewer.querySelector('[data-chat-viewer-count]');
     let lastId = Number(stream.querySelector('[data-message-id]:last-of-type')?.dataset.messageId || 0);
     let recorder; let recordStarted; let recordTimer; let recordedChunks = [];
-    let previewUrl;
+    let previewUrl; let viewerIndex = 0; let viewerTouchX = 0;
     const csrf = form.querySelector('input[name="_token"]').value;
     const syncChatViewport = () => bookingChat.style.setProperty('--chat-viewport-height', `${window.visualViewport?.height || window.innerHeight}px`);
     syncChatViewport();
@@ -565,7 +569,31 @@ if (bookingChat) {
     window.visualViewport?.addEventListener('resize', syncChatViewport);
     const scrollDown = (smooth = false) => stream.scrollTo({top: stream.scrollHeight, behavior: smooth ? 'smooth' : 'auto'});
     const escapeHtml = (value = '') => { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; };
+    const escapeAttribute = (value = '') => escapeHtml(value).replaceAll('"', '&quot;');
     const formatDuration = (seconds) => `${Math.floor((seconds || 0) / 60)}:${String(Math.floor((seconds || 0) % 60)).padStart(2, '0')}`;
+    const downloadAttachment = async (url, filename, trigger) => {
+        const icon = trigger?.querySelector('i'); const originalIcon = icon?.className;
+        trigger?.setAttribute('aria-busy', 'true'); if (icon) icon.className = 'bi bi-arrow-repeat';
+        try {
+            const response = await fetch(url, {credentials:'same-origin'});
+            if (!response.ok) throw new Error('Download failed');
+            const objectUrl = URL.createObjectURL(await response.blob());
+            const link = document.createElement('a'); link.href = objectUrl; link.download = filename || 'attachment'; link.hidden = true;
+            document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+        } catch (_) {
+            error.textContent = 'The file could not be downloaded. Please try again.'; error.hidden = false;
+        } finally {
+            trigger?.removeAttribute('aria-busy'); if (icon && originalIcon) icon.className = originalIcon;
+        }
+    };
+    const viewerItems = () => [...bookingChat.querySelectorAll('[data-chat-image]')];
+    const showViewerItem = (index) => {
+        const items = viewerItems(); if (!items.length) return;
+        viewerIndex = (index + items.length) % items.length; const item = items[viewerIndex];
+        viewerImage.src = item.href; viewerTitle.textContent = item.dataset.fileName || 'Photo'; viewerCount.textContent = `${viewerIndex + 1} of ${items.length}`;
+        mediaViewer.hidden = false; mediaViewer.setAttribute('aria-hidden', 'false');
+    };
+    const closeViewer = () => { mediaViewer.hidden = true; mediaViewer.setAttribute('aria-hidden', 'true'); viewerImage.removeAttribute('src'); };
     const initAudioCard = (card) => {
         if (card.dataset.ready) return;
         card.dataset.ready = '1';
@@ -586,9 +614,9 @@ if (bookingChat) {
         const article = document.createElement('article'); article.className = `chat-message${item.mine ? ' mine' : ''}`; article.dataset.messageId = item.id;
         const sender = `<div class="chat-sender"><strong>${escapeHtml(item.sender)}</strong><span>${escapeHtml(item.sender_role)}</span></div>`;
         let media = '';
-        if (item.type === 'image') media = `<a class="chat-image" href="${item.file_url}" target="_blank"><img src="${item.file_url}" alt="Shared photo"><span><i class="bi bi-arrows-fullscreen"></i></span></a>`;
+        if (item.type === 'image') media = `<a class="chat-image" href="${item.file_url}" data-chat-image data-file-name="${escapeAttribute(item.file_name || 'Photo')}"><img src="${item.file_url}" alt="Shared photo"><span><i class="bi bi-arrows-fullscreen"></i></span></a>`;
         if (item.type === 'audio') media = audioMarkup(item.file_url);
-        if (item.type === 'file') media = `<a class="chat-file" href="${item.file_url}" target="_blank"><i class="bi bi-file-earmark-text"></i><span><strong>${escapeHtml(item.file_name || 'Attachment')}</strong><small>${item.file_size ? `${Math.ceil(item.file_size / 1024)} KB` : 'Open attachment'}</small></span><b><i class="bi bi-download"></i></b></a>`;
+        if (item.type === 'file') media = `<a class="chat-file" href="${item.file_url}" data-chat-download data-file-name="${escapeAttribute(item.file_name || 'attachment')}"><i class="bi bi-file-earmark-text"></i><span><strong>${escapeHtml(item.file_name || 'Attachment')}</strong><small>${item.file_size ? `${Math.ceil(item.file_size / 1024)} KB · tap to download` : 'Tap to download'}</small></span><b><i class="bi bi-download"></i></b></a>`;
         article.innerHTML = `${sender}<div class="chat-bubble">${media}${item.body ? `<p>${escapeHtml(item.body)}</p>` : ''}<time>${escapeHtml(item.time)}</time></div>`;
         article.querySelectorAll('[data-audio-card]').forEach(initAudioCard);
         return article;
@@ -631,6 +659,19 @@ if (bookingChat) {
         preview.appendChild(card);
     };
     attachment.addEventListener('change', () => { const file = attachment.files[0] || null; attachmentKind.value = file?.type.startsWith('audio/') ? 'audio' : ''; renderAttachmentPreview(file); });
+    bookingChat.addEventListener('click', (event) => {
+        const image = event.target.closest('[data-chat-image]');
+        if (image) { event.preventDefault(); showViewerItem(viewerItems().indexOf(image)); return; }
+        const download = event.target.closest('[data-chat-download]');
+        if (download) { event.preventDefault(); downloadAttachment(download.href, download.dataset.fileName, download); }
+    });
+    mediaViewer.querySelector('[data-chat-viewer-close]').addEventListener('click', closeViewer);
+    mediaViewer.querySelector('[data-chat-viewer-prev]').addEventListener('click', () => showViewerItem(viewerIndex - 1));
+    mediaViewer.querySelector('[data-chat-viewer-next]').addEventListener('click', () => showViewerItem(viewerIndex + 1));
+    mediaViewer.querySelector('[data-chat-viewer-download]').addEventListener('click', (event) => { const item = viewerItems()[viewerIndex]; if (item) downloadAttachment(item.href, item.dataset.fileName, event.currentTarget); });
+    mediaViewer.addEventListener('touchstart', (event) => { viewerTouchX = event.touches[0].clientX; }, {passive:true});
+    mediaViewer.addEventListener('touchend', (event) => { const delta = event.changedTouches[0].clientX - viewerTouchX; if (Math.abs(delta) > 45) showViewerItem(viewerIndex + (delta < 0 ? 1 : -1)); }, {passive:true});
+    document.addEventListener('keydown', (event) => { if (mediaViewer.hidden) return; if (event.key === 'Escape') closeViewer(); if (event.key === 'ArrowLeft') showViewerItem(viewerIndex - 1); if (event.key === 'ArrowRight') showViewerItem(viewerIndex + 1); });
     bookingChat.querySelectorAll('[data-quick-reply]').forEach((button) => button.addEventListener('click', () => { body.value = button.dataset.quickReply; body.focus(); }));
     body.addEventListener('input', () => { body.style.height = 'auto'; body.style.height = `${Math.min(body.scrollHeight,120)}px`; });
     record.addEventListener('click', async () => {

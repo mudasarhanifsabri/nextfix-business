@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\BookingMessage;
 use App\Models\Company;
 use App\Models\Professional;
 use App\Models\Unit;
@@ -52,6 +53,24 @@ class BookingChatTest extends TestCase
 
         $message->update(['type' => 'file', 'mime_type' => 'video/webm']);
         $this->assertSame('audio', $message->fresh()->displayType());
+    }
+
+    public function test_chat_photos_open_in_app_and_documents_download_without_a_new_window(): void
+    {
+        $company = Company::create(['name' => 'PWA Host']);
+        $unit = Unit::create(['company_id'=>$company->id,'building'=>'Tower','unit_number'=>'3','address'=>'Dubai']);
+        $manager = User::factory()->create(['company_id'=>$company->id,'role'=>'company_manager']);
+        $booking = Booking::create(['company_id'=>$company->id,'unit_id'=>$unit->id,'reference'=>'NFB-PWA-1','service_type'=>'cleaning','service_name'=>'Cleaning','scheduled_at'=>now()->addDay(),'status'=>'assigned','payment_status'=>'paid','currency'=>'AED']);
+        BookingMessage::create(['booking_id'=>$booking->id,'user_id'=>$manager->id,'type'=>'image','path'=>'chat/photo.jpg','original_name'=>'room.jpg','mime_type'=>'image/jpeg','size'=>100]);
+        BookingMessage::create(['booking_id'=>$booking->id,'user_id'=>$manager->id,'type'=>'file','path'=>'chat/quote.pdf','original_name'=>'quote.pdf','mime_type'=>'application/pdf','size'=>200]);
+
+        $response = $this->actingAs($manager)->get(route('chat.show', $booking));
+
+        $response->assertOk()
+            ->assertSee('data-chat-image', false)
+            ->assertSee('data-chat-download', false)
+            ->assertSee('data-chat-media-viewer', false)
+            ->assertDontSee('target="_blank"', false);
     }
 
 }

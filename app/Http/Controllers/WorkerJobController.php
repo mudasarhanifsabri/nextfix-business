@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\AdminAlert;
 use App\Support\WorkChecklist;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -65,7 +66,7 @@ class WorkerJobController extends Controller
         return view('worker.jobs.show', compact('professional', 'booking', 'checklist'));
     }
 
-    public function update(Request $request, Booking $booking): RedirectResponse
+    public function update(Request $request, Booking $booking): RedirectResponse|JsonResponse
     {
         $professional = $this->professional($request);
         abort_unless($booking->professional_id === $professional->id, 403);
@@ -75,7 +76,7 @@ class WorkerJobController extends Controller
         $data = $request->validate([
             'completed_items' => ['nullable', 'array'],
             'completed_items.*' => ['string', Rule::in(array_keys($checklist))],
-            'action' => ['nullable', Rule::in(['inspection', 'estimate', 'save', 'photo', 'hold', 'resume', 'complete'])],
+            'action' => ['nullable', Rule::in(['inspection_photo', 'inspection', 'estimate', 'save', 'photo', 'hold', 'resume', 'complete'])],
             'inspection_condition' => ['nullable', Rule::in(['good', 'attention', 'urgent'])],
             'inspection_issues' => ['nullable', 'array'],
             'inspection_issues.*' => ['string', Rule::in(['water_leak', 'electrical', 'ac', 'damage', 'hygiene', 'access', 'safety', 'other'])],
@@ -94,18 +95,33 @@ class WorkerJobController extends Controller
             'hold_note' => ['nullable', 'string', 'max:500'],
         ]);
         $action = $data['action'] ?? 'save';
-        $completed = $action === 'photo' ? ($booking->completed_items ?? []) : array_values(array_unique($data['completed_items'] ?? []));
+        $photoAction = in_array($action, ['inspection_photo', 'photo'], true);
+        $completed = $photoAction ? ($booking->completed_items ?? []) : array_values(array_unique($data['completed_items'] ?? []));
         $progress = (int) round((count($completed) / max(count($checklist), 1)) * 100);
-        $updates = $action === 'photo' ? [] : ['completed_items' => $completed, 'progress' => $progress];
+        $updates = $photoAction ? [] : ['completed_items' => $completed, 'progress' => $progress];
 
         if (in_array($action, ['save', 'photo', 'hold', 'resume', 'complete'], true)) {
             abort_unless(in_array($booking->workflow_stage, ['work', 'complete'], true), 422, 'Work is locked until the estimate is approved.');
         }
 
-        if ($action === 'inspection') {
+        if ($action === 'inspection_photo') {
+            abort_unless(in_array($booking->workflow_stage ?: 'inspection', ['inspection', 'inspect'], true), 422, 'Inspection photos are locked after the report is submitted.');
+            $request->validate(['inspection_photos' => ['required', 'array', 'min:1', 'max:8']]);
+            foreach ($request->file('inspection_photos', []) as $photo) {
+                $path = $photo->store('job-evidence/'.$booking->id, 'public');
+                JobPhoto::create(['booking_id' => $booking->id, 'professional_id' => $professional->id, 'path' => $path, 'original_name' => $photo->getClientOriginalName(), 'mime_type' => $photo->getMimeType(), 'size' => $photo->getSize(), 'category' => 'inspection', 'captured_at' => now()]);
+            }
+        } elseif ($action === 'inspection') {
             abort_unless(in_array($booking->workflow_stage ?: 'inspection', ['inspection', 'inspect'], true), 422, 'The inspection is already submitted and locked.');
-            $request->validate(['inspection_condition' => ['required'], 'inspection_report' => ['required', 'string', 'max:2000']]);
-            $updates += ['workflow_stage' => 'estimate', 'inspection_condition' => $data['inspection_condition'], 'inspection_issues' => $data['inspection_issues'] ?? [], 'inspection_report' => $data['inspection_report']];
+            $request->validate(['inspection_condition' => ['required']]);
+            abort_unless($booking->inspectionPhotos()->exists() || $request->hasFile('inspection_photos'), 422, 'Add at least one inspection photo before continuing.');
+            $issues = $data['inspection_issues'] ?? [];
+            $report = trim((string) ($data['inspection_report'] ?? ''));
+            if ($report === '') {
+                $issueSummary = collect($issues)->map(fn (string $issue) => ucwords(str_replace('_', ' ', $issue)))->join(', ');
+                $report = ucfirst((string) $data['inspection_condition']).' condition recorded'.($issueSummary ? ': '.$issueSummary : '.');
+            }
+            $updates += ['workflow_stage' => 'estimate', 'inspection_condition' => $data['inspection_condition'], 'inspection_issues' => $issues, 'inspection_report' => $report];
             foreach ($request->file('inspection_photos', []) as $photo) {
                 $path = $photo->store('job-evidence/'.$booking->id, 'public');
                 JobPhoto::create(['booking_id' => $booking->id, 'professional_id' => $professional->id, 'path' => $path, 'original_name' => $photo->getClientOriginalName(), 'mime_type' => $photo->getMimeType(), 'size' => $photo->getSize(), 'category' => 'inspection', 'captured_at' => now()]);
@@ -129,6 +145,12 @@ class WorkerJobController extends Controller
             abort_unless($progress === 100, 422, 'Complete every checklist item before closing the job.');
             if ($booking->service_type === 'cleaning') {
                 abort_unless($booking->photos()->where('category', 'before')->exists(), 422, 'Add a before-cleaning photo before closing the job.');
+            } else {
+                abort_unless(
+                    $booking->photos()->whereIn('category', ['inspection', 'before'])->exists(),
+                    422,
+                    'Add inspection or before-repair photos before closing the job.'
+                );
             }
             abort_unless(
                 $booking->photos()->where('category', 'after')->exists(),
@@ -169,13 +191,23 @@ class WorkerJobController extends Controller
         }
 
         $message = match ($action) {
+            'inspection_photo' => 'Inspection photos saved.',
             'inspection' => 'Inspection saved. Add the estimate next.',
             'estimate' => 'Quotation sent to the company for approval.',
-            'photo' => 'After-work proof saved.',
+            'photo' => 'Photo proof saved.',
             'hold' => 'Job saved on hold.',
             'complete' => 'Job completed.',
             default => 'Progress saved.',
         };
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'photo_count' => $booking->photos()->count(),
+                'progress' => $booking->fresh()->progress,
+            ]);
+        }
+
         return back()->with('status', $message);
     }
 

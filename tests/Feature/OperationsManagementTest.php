@@ -9,6 +9,8 @@ use App\Models\CompanyRateCard;
 use App\Models\Professional;
 use App\Models\Unit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class OperationsManagementTest extends TestCase
@@ -76,7 +78,9 @@ class OperationsManagementTest extends TestCase
         $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-WORK-001', 'service_type' => 'maintenance', 'service_name' => 'AC repair', 'scheduled_at' => now()->addHour(), 'status' => 'assigned', 'workflow_stage' => 'work']);
 
         $this->actingAs($worker)->get(route('worker.home'))->assertOk()->assertSee('AC repair')->assertSee('Continue your work');
-        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Tap each finished task');
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))
+            ->assertOk()->assertSee('Repair checklist')->assertSee('Before repair reference')
+            ->assertSee('Take after-repair photos');
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
             'action' => 'hold', 'completed_items' => ['arrival', 'safety'], 'hold_reason' => 'waiting_parts',
         ])->assertRedirect();
@@ -128,6 +132,7 @@ class OperationsManagementTest extends TestCase
 
     public function test_worker_can_submit_inspection_and_estimate_for_admin_approval(): void
     {
+        Storage::fake('public');
         $worker = User::factory()->create(['role' => 'professional']);
         $admin = User::factory()->create(['role' => 'nextfix_admin']);
         $professional = Professional::create(['user_id' => $worker->id, 'name' => 'Inspector', 'role' => 'maintenance', 'phone' => '+971500000097']);
@@ -136,7 +141,13 @@ class OperationsManagementTest extends TestCase
         $unit = Unit::create(['company_id' => $company->id, 'building' => 'Marina Tower', 'unit_number' => '88', 'address' => 'Dubai']);
         $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-INSPECT-1', 'service_type' => 'maintenance', 'service_name' => 'Leak repair', 'scheduled_at' => now(), 'status' => 'assigned']);
 
-        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'inspection', 'inspection_condition' => 'urgent', 'inspection_issues' => ['water_leak'], 'inspection_report' => 'Pipe is leaking.'])->assertRedirect();
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'inspection',
+            'inspection_condition' => 'urgent',
+            'inspection_issues' => ['water_leak'],
+            'inspection_report' => 'Pipe is leaking.',
+            'inspection_photos' => [UploadedFile::fake()->image('leaking-pipe.jpg')],
+        ])->assertRedirect();
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'estimate', 'labour_hours' => 2, 'labour_cost' => 150, 'parts_cost' => 75, 'parts_required' => 'Replacement valve'])->assertRedirect();
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_customer_approval']);
         $this->assertDatabaseCount('notifications', 2);

@@ -107,6 +107,11 @@
     "src": "resources/css/worker-flow.css",
     "isEntry": true
   },
+  "resources/css/worker-maintenance.css": {
+    "file": "assets/worker-maintenance-BKchf1My.css",
+    "src": "resources/css/worker-maintenance.css",
+    "isEntry": true
+  },
   "resources/css/worker-media.css": {
     "file": "assets/worker-media-zj5oZyuS.css",
     "src": "resources/css/worker-media.css",
@@ -123,7 +128,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-CVwezdA3.js",
+    "file": "assets/app-D1mT47xs.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

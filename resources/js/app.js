@@ -125,8 +125,9 @@ if (workerChecks) {
 
         const swipeForm = document.querySelector('[data-swipe-form]');
         if (swipeForm) {
+            const hasStartPhoto = swipeForm.dataset.startPhoto !== '0';
             const hasAfterPhoto = swipeForm.dataset.afterPhoto === '1';
-            const ready = complete === boxes.length && hasAfterPhoto;
+            const ready = complete === boxes.length && hasStartPhoto && hasAfterPhoto;
             const slider = swipeForm.querySelector('input[type="range"]');
             const help = swipeForm.querySelector('[data-swipe-help]');
             const title = swipeForm.querySelector('.swipe-ready-title strong');
@@ -137,7 +138,7 @@ if (workerChecks) {
             if (title) title.textContent = ready ? 'Ready to close' : 'Finish requirements first';
             if (help) help.textContent = ready
                 ? 'Swipe the arrow to confirm handover'
-                : `${boxes.length - complete} tasks${hasAfterPhoto ? '' : ' and after photos'} remaining`;
+                : [boxes.length - complete ? `${boxes.length - complete} tasks` : '', !hasStartPhoto ? 'before photos' : '', !hasAfterPhoto ? 'after photos' : ''].filter(Boolean).join(' · ') + ' remaining';
             if (icon) icon.className = `bi ${ready ? 'bi-check2-circle' : 'bi-lock'}`;
         }
     };
@@ -242,6 +243,108 @@ if (cleaningChecklist) {
     };
     installCamera(beforeStep?.querySelector('form'), 'Take before photos');
     installCamera(afterStep?.querySelector('form'), 'Take after photos');
+}
+
+const installMaintenanceCamera = (form) => {
+    if (!form || form.querySelector('.camera-session-button')) return;
+    const input = form.querySelector('input[type="file"]');
+    if (!input) return;
+    const title = form.dataset.cameraTitle || 'Take job photos';
+    let photoPlan = [];
+    try { photoPlan = JSON.parse(form.dataset.cameraPlan || '[]'); } catch (_) {}
+    input.removeAttribute('capture'); input.multiple = true; form.classList.add('cleaning-camera-active');
+    const launch = document.createElement('button'); launch.type = 'button'; launch.className = 'camera-session-button';
+    launch.innerHTML = `<i class="bi bi-camera-fill"></i><span>${title}</span>`; form.prepend(launch);
+    input.addEventListener('change', () => {
+        if (!input.files.length) return;
+        if (input.files.length > 8) {
+            input.setCustomValidity('Choose up to 8 gallery photos at a time, or use the guided camera for up to 30.');
+            input.reportValidity(); return;
+        }
+        input.setCustomValidity(''); form.requestSubmit();
+    });
+    launch.addEventListener('click', async () => {
+        if (!navigator.mediaDevices?.getUserMedia) { input.click(); return; }
+        const overlay = document.createElement('section'); overlay.className = 'nf-camera';
+        overlay.innerHTML = `<header><div><strong>${title}</strong><small class="nf-camera-prompt"></small></div><button type="button" aria-label="Close">×</button></header><div class="nf-camera-stage"><video autoplay playsinline muted></video><div class="nf-camera-guide"></div></div><footer><div class="nf-camera-shots"></div><div class="nf-camera-upload" hidden><div><i></i></div><span>Preparing photos…</span></div><div class="nf-camera-error" hidden></div><div class="nf-camera-controls"><button type="button" class="nf-camera-fallback"><i class="bi bi-images"></i><span>Gallery</span></button><button type="button" class="nf-camera-capture" aria-label="Take photo"></button><button type="button" class="nf-camera-done" disabled><span>Done</span><i class="bi bi-check2"></i></button></div></footer>`;
+        document.body.appendChild(overlay); document.body.style.overflow = 'hidden';
+        const video = overlay.querySelector('video'); const shots = overlay.querySelector('.nf-camera-shots');
+        const done = overlay.querySelector('.nf-camera-done'); const capture = overlay.querySelector('.nf-camera-capture'); const prompt = overlay.querySelector('.nf-camera-prompt');
+        const upload = overlay.querySelector('.nf-camera-upload'); const uploadBar = upload.querySelector('i'); const uploadText = upload.querySelector('span'); const cameraError = overlay.querySelector('.nf-camera-error');
+        const files = []; const maxPhotos = 30; const batchSize = 5; let uploadedCount = 0; let uploading = false; let stream;
+        const close = () => { stream?.getTracks().forEach((track) => track.stop()); overlay.remove(); document.body.style.overflow = ''; };
+        const render = () => {
+            shots.replaceChildren();
+            files.forEach((file, index) => {
+                const card = document.createElement('span'); card.className = `nf-camera-shot${index < uploadedCount ? ' saved' : ''}`;
+                const image = document.createElement('img'); image.src = URL.createObjectURL(file); image.alt = `Photo ${index + 1}`;
+                const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = index < uploadedCount ? '✓' : '×'; remove.disabled = uploading || index < uploadedCount;
+                remove.addEventListener('click', () => { files.splice(index, 1); cameraError.hidden = true; render(); });
+                card.append(image, remove); shots.appendChild(card);
+            });
+            done.disabled = uploading || !files.length || uploadedCount >= files.length; capture.disabled = uploading || files.length >= maxPhotos;
+            const next = photoPlan[files.length];
+            prompt.textContent = files.length >= maxPhotos ? `Maximum ${maxPhotos} photos · tap Done` : next ? `${files.length + 1} · ${next}` : `${files.length} photos ready · add more or tap Done`;
+            shots.scrollLeft = shots.scrollWidth;
+        };
+        overlay.querySelector('header button').addEventListener('click', close);
+        overlay.querySelector('.nf-camera-fallback').addEventListener('click', () => { close(); input.click(); });
+        try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); video.srcObject = stream; render(); }
+        catch (_) { close(); input.click(); return; }
+        capture.addEventListener('click', () => {
+            if (uploading || files.length >= maxPhotos) return;
+            const sourceWidth = video.videoWidth || 1280; const sourceHeight = video.videoHeight || 960; const scale = Math.min(1, 1600 / Math.max(sourceWidth, sourceHeight));
+            const canvas = document.createElement('canvas'); canvas.width = Math.round(sourceWidth * scale); canvas.height = Math.round(sourceHeight * scale); canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => { if (!blob) return; files.push(new File([blob], `nextfix-${Date.now()}-${files.length + 1}.jpg`, {type:'image/jpeg'})); render(); }, 'image/jpeg', .74);
+        });
+        done.addEventListener('click', () => {
+            uploading = true; cameraError.hidden = true; upload.hidden = false; done.innerHTML = '<span>Uploading</span><i class="bi bi-cloud-arrow-up"></i>'; render();
+            const fail = (xhr, message = 'Upload failed. Your remaining photos are still here.') => {
+                if (xhr?.status === 419) message = 'Session expired. Saved photos are safe; reopen the job to continue.';
+                else if (xhr?.status === 413) message = 'This photo batch is too large. Please try again.';
+                else if (xhr) { try { const data = JSON.parse(xhr.responseText); message = data.message || Object.values(data.errors || {}).flat()[0] || message; } catch (_) {} }
+                uploading = false; upload.hidden = true; cameraError.textContent = uploadedCount ? `${uploadedCount} saved. ${message}` : message; cameraError.hidden = false; done.innerHTML = '<span>Retry remaining</span><i class="bi bi-arrow-clockwise"></i>'; render();
+            };
+            const uploadNext = () => {
+                if (uploadedCount >= files.length) { uploadBar.style.width = '100%'; uploadText.textContent = `All ${files.length} photos saved ✓`; window.setTimeout(() => { close(); window.location.reload(); }, 450); return; }
+                const batch = files.slice(uploadedCount, uploadedCount + batchSize); const payload = new FormData(form); payload.delete(input.name); batch.forEach((file) => payload.append(input.name, file));
+                const xhr = new XMLHttpRequest(); xhr.open('POST', form.getAttribute('action') || window.location.href); xhr.withCredentials = true; xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.setRequestHeader('Accept', 'application/json');
+                xhr.upload.addEventListener('progress', (event) => { if (!event.lengthComputable) return; const percent = Math.max(2, Math.round(((uploadedCount + (event.loaded / event.total) * batch.length) / files.length) * 100)); uploadBar.style.width = `${percent}%`; uploadText.textContent = `Saving ${uploadedCount + 1}–${uploadedCount + batch.length} of ${files.length} · ${percent}%`; });
+                xhr.addEventListener('load', () => { if (xhr.status >= 200 && xhr.status < 400) { uploadedCount += batch.length; render(); uploadNext(); return; } fail(xhr); });
+                xhr.addEventListener('error', () => fail(null, 'Connection lost. Check internet and retry the remaining photos.')); xhr.send(payload);
+            };
+            uploadNext();
+        });
+    });
+};
+document.querySelectorAll('[data-maintenance-camera-session]').forEach(installMaintenanceCamera);
+
+const maintenanceChecklist = document.querySelector('.maintenance-checklist');
+if (maintenanceChecklist) {
+    const startStep = document.querySelector('.maintenance-start-step'); const progressCard = document.querySelector('.worker-progress-card');
+    const afterStep = document.querySelector('.work-evidence'); const holdStep = document.querySelector('.worker-hold'); const finishStep = document.querySelector('[data-swipe-form]');
+    const oldJourney = document.querySelector('.job-journey'); const allChecks = [...maintenanceChecklist.querySelectorAll('input[type="checkbox"]')];
+    const hasStart = finishStep?.dataset.startPhoto === '1'; const hasAfter = finishStep?.dataset.afterPhoto === '1';
+    const panels = [[startStep], [progressCard, maintenanceChecklist], [afterStep], [holdStep, finishStep]];
+    const labels = [['bi-camera','Before'],['bi-tools','Repair'],['bi-camera-fill','After'],['bi-check2-circle','Finish']];
+    const allDone = () => allChecks.length > 0 && allChecks.every((box) => box.checked);
+    let activeStep = !hasStart ? 0 : !allDone() ? 1 : !hasAfter ? 2 : 3;
+    const nav = document.createElement('nav'); nav.className = 'maintenance-wizard-nav'; nav.setAttribute('aria-label', 'Maintenance work steps');
+    const requirements = () => [hasStart, allDone(), hasAfter, true];
+    const showStep = (index) => {
+        activeStep = index;
+        panels.forEach((group, groupIndex) => group.forEach((node) => node?.classList.toggle('maintenance-wizard-hidden', groupIndex !== index)));
+        [...nav.children].forEach((button, buttonIndex) => { button.classList.toggle('active', buttonIndex === index); button.classList.toggle('done', requirements()[buttonIndex] && buttonIndex < index); });
+        document.querySelector('.maintenance-wizard-actions')?.remove();
+        const visible = panels[index].filter(Boolean).at(-1); if (!visible || index === 3) return;
+        const actions = document.createElement('div'); actions.className = 'maintenance-wizard-actions';
+        const back = document.createElement('button'); back.type = 'button'; back.textContent = index ? '← Back' : 'My jobs'; back.addEventListener('click', () => index ? showStep(index - 1) : (window.location.href = '/work/jobs'));
+        const next = document.createElement('button'); next.type = 'button'; next.className = 'primary-next'; next.textContent = index === 2 ? 'Continue to finish →' : 'Next →'; next.disabled = !requirements()[index]; next.addEventListener('click', () => showStep(index + 1));
+        actions.append(back, next); visible.after(actions);
+    };
+    labels.forEach(([icon, label], index) => { const button = document.createElement('button'); button.type = 'button'; button.innerHTML = `<i class="bi ${icon}"></i><span>${label}</span>`; button.addEventListener('click', () => { if (index <= activeStep || requirements().slice(0, index).every(Boolean)) showStep(index); }); nav.appendChild(button); });
+    oldJourney?.classList.add('maintenance-wizard-hidden'); oldJourney?.after(nav); showStep(activeStep);
+    maintenanceChecklist.addEventListener('change', () => window.setTimeout(() => showStep(1), 20));
 }
 
 document.querySelectorAll('[data-swipe-form]').forEach((form) => {

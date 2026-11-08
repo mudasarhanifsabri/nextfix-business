@@ -16,6 +16,43 @@ class WorkerMediaTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_maintenance_inspection_accepts_multiple_camera_batches_without_advancing_early(): void
+    {
+        Storage::fake('public');
+        $worker = User::factory()->create(['role' => 'professional']);
+        $professional = Professional::create(['user_id' => $worker->id, 'name' => 'Batch Inspector', 'role' => 'maintenance', 'phone' => '+971500000110']);
+        $company = Company::create(['name' => 'Batch Evidence Homes']);
+        $unit = Unit::create(['company_id' => $company->id, 'building' => 'Business Bay', 'unit_number' => '210', 'address' => 'Dubai']);
+        $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-BATCH-1', 'service_type' => 'maintenance', 'service_name' => 'AC inspection', 'scheduled_at' => now(), 'status' => 'assigned']);
+
+        foreach ([5, 4] as $batchSize) {
+            $photos = collect(range(1, $batchSize))
+                ->map(fn (int $number) => UploadedFile::fake()->image('inspection-'.$number.'.jpg'))
+                ->all();
+
+            $this->actingAs($worker)
+                ->withHeaders(['Accept' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'])
+                ->post(route('worker.jobs.update', $booking), [
+                    'action' => 'inspection_photo',
+                    'inspection_photos' => $photos,
+                ])->assertOk()->assertJsonPath('message', 'Inspection photos saved.');
+        }
+
+        $this->assertSame(9, $booking->inspectionPhotos()->count());
+        $this->assertSame('inspection', $booking->fresh()->workflow_stage);
+
+        $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
+            'action' => 'inspection',
+            'inspection_condition' => 'attention',
+            'inspection_issues' => ['ac'],
+            'inspection_report' => '',
+        ])->assertOk()->assertJsonPath('message', 'Inspection saved. Add the estimate next.');
+
+        $booking->refresh();
+        $this->assertSame('estimate', $booking->workflow_stage);
+        $this->assertStringContainsString('Ac', $booking->inspection_report);
+    }
+
     public function test_worker_can_upload_profile_picture_and_multiple_inspection_photos(): void
     {
         Storage::fake('public');
@@ -51,7 +88,7 @@ class WorkerMediaTest extends TestCase
         ])->assertRedirect();
         $this->assertDatabaseHas('job_photos', ['booking_id' => $booking->id, 'category' => 'after']);
         $this->assertSame(['arrival'], $booking->fresh()->completed_items);
-        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Add after-work photos')->assertSee('2 saved');
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Take after-repair photos')->assertSee('2 saved');
 
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
             'action' => 'complete', 'completed_items' => array_keys(config('workflows.maintenance')),

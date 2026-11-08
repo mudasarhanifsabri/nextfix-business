@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Middleware\EnsureRole;
+use App\Http\Middleware\PreventStaleFormCache;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\PreventStaleFormCache;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,7 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->web(append: [PreventStaleFormCache::class]);
+        $middleware->web(append: [PreventStaleFormCache::class, SecurityHeaders::class]);
+        $middleware->alias(['role' => EnsureRole::class]);
+        $middleware->trustHosts(
+            fn (): array => ['^'.preg_quote((string) parse_url((string) config('app.url'), PHP_URL_HOST), '/').'$'],
+            subdomains: false,
+        );
         $middleware->validateCsrfTokens(except: [
             'webhooks/nomod',
         ]);

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class CompanyController extends Controller
@@ -56,7 +57,7 @@ class CompanyController extends Controller
             'billing_email' => ['nullable', 'email', 'max:255'],
             'payment_terms' => ['required', 'integer', 'in:0,7,15,30,45,60'],
             'status' => ['nullable', 'string', 'in:active,onboarding'],
-            'manager_password' => ['required', 'string', 'min:8', 'confirmed'],
+            'manager_password' => ['required', 'string', 'confirmed', Password::defaults()],
         ]);
 
         $company = DB::transaction(function () use ($data): Company {
@@ -120,5 +121,4 @@ class CompanyController extends Controller
 
         return redirect()->route('admin.companies.show', $company)->with('status', 'Company profile updated.');
     }
-
 }

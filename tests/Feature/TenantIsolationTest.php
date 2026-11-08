@@ -16,7 +16,7 @@ class TenantIsolationTest extends TestCase
     {
         $a = Company::create(['name' => 'Company A']);
         $b = Company::create(['name' => 'Company B']);
-        $user = User::factory()->create(['company_id' => $a->id]);
+        $user = User::factory()->create(['company_id' => $a->id, 'role' => 'company_manager']);
         $unit = Unit::create(['company_id' => $b->id, 'building' => 'Private Tower', 'unit_number' => '1', 'bedrooms' => 1, 'address' => 'Dubai', 'is_active' => true]);
 
         $this->actingAs($user)->get(route('units.edit', $unit))->assertNotFound();
@@ -26,7 +26,7 @@ class TenantIsolationTest extends TestCase
     {
         $a = Company::create(['name' => 'Company A']);
         $b = Company::create(['name' => 'Company B']);
-        $user = User::factory()->create(['company_id' => $a->id]);
+        $user = User::factory()->create(['company_id' => $a->id, 'role' => 'company_manager']);
         $unit = Unit::create(['company_id' => $b->id, 'building' => 'Private Tower', 'unit_number' => '1', 'bedrooms' => 1, 'address' => 'Dubai', 'is_active' => true]);
 
         $this->actingAs($user)->post(route('bookings.store'), ['unit_id' => $unit->id, 'service_type' => 'cleaning', 'service_name' => 'Regular cleaning', 'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s')])->assertNotFound();

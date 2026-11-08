@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
 
 class NotificationController extends Controller
 {
@@ -45,7 +45,7 @@ class NotificationController extends Controller
         $item = $request->user()->notifications()->findOrFail($notification);
         $item->markAsRead();
 
-        return redirect($item->data['url'] ?? route('admin.notifications.index'));
+        return redirect($this->safeDestination($request, $item->data['url'] ?? null));
     }
 
     public function readAll(Request $request): RedirectResponse
@@ -53,5 +53,26 @@ class NotificationController extends Controller
         $request->user()->unreadNotifications->markAsRead();
 
         return back()->with('status', 'All notifications marked as read.');
+    }
+
+    private function safeDestination(Request $request, mixed $destination): string
+    {
+        $fallback = route('admin.notifications.index');
+        if (! is_string($destination) || blank($destination)) {
+            return $fallback;
+        }
+
+        if (str_starts_with($destination, '/') && ! str_starts_with($destination, '//')) {
+            return $destination;
+        }
+
+        $parts = parse_url($destination);
+        if ($parts === false || ! isset($parts['host']) || ! hash_equals($request->getHost(), $parts['host'])) {
+            return $fallback;
+        }
+
+        return in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
+            ? $destination
+            : $fallback;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\IntegrationSetting;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Throwable;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Password::defaults(fn (): Password => (app()->isProduction() || parse_url((string) config('app.url'), PHP_URL_HOST) === 'business.nextage.ae')
+            ? Password::min(12)->letters()->mixedCase()->numbers()->symbols()
+            : Password::min(8));
+
         try {
             if (! Schema::hasTable('integration_settings')) {
                 return;

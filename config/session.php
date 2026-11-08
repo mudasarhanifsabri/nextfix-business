@@ -1,5 +1,8 @@
 <?php
 
+$productionMode = env('APP_ENV') === 'production'
+    || parse_url((string) env('APP_URL', ''), PHP_URL_HOST) === 'business.nextage.ae';
+
 return [
 
     /*
@@ -30,7 +33,7 @@ return [
     |
     */
 
-    'lifetime' => max(480, (int) env('SESSION_LIFETIME', 480)),
+    'lifetime' => min(240, max(15, (int) env('SESSION_LIFETIME', 120))),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
@@ -45,7 +48,7 @@ return [
     |
     */
 
-    'encrypt' => env('SESSION_ENCRYPT', false),
+    'encrypt' => $productionMode || env('SESSION_ENCRYPT', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -167,7 +170,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => $productionMode || env('SESSION_SECURE_COOKIE', false),
 
     /*
     |--------------------------------------------------------------------------

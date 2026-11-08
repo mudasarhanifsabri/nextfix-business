@@ -6,8 +6,9 @@ use App\Models\Professional;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class ProfessionalController extends Controller
@@ -38,11 +39,11 @@ class ProfessionalController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'role' => ['required', Rule::in(['cleaner', 'maintenance'])],
             'email' => ['required', 'email', 'max:190', 'unique:professionals,email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'confirmed', Password::defaults()],
             'phone' => ['required', 'string', 'max:40'],
             'status' => ['required', Rule::in(['available', 'busy', 'off_duty'])],
             'skills' => ['nullable', 'array'], 'skills.*' => ['string', 'max:60'],
-            'working_days' => ['nullable', 'array'], 'working_days.*' => ['string', Rule::in(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])],
+            'working_days' => ['nullable', 'array'], 'working_days.*' => ['string', Rule::in(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
         $professional = DB::transaction(function () use ($data): Professional {

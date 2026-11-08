@@ -39,7 +39,9 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => env('APP_ENV', 'production') !== 'production'
+        && parse_url((string) env('APP_URL', ''), PHP_URL_HOST) !== 'business.nextage.ae'
+        && (bool) env('APP_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------

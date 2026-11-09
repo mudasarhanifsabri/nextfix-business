@@ -1,14 +1,8 @@
 @extends('layouts.app', ['heading' => 'Home'])
 @section('content')
-@php($userName = auth()->user()->name)
 <div class="company-native-only native-home">
-    <section class="native-welcome">
-        <div><small>Hello,</small><h2>{{ str($userName)->before(' ') }}</h2></div>
-        <a class="native-avatar" href="{{ route('company.profile.show') }}">{{ strtoupper(substr($userName, 0, 1)) }}</a>
-    </section>
-    <a class="native-company-switch" href="{{ route('company.profile.show') }}"><i class="bi bi-buildings"></i><span><small>Your company</small><strong>{{ auth()->user()->company?->name }}</strong></span><i class="bi bi-chevron-right"></i></a>
-    @if($quotationCount)<a class="native-action-alert" href="{{ route('bookings.index') }}#quotes"><i class="bi bi-receipt-cutoff"></i><span><strong>{{ $quotationCount }} quotation{{ $quotationCount > 1 ? 's' : '' }} ready</strong><small>Review the inspection and approve or request changes.</small></span><i class="bi bi-chevron-right"></i></a>@endif
     <a class="native-photo-hero" href="{{ route('bookings.create', 'cleaning') }}"><img src="/images/app/company/cleaning-hero.webp" alt="NextFix cleaner preparing a Dubai holiday home"><span class="native-photo-overlay"></span><div><small>HOLIDAY-HOME CARE</small><h2>Guest-ready.<br>Every stay.</h2><span>Book cleaning <i class="bi bi-arrow-right"></i></span></div></a>
+    @if($quotationCount)<a class="native-action-alert" href="{{ route('bookings.index') }}#quotes"><i class="bi bi-receipt-cutoff"></i><span><strong>{{ $quotationCount }} quotation{{ $quotationCount > 1 ? 's' : '' }} ready</strong><small>Review the inspection and approve or request changes.</small></span><i class="bi bi-chevron-right"></i></a>@endif
     <div class="native-service-pair" id="services">
         <a class="native-service-tile cleaning" href="{{ route('bookings.create', 'cleaning') }}">
             <span class="native-service-label"><i class="bi bi-stars"></i><strong>Cleaning</strong></span>

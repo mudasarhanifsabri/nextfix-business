@@ -457,7 +457,11 @@ document.querySelectorAll('[data-native-booking]').forEach((form) => {
     const activateUnit = (value) => {
         if (!unitSelect) return;
         unitSelect.value = String(value);
-        unitButtons.forEach((button) => button.classList.toggle('active', button.dataset.nativeUnit === String(value)));
+        unitButtons.forEach((button) => {
+            const active = button.dataset.nativeUnit === String(value);
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
         unitSelect.dispatchEvent(new Event('change', {bubbles: true}));
     };
     unitButtons.forEach((button) => button.addEventListener('click', () => activateUnit(button.dataset.nativeUnit)));

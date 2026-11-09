@@ -61,6 +61,11 @@
 
         <section class="booking-wizard__panel" data-wizard-panel="2" hidden>
             <div class="booking-wizard__title"><span>STEP 2</span><h2>Choose a service</h2><small data-booking-unit-label></small></div>
+            <button class="booking-wizard__selected-unit" type="button" data-wizard-back="1">
+                <img src="/images/app/company/unit-dubai.webp" alt="Selected holiday-home unit">
+                <span><small>Selected unit</small><strong data-wizard-selected-unit>Choose a unit</strong></span>
+                <i class="bi bi-pencil"></i>
+            </button>
             <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search cleaning services" data-service-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
             <div class="booking-wizard__chips" data-service-filters>
                 <button type="button" class="active" data-service-filter="all">All</button>
@@ -72,7 +77,7 @@
             <div class="booking-wizard__service-list" data-service-list>
                 @foreach($cleaningTypes as $code => $label)
                     @php($meta = $cleaningMetadata[$code])
-                    <label class="booking-wizard__service contract-choice" data-rate-code="{{ $code }}" data-service-category="{{ $meta['category'] }}" data-service-search-text="{{ str($label.' '.$meta['description'])->lower() }}">
+                    <label class="booking-wizard__service" data-rate-code="{{ $code }}" data-service-category="{{ $meta['category'] }}" data-service-image="/images/app/company/{{ $meta['image'] }}" data-service-search-text="{{ str($label.' '.$meta['description'])->lower() }}">
                         <input type="radio" name="service_code" value="{{ $code }}" data-service-label="{{ $label }}" @checked($selectedService === $code)>
                         <img src="/images/app/company/{{ $meta['image'] }}" alt="{{ $label }}">
                         <span><strong>{{ $label }}</strong><small>{{ $meta['description'] }}</small><em data-rate-price>Checking rate…</em></span>
@@ -111,9 +116,13 @@
             <h3>Select time</h3>
             <div class="booking-wizard__time-strip">@foreach(['08:30'=>'8:30 AM','10:00'=>'10:00 AM','12:00'=>'12:00 PM','14:00'=>'2:00 PM','16:00'=>'4:00 PM'] as $value => $label)<button type="button" class="native-time-option {{ $nativeScheduled->format('H:i') === $value ? 'active' : '' }}" data-native-time="{{ $value }}">{{ $label }}</button>@endforeach</div>
 
+            <div class="booking-wizard__review-card">
+                <img src="/images/app/company/service-touch-up.webp" alt="Selected cleaning service" data-wizard-review-image>
+                <span><small>Your service</small><strong data-wizard-review-service>Choose a service</strong><em data-wizard-review-unit>Choose a unit</em></span>
+                <i class="bi bi-check-lg"></i>
+            </div>
             <div class="booking-wizard__review">
                 <div><i class="bi bi-building"></i><span><small>Unit</small><strong data-wizard-review-unit>—</strong></span></div>
-                <div><i class="bi bi-stars"></i><span><small>Service</small><strong data-wizard-review-service>—</strong></span></div>
                 <div data-wizard-review-addons hidden><i class="bi bi-plus-square"></i><span><small>Add-ons</small><strong data-wizard-review-addon-copy>—</strong></span></div>
                 <div><i class="bi bi-receipt"></i><span><small>Agreed total</small><strong data-wizard-review-total>—</strong></span></div>
             </div>

@@ -427,6 +427,10 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
         summaryTitles.forEach((element) => { element.textContent = `${label} · ${format(total)}`; });
         summaryCopies.forEach((element) => { element.textContent = format(total); });
         form.querySelectorAll('[data-wizard-review-service]').forEach((element) => { element.textContent = label; });
+        form.querySelectorAll('[data-wizard-review-image]').forEach((element) => {
+            if (selected.dataset.serviceImage) element.src = selected.dataset.serviceImage;
+            element.alt = label;
+        });
         form.querySelectorAll('[data-wizard-review-total]').forEach((element) => { element.textContent = format(total); });
         const selectedExtras = extraInputs.filter((extra) => Number(extra.value) > 0);
         const extraReview = form.querySelector('[data-wizard-review-addons]');
@@ -488,6 +492,7 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
         const unitTitle = unitButton?.dataset.unitTitle || 'Choose a unit';
         const unitSubtitle = unitButton?.dataset.unitSubtitle || '';
         wizard.querySelectorAll('[data-wizard-unit-summary]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
+        wizard.querySelectorAll('[data-wizard-selected-unit]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
         wizard.querySelectorAll('[data-wizard-review-unit]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
     };
 

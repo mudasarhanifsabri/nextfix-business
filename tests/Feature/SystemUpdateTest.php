@@ -63,4 +63,25 @@ class SystemUpdateTest extends TestCase
             ->assertSee('GitHub check unavailable')
             ->assertSee('Git is temporarily busy');
     }
+
+    public function test_updates_page_reports_the_public_media_link_stage(): void
+    {
+        $admin = User::factory()->create(['role' => 'nextfix_admin']);
+        DeploymentRun::create([
+            'user_id' => $admin->id,
+            'release_id' => str_repeat('b', 40),
+            'version' => 'main-theme-storage',
+            'status' => 'running',
+            'stage' => 'storage',
+        ]);
+
+        $this->mock(LatestGitRelease::class)
+            ->shouldReceive('inspect')->once()->with(true)->andReturn(null)
+            ->shouldReceive('installed')->once()->andReturn(['version' => '1.0.0-dev', 'commit' => null]);
+
+        $this->actingAs($admin)->get(route('admin.updates.index'))
+            ->assertOk()
+            ->assertSee('Linking public media')
+            ->assertSee('88%');
+    }
 }

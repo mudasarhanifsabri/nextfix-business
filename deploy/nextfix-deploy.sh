@@ -49,6 +49,11 @@ echo "stage=migrate"
 php "$RELEASE/artisan" down --retry=60
 php "$RELEASE/artisan" migrate --force
 
+echo "stage=storage"
+if [[ ! -L "$RELEASE/public/storage" && ! -e "$RELEASE/public/storage" ]]; then
+    php "$RELEASE/artisan" storage:link
+fi
+
 echo "stage=activate"
 ln -sfn "$RELEASE" "$NEXTFIX_CURRENT.next"
 mv -Tf "$NEXTFIX_CURRENT.next" "$NEXTFIX_CURRENT"

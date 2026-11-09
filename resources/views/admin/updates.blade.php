@@ -5,7 +5,7 @@
 <section class="panel update-card" data-github-update-check><div class="panel-head"><div><p class="eyebrow">INSTALLED</p><h3>Version {{ $installedVersion }}</h3></div><span class="github-live"><i></i> Live GitHub check</span></div><div class="update-body">@if($release)<p class="eyebrow">GITHUB {{ strtoupper($release['branch']) }}</p><h2>{{ $release['update_available'] ? 'New update available' : 'Software is up to date' }}</h2><p>{{ $release['notes'] }}</p><dl><dt>Latest commit</dt><dd><code>{{ $release['commit'] }}</code></dd></dl>
 <form method="post" action="{{ route('admin.updates.store') }}">@csrf<label>Confirm administrator password<input type="password" name="password" required autocomplete="current-password"></label><button class="primary wide" @disabled(!$scriptReady || !$release['update_available'])>{{ $release['update_available'] ? 'Update all code from GitHub' : 'Already up to date' }}</button></form>
 @else<div class="empty"><h4>GitHub check unavailable</h4><p>{{ $releaseError }}</p></div>@endif</div></section>
-<section class="panel safeguards"><div class="panel-head"><div><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What one click does</h3></div></div><ul><li>✓ Fetches the latest GitHub main branch</li><li>✓ Locks the exact 40-character commit</li><li>✓ Refuses non-fast-forward or locally modified code</li><li>✓ Installs production Composer dependencies</li><li>✓ Runs database migrations and Laravel optimization</li><li>✓ Preserves the server-only .env and records deployment logs</li></ul></section></div>
+<section class="panel safeguards"><div class="panel-head"><div><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What one click does</h3></div></div><ul><li>✓ Fetches the latest GitHub main branch</li><li>✓ Locks the exact 40-character commit</li><li>✓ Refuses non-fast-forward or locally modified code</li><li>✓ Installs production Composer dependencies</li><li>✓ Runs database migrations and Laravel optimization</li><li>✓ Links public media for uploaded theme banners</li><li>✓ Preserves the server-only .env and records deployment logs</li></ul></section></div>
 @php
     $progressStages = [
         'queued' => [8, 'Update queued'],
@@ -14,6 +14,7 @@
         'activate' => [48, 'Activating new code'],
         'dependencies' => [65, 'Installing dependencies'],
         'migrate' => [80, 'Updating database'],
+        'storage' => [88, 'Linking public media'],
         'optimize' => [94, 'Optimizing application'],
         'complete' => [100, 'Update complete'],
     ];

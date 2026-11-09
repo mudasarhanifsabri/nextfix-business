@@ -65,6 +65,11 @@ echo "stage=dependencies"
 echo "stage=migrate"
 php artisan migrate --force
 
+echo "stage=storage"
+if [[ ! -L public/storage && ! -e public/storage ]]; then
+    php artisan storage:link
+fi
+
 echo "stage=optimize"
 php artisan optimize:clear
 php artisan optimize

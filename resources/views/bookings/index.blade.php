@@ -1,6 +1,5 @@
-@extends('layouts.app', ['heading' => 'Bookings'])
+@extends('layouts.app', ['heading' => 'Bookings', 'mobileTitle' => 'Bookings'])
 @section('content')
-<div class="company-native-only native-page-heading"><div><small>MY SERVICES</small><h2>Bookings</h2></div><a href="{{ route('bookings.create', 'cleaning') }}"><i class="bi bi-plus-lg"></i></a></div>
 <div class="company-native-only native-booking-actions"><a href="{{ route('bookings.create', 'cleaning') }}"><img src="/images/app/company/checkout-cleaning.webp" alt=""><span><strong>Book cleaning</strong><small>Use your agreed rates</small></span></a><a href="{{ route('bookings.create', 'maintenance') }}"><img src="/images/app/company/maintenance-hero.webp" alt=""><span><strong>Report issue</strong><small>Inspection first</small></span></a></div>
 <div class="company-desktop-only page-actions"><p class="muted">Cleaning and maintenance services for your units</p><div><a class="secondary" href="{{ route('bookings.create', 'maintenance') }}">Report issue</a> <a class="primary" href="{{ route('bookings.create', 'cleaning') }}">+ Book cleaning</a></div></div>
 @if($quotations->isNotEmpty())

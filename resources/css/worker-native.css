@@ -98,6 +98,7 @@
 .worker-contact-actions>a{width:100%;min-height:47px;border-radius:14px!important}
 
 @media(max-width:699px){
+    .worker-app main>.smart-breadcrumb{display:none!important}
     .worker-app main{padding-top:14px!important}
     .worker-screen-bar{height:64px;padding:calc(7px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 7px max(14px,env(safe-area-inset-left))}
     .worker-screen-bar__title strong{font-size:17px}

@@ -23,12 +23,12 @@
     "isEntry": true
   },
   "resources/css/company-mobile.css": {
-    "file": "assets/company-mobile-DWwRW-Sp.css",
+    "file": "assets/company-mobile-D0Akj104.css",
     "src": "resources/css/company-mobile.css",
     "isEntry": true
   },
   "resources/css/company-native.css": {
-    "file": "assets/company-native-COB8FeTI.css",
+    "file": "assets/company-native-3wNEudZY.css",
     "src": "resources/css/company-native.css",
     "isEntry": true
   },
@@ -38,7 +38,7 @@
     "isEntry": true
   },
   "resources/css/job-report.css": {
-    "file": "assets/job-report-DxktCt3w.css",
+    "file": "assets/job-report-CT1_CZQ4.css",
     "src": "resources/css/job-report.css",
     "isEntry": true
   },
@@ -68,7 +68,7 @@
     "isEntry": true
   },
   "resources/css/units.css": {
-    "file": "assets/units-BXhT-fSw.css",
+    "file": "assets/units-Dh1xnUrs.css",
     "src": "resources/css/units.css",
     "isEntry": true
   },
@@ -113,7 +113,7 @@
     "isEntry": true
   },
   "resources/css/worker-maintenance.css": {
-    "file": "assets/worker-maintenance-BKchf1My.css",
+    "file": "assets/worker-maintenance-9zZHgNKP.css",
     "src": "resources/css/worker-maintenance.css",
     "isEntry": true
   },
@@ -123,8 +123,13 @@
     "isEntry": true
   },
   "resources/css/worker-native.css": {
-    "file": "assets/worker-native-9-P7E_UN.css",
+    "file": "assets/worker-native-CSemKYs9.css",
     "src": "resources/css/worker-native.css",
+    "isEntry": true
+  },
+  "resources/css/worker-stage.css": {
+    "file": "assets/worker-stage-gDGP0Q1k.css",
+    "src": "resources/css/worker-stage.css",
     "isEntry": true
   },
   "resources/css/worker.css": {
@@ -133,7 +138,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-N-zrSLpI.js",
+    "file": "assets/app-DZJRrvrb.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

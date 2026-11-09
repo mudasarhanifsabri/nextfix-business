@@ -6,7 +6,6 @@
 @endphp
 <div class="company-native-only native-booking-screen">
     <a class="native-back" href="{{ route('dashboard') }}"><i class="bi bi-arrow-left"></i><span>{{ $service === 'cleaning' ? 'Book cleaning' : 'Maintenance' }}</span></a>
-    <div class="native-booking-steps"><span class="active"><b>1</b>Unit</span><i></i><span class="active"><b>2</b>Service</span><i></i><span><b>3</b>Schedule</span></div>
     <form class="native-booking-form" method="post" action="{{ route('bookings.store') }}" enctype="multipart/form-data" data-native-booking @if($service === 'cleaning') data-cleaning-booking data-rates-active="{{ $rateCard && $rateCard->status === 'approved' ? '1' : '0' }}" data-booking-rates='@json($bookingRates)' @endif>
         @csrf
         <input type="hidden" name="service_type" value="{{ $service }}">

@@ -255,6 +255,7 @@ const installMaintenanceCamera = (form) => {
     input.removeAttribute('capture'); input.multiple = true; form.classList.add('cleaning-camera-active');
     const launch = document.createElement('button'); launch.type = 'button'; launch.className = 'camera-session-button';
     launch.innerHTML = `<i class="bi bi-camera-fill"></i><span>${title}</span>`; form.prepend(launch);
+    form.querySelector('.guided-camera-picker')?.classList.add('camera-native-input');
     input.addEventListener('change', () => {
         if (!input.files.length) return;
         if (input.files.length > 8) {
@@ -321,30 +322,30 @@ document.querySelectorAll('[data-maintenance-camera-session]').forEach(installMa
 
 const maintenanceChecklist = document.querySelector('.maintenance-checklist');
 if (maintenanceChecklist) {
-    const startStep = document.querySelector('.maintenance-start-step'); const progressCard = document.querySelector('.worker-progress-card');
+    const scopeCard = document.querySelector('.maintenance-approved-scope'); const progressCard = document.querySelector('.worker-progress-card');
     const afterStep = document.querySelector('.work-evidence'); const holdStep = document.querySelector('.worker-hold'); const finishStep = document.querySelector('[data-swipe-form]');
     const oldJourney = document.querySelector('.job-journey'); const allChecks = [...maintenanceChecklist.querySelectorAll('input[type="checkbox"]')];
-    const hasStart = finishStep?.dataset.startPhoto === '1'; const hasAfter = finishStep?.dataset.afterPhoto === '1';
-    const panels = [[startStep], [progressCard, maintenanceChecklist], [afterStep], [holdStep, finishStep]];
-    const labels = [['bi-camera','Before'],['bi-tools','Repair'],['bi-camera-fill','After'],['bi-check2-circle','Finish']];
+    const hasAfter = finishStep?.dataset.afterPhoto === '1';
+    const panels = [[scopeCard, progressCard, maintenanceChecklist], [afterStep], [holdStep, finishStep]];
+    const labels = [['bi-tools','Repair'],['bi-camera-fill','Proof'],['bi-check2-circle','Finish']];
     const allDone = () => allChecks.length > 0 && allChecks.every((box) => box.checked);
-    let activeStep = !hasStart ? 0 : !allDone() ? 1 : !hasAfter ? 2 : 3;
+    let activeStep = !allDone() ? 0 : !hasAfter ? 1 : 2;
     const nav = document.createElement('nav'); nav.className = 'maintenance-wizard-nav'; nav.setAttribute('aria-label', 'Maintenance work steps');
-    const requirements = () => [hasStart, allDone(), hasAfter, true];
+    const requirements = () => [allDone(), hasAfter, true];
     const showStep = (index) => {
         activeStep = index;
         panels.forEach((group, groupIndex) => group.forEach((node) => node?.classList.toggle('maintenance-wizard-hidden', groupIndex !== index)));
         [...nav.children].forEach((button, buttonIndex) => { button.classList.toggle('active', buttonIndex === index); button.classList.toggle('done', requirements()[buttonIndex] && buttonIndex < index); });
         document.querySelector('.maintenance-wizard-actions')?.remove();
-        const visible = panels[index].filter(Boolean).at(-1); if (!visible || index === 3) return;
+        const visible = panels[index].filter(Boolean).at(-1); if (!visible || index === panels.length - 1) return;
         const actions = document.createElement('div'); actions.className = 'maintenance-wizard-actions';
         const back = document.createElement('button'); back.type = 'button'; back.textContent = index ? '← Back' : 'My jobs'; back.addEventListener('click', () => index ? showStep(index - 1) : (window.location.href = '/work/jobs'));
-        const next = document.createElement('button'); next.type = 'button'; next.className = 'primary-next'; next.textContent = index === 2 ? 'Continue to finish →' : 'Next →'; next.disabled = !requirements()[index]; next.addEventListener('click', () => showStep(index + 1));
+        const next = document.createElement('button'); next.type = 'button'; next.className = 'primary-next'; next.textContent = index === 1 ? 'Continue to finish →' : 'Add final proof →'; next.disabled = !requirements()[index]; next.addEventListener('click', () => showStep(index + 1));
         actions.append(back, next); visible.after(actions);
     };
     labels.forEach(([icon, label], index) => { const button = document.createElement('button'); button.type = 'button'; button.innerHTML = `<i class="bi ${icon}"></i><span>${label}</span>`; button.addEventListener('click', () => { if (index <= activeStep || requirements().slice(0, index).every(Boolean)) showStep(index); }); nav.appendChild(button); });
-    oldJourney?.classList.add('maintenance-wizard-hidden'); oldJourney?.after(nav); showStep(activeStep);
-    maintenanceChecklist.addEventListener('change', () => window.setTimeout(() => showStep(1), 20));
+    oldJourney?.after(nav); showStep(activeStep);
+    maintenanceChecklist.addEventListener('change', () => window.setTimeout(() => showStep(0), 20));
 }
 
 document.querySelectorAll('[data-swipe-form]').forEach((form) => {
@@ -738,4 +739,149 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
     items.forEach((item,index) => item.addEventListener('click', (event) => { event.preventDefault(); show(index); })); lightbox.querySelector('.gallery-close').addEventListener('click', close); lightbox.querySelector('.gallery-prev').addEventListener('click', () => show(current-1)); lightbox.querySelector('.gallery-next').addEventListener('click', () => show(current+1));
     lightbox.addEventListener('touchstart', (event) => touchX = event.touches[0].clientX, {passive:true}); lightbox.addEventListener('touchend', (event) => { const delta=event.changedTouches[0].clientX-touchX; if(Math.abs(delta)>45) show(current+(delta<0?1:-1)); }, {passive:true});
     document.addEventListener('keydown', (event) => { if(lightbox.hidden)return; if(event.key==='Escape')close(); if(event.key==='ArrowLeft')show(current-1); if(event.key==='ArrowRight')show(current+1); });
+});
+
+document.querySelectorAll('[data-stage-workspace]').forEach((workspace) => {
+    const tabs = [...workspace.querySelectorAll('[data-stage-tab]')];
+    const panels = [...workspace.querySelectorAll('[data-stage-panel]')];
+    if (!tabs.length || !panels.length) return;
+
+    const activate = (name, shouldScroll = false) => {
+        const available = panels.some((panel) => panel.dataset.stagePanel === name);
+        if (!available) return;
+        tabs.forEach((tab) => {
+            const active = tab.dataset.stageTab === name;
+            tab.classList.toggle('is-active', active);
+            tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.stagePanel === name));
+        workspace.dataset.activeStage = name;
+        if (shouldScroll && window.matchMedia('(max-width: 699px)').matches) {
+            workspace.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+    };
+
+    tabs.forEach((tab) => tab.addEventListener('click', () => activate(tab.dataset.stageTab)));
+    workspace.querySelectorAll('[data-stage-next]').forEach((button) => button.addEventListener('click', () => activate(button.dataset.stageNext, true)));
+    activate(workspace.dataset.defaultStage || tabs[0].dataset.stageTab);
+});
+
+document.querySelectorAll('[data-number-step]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const input = button.closest('.number-stepper')?.querySelector('input[type="number"]');
+        if (!input) return;
+        const step = Number(button.dataset.numberStep) || 0;
+        const min = Number(input.min || 0);
+        const max = Number(input.max || Number.MAX_SAFE_INTEGER);
+        input.value = String(Math.min(max, Math.max(min, (Number(input.value) || 0) + step)));
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+});
+
+document.querySelectorAll('[data-estimate-form]').forEach((form) => {
+    const labour = form.querySelector('input[name="labour_cost"]');
+    const parts = form.querySelector('input[name="parts_cost"]');
+    const partsText = form.querySelector('textarea[name="parts_required"]');
+    const gross = form.querySelector('[data-estimate-gross]');
+    const net = form.querySelector('[data-estimate-net]');
+    const credit = Number(form.dataset.inspectionCredit || 0);
+    const update = () => {
+        const amount = (Number(labour?.value) || 0) + (Number(parts?.value) || 0);
+        if (gross) gross.textContent = `AED ${amount.toFixed(2)}`;
+        if (net) net.textContent = `AED ${Math.max(0, amount - Math.min(credit, amount)).toFixed(2)}`;
+    };
+    [labour, parts].forEach((input) => input?.addEventListener('input', update));
+    form.querySelector('[data-no-parts]')?.addEventListener('click', () => {
+        if (parts) { parts.value = '0'; parts.dispatchEvent(new Event('input', {bubbles: true})); }
+        if (partsText) partsText.value = '';
+    });
+    form.querySelector('[data-focus-parts]')?.addEventListener('click', () => partsText?.focus());
+    update();
+});
+
+document.querySelectorAll('[data-task-workflow]').forEach((form) => {
+    const cards = [...form.querySelectorAll('[data-task-card]')];
+    const boxes = cards.map((card) => card.querySelector('input[type="checkbox"]'));
+    const title = form.querySelector('[data-task-title]');
+    const position = form.querySelector('[data-task-position]');
+    const progressValue = form.querySelector('[data-progress-value]');
+    const progressCount = form.querySelector('[data-progress-count]');
+    const progressBar = form.querySelector('[data-progress-bar]');
+    const previous = form.querySelector('[data-task-prev]');
+    const next = form.querySelector('[data-task-next]');
+    const done = form.querySelector('[data-task-done]');
+    let current = Math.max(0, boxes.findIndex((box) => !box.checked));
+    if (current < 0) current = Math.max(0, cards.length - 1);
+
+    const syncCompletionForm = () => {
+        const completion = document.querySelector('[data-swipe-complete]');
+        if (!completion) return;
+        completion.querySelectorAll('input[name="completed_items[]"]').forEach((input) => input.remove());
+        boxes.filter((box) => box.checked).forEach((box) => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden'; hidden.name = 'completed_items[]'; hidden.value = box.value;
+            completion.appendChild(hidden);
+        });
+    };
+
+    const render = () => {
+        const complete = boxes.filter((box) => box.checked).length;
+        const percent = Math.round((complete / Math.max(1, boxes.length)) * 100);
+        cards.forEach((card, index) => {
+            card.classList.toggle('is-current', index === current);
+            card.classList.toggle('is-complete', boxes[index].checked);
+            const state = card.querySelector('small');
+            if (state) state.textContent = boxes[index].checked ? 'Done' : 'Tap when finished';
+        });
+        if (title) title.textContent = cards[current]?.querySelector('strong')?.textContent || 'All tasks complete';
+        if (position) position.textContent = String(current + 1);
+        if (progressValue) progressValue.textContent = `${percent}%`;
+        if (progressCount) progressCount.textContent = `${complete} of ${boxes.length}`;
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        if (previous) previous.disabled = current === 0;
+        if (next) next.disabled = current >= cards.length - 1;
+        if (done) done.innerHTML = boxes[current]?.checked ? '<i class="bi bi-arrow-counterclockwise"></i> Undo' : '<i class="bi bi-check2"></i> Mark done';
+        syncCompletionForm();
+    };
+
+    previous?.addEventListener('click', () => { current = Math.max(0, current - 1); render(); });
+    next?.addEventListener('click', () => { current = Math.min(cards.length - 1, current + 1); render(); });
+    done?.addEventListener('click', () => {
+        const box = boxes[current];
+        if (!box) return;
+        box.checked = !box.checked;
+        box.dispatchEvent(new Event('change', {bubbles: true}));
+        if (box.checked && current < cards.length - 1) current += 1;
+        render();
+    });
+    boxes.forEach((box, index) => box.addEventListener('change', () => { current = index; render(); }));
+    render();
+});
+
+document.querySelectorAll('[data-swipe-complete]').forEach((form) => {
+    const track = form.querySelector('.swipe-track');
+    const knob = form.querySelector('.swipe-knob');
+    if (!track || !knob || form.dataset.enabled !== '1') return;
+    let dragging = false;
+    let startX = 0;
+    let offset = 0;
+    const maxOffset = () => Math.max(0, track.clientWidth - knob.offsetWidth - 12);
+    const reset = () => { offset = 0; knob.style.transform = ''; };
+    knob.addEventListener('pointerdown', (event) => {
+        dragging = true; startX = event.clientX - offset; knob.setPointerCapture(event.pointerId);
+    });
+    knob.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+        offset = Math.min(maxOffset(), Math.max(0, event.clientX - startX));
+        knob.style.transform = `translateX(${offset}px)`;
+    });
+    const finish = () => {
+        if (!dragging) return;
+        dragging = false;
+        if (offset >= maxOffset() * .88) { knob.style.transform = `translateX(${maxOffset()}px)`; window.setTimeout(() => form.requestSubmit(), 160); }
+        else reset();
+    };
+    knob.addEventListener('pointerup', finish);
+    knob.addEventListener('pointercancel', finish);
+    window.addEventListener('resize', reset);
 });

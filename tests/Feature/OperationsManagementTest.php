@@ -77,15 +77,16 @@ class OperationsManagementTest extends TestCase
         $unit = Unit::create(['company_id' => $company->id, 'building' => 'Test Tower', 'unit_number' => '101', 'address' => 'Dubai']);
         $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-WORK-001', 'service_type' => 'maintenance', 'service_name' => 'AC repair', 'scheduled_at' => now()->addHour(), 'status' => 'assigned', 'workflow_stage' => 'work']);
 
-        $this->actingAs($worker)->get(route('worker.home'))->assertOk()->assertSee('AC repair')->assertSee('Continue your work');
+        $this->actingAs($worker)->get(route('worker.home'))->assertOk()->assertSee('AC repair')->assertSee('Continue job');
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))
-            ->assertOk()->assertSee('Repair checklist')->assertSee('Before repair reference')
-            ->assertSee('Take after-repair photos');
+            ->assertOk()->assertSee('Repair scope')->assertSee('APPROVED REPAIR')
+            ->assertDontSee('Before repair reference')
+            ->assertSee('Take finished-work photos');
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
             'action' => 'hold', 'completed_items' => ['arrival', 'safety'], 'hold_reason' => 'waiting_parts',
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'on_hold', 'hold_reason' => 'waiting_parts', 'progress' => 25]);
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'on_hold', 'hold_reason' => 'waiting_parts', 'progress' => 29]);
     }
 
     public function test_cleaning_job_uses_direct_cleaning_workflow_without_maintenance_estimate(): void
@@ -97,7 +98,7 @@ class OperationsManagementTest extends TestCase
         $booking = Booking::create(['company_id' => $company->id, 'unit_id' => $unit->id, 'professional_id' => $professional->id, 'reference' => 'NFB-CLEAN-001', 'service_type' => 'cleaning', 'service_name' => 'Checkout cleaning', 'scheduled_at' => now()->addHour(), 'status' => 'confirmed', 'workflow_stage' => 'work']);
 
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))
-            ->assertOk()->assertSee('Before photo')
+            ->assertOk()->assertSee('Show how the unit arrived')
             ->assertSee('Bedroom 1')->assertSee('Guest supplies')
             ->assertSee('Final guest-ready check')
             ->assertDontSee('no inspection quotation')
@@ -126,7 +127,7 @@ class OperationsManagementTest extends TestCase
         ])->assertRedirect(route('dashboard'));
 
         $this->get(route('dashboard'))->assertRedirect(route('worker.home'));
-        $this->get(route('worker.home'))->assertOk()->assertSee('You are all caught up');
+        $this->get(route('worker.home'))->assertOk()->assertSee('All clear today');
         $this->get(route('worker.jobs.index'))->assertOk()->assertSee('Active jobs');
     }
 

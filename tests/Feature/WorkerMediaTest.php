@@ -72,7 +72,7 @@ class WorkerMediaTest extends TestCase
         ])->assertRedirect();
         $this->assertDatabaseCount('job_photos', 2);
         $response = $this->actingAs($worker)->get(route('worker.jobs.show', $booking));
-        $response->assertOk()->assertSee('Photo evidence · 2');
+        $response->assertOk()->assertSee('Inspection summary')->assertSee('2 photos');
         $photo = $booking->inspectionPhotos()->first();
         $this->actingAs($worker)->get(route('worker.evidence.show', $photo))->assertOk();
 
@@ -88,7 +88,7 @@ class WorkerMediaTest extends TestCase
         ])->assertRedirect();
         $this->assertDatabaseHas('job_photos', ['booking_id' => $booking->id, 'category' => 'after']);
         $this->assertSame(['arrival'], $booking->fresh()->completed_items);
-        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Take after-repair photos')->assertSee('2 saved');
+        $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Take finished-work photos')->assertSee('Upload final photos');
 
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), [
             'action' => 'complete', 'completed_items' => array_keys(config('workflows.maintenance')),
@@ -104,7 +104,7 @@ class WorkerMediaTest extends TestCase
         ])->assertStatus(422);
         $this->assertSame($photoCount, $booking->photos()->count());
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))
-            ->assertOk()->assertSee('Job completed · record locked')
+            ->assertOk()->assertSee('Job completed')->assertSee('checklist and photos are locked')
             ->assertDontSee('Save checklist progress')->assertDontSee('Save after photos');
     }
 }

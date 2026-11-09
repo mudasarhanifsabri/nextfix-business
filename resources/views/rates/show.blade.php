@@ -1,4 +1,4 @@
-@extends('layouts.app', ['heading' => 'Contract rates'])
+@extends('layouts.app', ['heading' => 'Contract rates', 'mobileTitle' => 'Rates'])
 @section('content')
 <div class="rate-page-head customer">
     <div><p class="eyebrow">YOUR NEXTFIX AGREEMENT</p><h2>Your approved services</h2><p>Choose a unit to see exactly what your team can book and the agreed price.</p></div>

@@ -2,7 +2,7 @@
     $isWorker = auth()->user()->role === 'professional';
     $backUrl = $isWorker ? route('worker.jobs.show', $booking) : (auth()->user()->role === 'nextfix_admin' ? route('admin.operations.index') : route('bookings.index'));
 @endphp
-@extends($isWorker ? 'layouts.worker' : 'layouts.app', $isWorker ? ['title' => $booking->reference.' chat | NextFix', 'screenTitle' => 'Chat'] : ['heading' => 'Job chat', 'title' => $booking->reference.' chat | NextFix'])
+@extends($isWorker ? 'layouts.worker' : 'layouts.app', $isWorker ? ['title' => $booking->reference.' chat | NextFix', 'screenTitle' => 'Chat'] : ['heading' => 'Job chat', 'title' => $booking->reference.' chat | NextFix', 'mobileFocus' => true])
 @section('content')
 <section class="booking-chat" data-chat-feed="{{ route('chat.feed', $booking) }}" data-chat-store="{{ route('chat.store', $booking) }}">
     <header class="chat-job-head">

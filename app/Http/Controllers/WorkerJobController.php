@@ -96,7 +96,9 @@ class WorkerJobController extends Controller
         ]);
         $action = $data['action'] ?? 'save';
         $photoAction = in_array($action, ['inspection_photo', 'photo'], true);
-        $completed = $photoAction ? ($booking->completed_items ?? []) : array_values(array_unique($data['completed_items'] ?? []));
+        $completed = $photoAction
+            ? array_values(array_intersect($booking->completed_items ?? [], array_keys($checklist)))
+            : array_values(array_unique($data['completed_items'] ?? []));
         $progress = (int) round((count($completed) / max(count($checklist), 1)) * 100);
         $updates = $photoAction ? [] : ['completed_items' => $completed, 'progress' => $progress];
 
@@ -146,11 +148,7 @@ class WorkerJobController extends Controller
             if ($booking->service_type === 'cleaning') {
                 abort_unless($booking->photos()->where('category', 'before')->exists(), 422, 'Add a before-cleaning photo before closing the job.');
             } else {
-                abort_unless(
-                    $booking->photos()->whereIn('category', ['inspection', 'before'])->exists(),
-                    422,
-                    'Add inspection or before-repair photos before closing the job.'
-                );
+                abort_unless($booking->photos()->where('category', 'inspection')->exists(), 422, 'Inspection evidence is required before closing the repair.');
             }
             abort_unless(
                 $booking->photos()->where('category', 'after')->exists(),

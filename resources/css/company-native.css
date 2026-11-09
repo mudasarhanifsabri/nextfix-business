@@ -1,11 +1,13 @@
-.company-native-only,.company-mobile-brand{display:none}
+.company-native-only,.company-mobile-brand,.company-mobile-leading,.company-mobile-screen-title{display:none}
 .company-desktop-only{display:block}
 
 @media(max-width:800px){
+.company-app .content>.smart-breadcrumb{display:none!important}
 body.company-app{--native-blue:#175ee8;--native-navy:#0d1d3c;--native-ink:#111936;--native-muted:#707994;--native-line:#e3e8f2;--native-bg:#f7f8fc;background:var(--native-bg)}
 .company-native-only{display:block}.company-desktop-only{display:none!important}
 .company-app .topbar{height:68px;padding:10px 15px;background:rgba(255,255,255,.97);box-shadow:none;border-bottom:1px solid #edf0f6}
 .company-app .topbar-copy{display:none}.company-mobile-brand{display:flex;align-items:center;gap:8px;color:var(--native-ink);font:800 17px Manrope;text-decoration:none}.company-mobile-brand img{width:31px;height:31px;border-radius:10px;object-fit:cover}.company-mobile-brand span{white-space:nowrap}.company-mobile-brand b{color:var(--native-blue);font-weight:700}
+.company-mobile-leading{display:block;flex:0 0 40px;width:40px;height:40px}.company-mobile-back{display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--native-line);border-radius:50%;background:#fff;color:var(--native-ink);font-size:17px;text-decoration:none}.company-mobile-screen-title{position:absolute;left:50%;display:block;max-width:58%;overflow:hidden;transform:translateX(-50%);color:var(--native-ink);font:800 17px Manrope;text-overflow:ellipsis;white-space:nowrap}
 .company-app .top-actions{margin-left:auto}.company-app .top-actions .pwa-install-top,.company-app .top-actions .alert-sound-button,.company-app .top-actions>span{display:none!important}.company-app .top-actions .icon-button{width:40px;height:40px;border-radius:50%;border:0;background:#f5f7fb;color:var(--native-ink)}
 .company-app .content{padding:12px 14px calc(92px + env(safe-area-inset-bottom))}.company-app .content>.page-context{display:none}
 .company-app .mobile-nav{height:70px;border:0;border-top:1px solid #e8ebf2;border-radius:0;background:rgba(255,255,255,.98);box-shadow:0 -6px 24px rgba(24,42,78,.07)}.company-app .mobile-nav a,.company-app .mobile-nav a.active{background:transparent}.company-app .mobile-nav a.active{color:var(--native-blue)}.company-app .mobile-nav span{font-size:8px}.company-app .mobile-nav i{font-size:19px}

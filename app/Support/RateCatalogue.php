@@ -22,6 +22,30 @@ class RateCatalogue
         ];
     }
 
+    public static function cleaningMetadata(): array
+    {
+        return [
+            'touch_up' => ['category' => 'quick', 'image' => 'service-touch-up.webp', 'description' => 'Fast reset for a tidy, lightly used home.'],
+            'normal_materials' => ['category' => 'standard', 'image' => 'service-normal-materials.webp', 'description' => 'Complete regular clean with NextFix materials.'],
+            'normal_linen' => ['category' => 'linen', 'image' => 'service-linen.webp', 'description' => 'Regular clean with fresh linen, towels and amenities.'],
+            'client_in_stay' => ['category' => 'linen', 'image' => 'checkout-cleaning.webp', 'description' => 'Quiet in-stay service with linen and guest supplies.'],
+            'deep_materials' => ['category' => 'deep', 'image' => 'deep-cleaning.webp', 'description' => 'Detailed deep clean using NextFix materials.'],
+            'deep_linen' => ['category' => 'deep', 'image' => 'cleaning-hero.webp', 'description' => 'Deep clean finished with linen, towels and amenities.'],
+            'intensive_deep' => ['category' => 'deep', 'image' => 'service-intensive-deep.webp', 'description' => 'Intensive restoration clean for demanding turnovers.'],
+        ];
+    }
+
+    public static function cleaningExtraSections(): array
+    {
+        return array_intersect_key(self::sections(), array_flip([
+            'additional_linen',
+            'carpet',
+            'mattress',
+            'sofa_bed',
+            'sofa',
+        ]));
+    }
+
     public static function sections(): array
     {
         return [

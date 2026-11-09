@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\Booking;
 use App\Models\Company;
 use App\Models\CompanyRateCard;
 use App\Models\Unit;
 use App\Models\User;
+use App\Support\WorkChecklist;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -103,5 +105,86 @@ class UnitRateCategoryTest extends TestCase
             'service_name' => 'Touch-up cleaning',
             'amount_minor' => 12000,
         ]);
+    }
+
+    public function test_cleaning_booking_saves_priced_add_ons_and_worker_tasks(): void
+    {
+        $company = Company::create(['name' => 'Linen Homes']);
+        $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
+        $unit = Unit::create([
+            'company_id' => $company->id,
+            'building' => 'Creek Residence',
+            'unit_number' => '806',
+            'rate_unit_type' => '1_bhk',
+            'bedrooms' => 1,
+            'address' => 'Dubai Creek Harbour, Dubai',
+            'is_active' => true,
+        ]);
+        CompanyRateCard::create([
+            'company_id' => $company->id,
+            'status' => 'approved',
+            'rates' => [
+                'cleaning' => ['1_bhk' => ['normal_linen' => 18500]],
+                'extras' => [
+                    'additional_linen' => ['bath_towel' => 2500],
+                    'carpet' => ['2x3' => 7000],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($manager)->post(route('bookings.store'), [
+            'unit_id' => $unit->id,
+            'service_type' => 'cleaning',
+            'service_code' => 'normal_linen',
+            'service_name' => 'This client value must not control pricing',
+            'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            'extras' => [
+                'additional_linen' => ['bath_towel' => 2],
+                'carpet' => ['2x3' => 1],
+            ],
+        ])->assertRedirect(route('bookings.index'));
+
+        $booking = Booking::with('unit')->sole();
+        $this->assertSame('normal_linen', $booking->service_code);
+        $this->assertSame('Normal cleaning + linen, towels & amenities', $booking->service_name);
+        $this->assertSame(30500, $booking->amount_minor);
+        $this->assertCount(3, $booking->booking_items);
+        $this->assertSame(5000, $booking->booking_items[1]['total_minor']);
+
+        $tasks = WorkChecklist::for($booking);
+        $this->assertContains('Linen & towels', $tasks);
+        $this->assertContains('Bath towel × 2', $tasks);
+        $this->assertContains('2 × 3 m × 1', $tasks);
+    }
+
+    public function test_cleaning_booking_rejects_an_unapproved_add_on(): void
+    {
+        $company = Company::create(['name' => 'Protected Rates']);
+        $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
+        $unit = Unit::create([
+            'company_id' => $company->id,
+            'building' => 'Marina View',
+            'unit_number' => '402',
+            'rate_unit_type' => '1_bhk',
+            'bedrooms' => 1,
+            'address' => 'Dubai Marina, Dubai',
+            'is_active' => true,
+        ]);
+        CompanyRateCard::create([
+            'company_id' => $company->id,
+            'status' => 'approved',
+            'rates' => ['cleaning' => ['1_bhk' => ['touch_up' => 12000]]],
+        ]);
+
+        $this->actingAs($manager)->post(route('bookings.store'), [
+            'unit_id' => $unit->id,
+            'service_type' => 'cleaning',
+            'service_code' => 'touch_up',
+            'service_name' => 'Touch-up cleaning',
+            'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            'extras' => ['additional_linen' => ['bath_towel' => 1]],
+        ])->assertSessionHasErrors('extras.additional_linen.bath_towel');
+
+        $this->assertDatabaseCount('bookings', 0);
     }
 }

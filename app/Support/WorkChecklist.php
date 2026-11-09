@@ -24,14 +24,34 @@ final class WorkChecklist
             $items['maid_room'] = 'Maid’s room';
         }
 
-        return $items + [
+        $serviceCode = $booking->service_code;
+        if (! $serviceCode) {
+            $fullCode = RateCatalogue::bookingCode($booking->service_name, $booking->unit->rate_unit_type);
+            $serviceCode = $fullCode ? str($fullCode)->afterLast('.')->toString() : null;
+        }
+
+        $items += [
             'bathrooms' => 'Bathroom(s)',
             'kitchen' => 'Kitchen',
             'living' => 'Living area',
-            'linen' => 'Linen & towels',
-            'supplies' => 'Guest supplies',
             'floors' => 'Floors & balcony',
-            'guest_ready' => 'Final guest-ready check',
         ];
+
+        if (in_array($serviceCode, ['normal_linen', 'client_in_stay', 'deep_linen', 'intensive_deep'], true)) {
+            $items['linen'] = 'Linen & towels';
+            $items['supplies'] = 'Guest supplies';
+        }
+
+        foreach ($booking->booking_items ?? [] as $item) {
+            if (($item['kind'] ?? null) !== 'extra') {
+                continue;
+            }
+            $key = 'extra_'.substr(md5((string) ($item['code'] ?? $item['label'] ?? 'item')), 0, 10);
+            $items[$key] = ($item['label'] ?? 'Add-on').' × '.max(1, (int) ($item['quantity'] ?? 1));
+        }
+
+        $items['guest_ready'] = 'Final guest-ready check';
+
+        return $items;
     }
 }

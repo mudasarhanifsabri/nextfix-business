@@ -11,11 +11,11 @@ class Booking extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['company_id', 'unit_id', 'professional_id', 'reference', 'service_type', 'service_name', 'scheduled_at', 'status', 'payment_status', 'amount_minor', 'currency', 'notes', 'completed_items', 'progress', 'workflow_stage', 'inspection_condition', 'inspection_issues', 'inspection_report', 'labour_hours', 'labour_amount_minor', 'parts_amount_minor', 'parts_required', 'estimate_note', 'estimate_submitted_at', 'estimate_approved_at', 'quotation_sent_at', 'customer_decision_at', 'customer_decision_note', 'inspection_fee_minor', 'inspection_fee_paid_at', 'inspection_payment_url', 'quotation_invoice_id', 'quotation_payment_url', 'hold_reason', 'hold_note', 'work_started_at', 'work_completed_at'];
+    protected $fillable = ['company_id', 'unit_id', 'professional_id', 'reference', 'service_type', 'service_name', 'service_code', 'booking_items', 'scheduled_at', 'status', 'payment_status', 'amount_minor', 'currency', 'notes', 'completed_items', 'progress', 'workflow_stage', 'inspection_condition', 'inspection_issues', 'inspection_report', 'labour_hours', 'labour_amount_minor', 'parts_amount_minor', 'parts_required', 'estimate_note', 'estimate_submitted_at', 'estimate_approved_at', 'quotation_sent_at', 'customer_decision_at', 'customer_decision_note', 'inspection_fee_minor', 'inspection_fee_paid_at', 'inspection_payment_url', 'quotation_invoice_id', 'quotation_payment_url', 'hold_reason', 'hold_note', 'work_started_at', 'work_completed_at'];
 
     protected function casts(): array
     {
-        return ['scheduled_at' => 'datetime', 'completed_items' => 'array', 'inspection_issues' => 'array', 'estimate_submitted_at' => 'datetime', 'estimate_approved_at' => 'datetime', 'quotation_sent_at' => 'datetime', 'customer_decision_at' => 'datetime', 'inspection_fee_paid_at' => 'datetime', 'work_started_at' => 'datetime', 'work_completed_at' => 'datetime'];
+        return ['scheduled_at' => 'datetime', 'booking_items' => 'array', 'completed_items' => 'array', 'inspection_issues' => 'array', 'estimate_submitted_at' => 'datetime', 'estimate_approved_at' => 'datetime', 'quotation_sent_at' => 'datetime', 'customer_decision_at' => 'datetime', 'inspection_fee_paid_at' => 'datetime', 'work_started_at' => 'datetime', 'work_completed_at' => 'datetime'];
     }
 
     public function company(): BelongsTo

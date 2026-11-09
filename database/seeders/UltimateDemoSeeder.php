@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Booking;
 use App\Models\Company;
 use App\Models\CompanyDocument;
+use App\Models\CompanyRateCard;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Unit;
@@ -29,6 +30,12 @@ class UltimateDemoSeeder extends Seeder
                 'email' => 'manager@'.$slug.'.demo', 'phone' => '+971 50 '.str_pad((string) (5500000 + $index), 7, '0'), 'billing_email' => 'accounts@'.$slug.'.demo',
                 'billing_address' => ($index % 2 ? 'Business Bay' : 'Dubai Marina').', Dubai', 'city' => 'Dubai', 'country' => 'United Arab Emirates', 'payment_terms' => 30,
                 'status' => $index === 7 ? 'onboarding' : 'active',
+            ]);
+            CompanyRateCard::updateOrCreate(['company_id' => $company->id], [
+                'status' => 'approved',
+                'maintenance_inspection_minor' => 15000,
+                'rates' => $this->demoRates($index),
+                'approved_at' => now(),
             ]);
             User::updateOrCreate(['email' => 'manager'.$index.'@nextfix.demo'], ['company_id' => $company->id, 'name' => $company->contact_name, 'password' => Hash::make('Demo12345!'), 'role' => 'company_manager', 'email_verified_at' => now()]);
 
@@ -68,5 +75,33 @@ class UltimateDemoSeeder extends Seeder
             $admin->notifyNow(new AdminAlert('Invoice overdue', 'Invoice INV-2026-0002 is now overdue.', route('admin.invoices.index'), 'warning'));
             $admin->notifyNow(new AdminAlert('Document expires soon', 'A company trade license expires within 30 days.', route('admin.companies.index'), 'warning'));
         }
+    }
+
+    private function demoRates(int $companyIndex): array
+    {
+        $cleaning = [];
+        foreach (['1_bhk' => 14000, '2_bhk' => 18000, '3_bhk' => 22000] as $unitType => $base) {
+            $variation = $companyIndex * 250;
+            $cleaning[$unitType] = [
+                'touch_up' => $base + $variation,
+                'normal_materials' => $base + 4000 + $variation,
+                'normal_linen' => $base + 9000 + $variation,
+                'client_in_stay' => $base + 10000 + $variation,
+                'deep_materials' => $base + 16000 + $variation,
+                'deep_linen' => $base + 23000 + $variation,
+                'intensive_deep' => $base + 32000 + $variation,
+            ];
+        }
+
+        return [
+            'cleaning' => $cleaning,
+            'extras' => [
+                'additional_linen' => ['pillow_case' => 1000, 'bed_sheet' => 2500, 'duvet_cover' => 3000, 'bath_mat' => 1200, 'face_towel' => 800, 'hand_towel' => 1000, 'bath_towel' => 1800, 'pool_towel' => 2200],
+                'carpet' => ['0_8x3' => 4500, '1_5x2_3' => 6000, '2x3' => 7500, '3x4' => 12000, '3x5' => 15000],
+                'mattress' => ['single' => 9000, 'double' => 12000, 'queen' => 14000, 'king' => 16000, 'super_king' => 18000],
+                'sofa_bed' => ['2_seater' => 12000, '3_seater' => 15000, '4_seater' => 18000],
+                'sofa' => ['1_seater' => 5000, '2_seater' => 9000, '3_seater' => 12000, '4_seater' => 15000, '5_seater' => 18000],
+            ],
+        ];
     }
 }

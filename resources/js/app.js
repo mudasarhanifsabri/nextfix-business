@@ -396,26 +396,45 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
     try { rates = JSON.parse(form.dataset.bookingRates || '{}'); } catch (_) {}
     const unit = form.querySelector('select[name="unit_id"]');
     const cards = [...form.querySelectorAll('[data-rate-code]')];
+    const extraInputs = [...form.querySelectorAll('[data-extra-input]')];
     const empty = form.querySelector('[data-no-contracted-service]');
     const unitLabel = form.querySelector('[data-booking-unit-label]');
-    const summaryTitle = form.querySelector('[data-booking-summary-title]');
-    const summaryCopy = form.querySelector('[data-booking-summary-copy]');
+    const summaryTitles = [...form.querySelectorAll('[data-booking-summary-title]')];
+    const summaryCopies = [...form.querySelectorAll('[data-booking-summary-copy]')];
+    const serviceName = form.querySelector('[data-service-name]');
     const submit = form.querySelector('button[type="submit"]');
+    const nextService = form.querySelector('[data-wizard-next="3"]');
     const activeRates = form.dataset.ratesActive === '1';
     const format = (minor) => `AED ${(Number(minor) / 100).toLocaleString('en-AE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const extraTotal = () => extraInputs.reduce((total, input) => total + (Number(input.dataset.extraPrice || 0) * Number(input.value || 0)), 0);
+    const selectedService = () => cards.find((card) => card.dataset.rateAvailable === '1' && card.querySelector('input').checked);
     const updateSummary = () => {
-        const selected = cards.find((card) => card.querySelector('input').checked && !card.hidden);
+        const selected = selectedService();
         if (!selected) {
-            summaryTitle.textContent = 'No service selected';
-            summaryCopy.textContent = 'Choose one of the approved cleaning services above.';
+            summaryTitles.forEach((element) => { element.textContent = 'Choose a service'; });
+            summaryCopies.forEach((element) => { element.textContent = 'Choose an approved service'; });
             if (submit) submit.disabled = true;
+            if (nextService) nextService.disabled = true;
+            if (serviceName) serviceName.value = '';
             return;
         }
         const input = selected.querySelector('input');
-        const price = selected.querySelector('[data-rate-price]').textContent;
-        summaryTitle.textContent = `${input.value} · ${price}`;
-        summaryCopy.textContent = 'This is the approved contract price for the selected property.';
+        const selectedUnit = rates[String(unit?.value || '')] || {};
+        const base = Number(selectedUnit.services?.[selected.dataset.rateCode] || 0);
+        const total = base + extraTotal();
+        const label = input.dataset.serviceLabel || input.value;
+        if (serviceName) serviceName.value = label;
+        summaryTitles.forEach((element) => { element.textContent = `${label} · ${format(total)}`; });
+        summaryCopies.forEach((element) => { element.textContent = format(total); });
+        form.querySelectorAll('[data-wizard-review-service]').forEach((element) => { element.textContent = label; });
+        form.querySelectorAll('[data-wizard-review-total]').forEach((element) => { element.textContent = format(total); });
+        const selectedExtras = extraInputs.filter((extra) => Number(extra.value) > 0);
+        const extraReview = form.querySelector('[data-wizard-review-addons]');
+        const extraCopy = form.querySelector('[data-wizard-review-addon-copy]');
+        if (extraReview) extraReview.hidden = selectedExtras.length === 0;
+        if (extraCopy) extraCopy.textContent = selectedExtras.map((extra) => `${extra.dataset.extraLabel} × ${extra.value}`).join(', ');
         if (submit) submit.disabled = !activeRates;
+        if (nextService) nextService.disabled = !activeRates;
     };
     const updateServices = () => {
         const selectedUnit = rates[String(unit?.value || '')] || {};
@@ -425,6 +444,7 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
             const amount = services[card.dataset.rateCode];
             const isAvailable = amount !== null && amount !== '' && amount !== undefined && Number.isFinite(Number(amount));
             card.hidden = !isAvailable;
+            card.dataset.rateAvailable = isAvailable ? '1' : '0';
             const input = card.querySelector('input');
             input.disabled = !isAvailable;
             if (!isAvailable) input.checked = false;
@@ -433,7 +453,7 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
                 card.querySelector('[data-rate-price]').textContent = format(amount);
             }
         });
-        if (!cards.some((card) => !card.hidden && card.querySelector('input').checked)) {
+        if (!form.closest('[data-booking-wizard]') && !cards.some((card) => !card.hidden && card.querySelector('input').checked)) {
             const first = cards.find((card) => !card.hidden);
             if (first) first.querySelector('input').checked = true;
         }
@@ -443,7 +463,141 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
     };
     unit?.addEventListener('change', updateServices);
     cards.forEach((card) => card.querySelector('input').addEventListener('change', updateSummary));
+    extraInputs.forEach((input) => input.addEventListener('change', updateSummary));
     updateServices();
+});
+
+document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
+    const form = wizard.querySelector('form');
+    if (!form) return;
+    const panels = [...wizard.querySelectorAll('[data-wizard-panel]')];
+    const stepButtons = [...wizard.querySelectorAll('[data-wizard-step]')];
+    const unitSelect = form.querySelector('select[name="unit_id"]');
+    const unitButtons = [...form.querySelectorAll('[data-native-unit]')];
+    const serviceCards = [...form.querySelectorAll('[data-rate-code]')];
+    const serviceInputs = serviceCards.map((card) => card.querySelector('input'));
+    const scheduled = form.querySelector('[data-native-scheduled]');
+    const dateButtons = [...form.querySelectorAll('[data-native-date]')];
+    const timeButtons = [...form.querySelectorAll('[data-native-time]')];
+    let currentStep = 1;
+    let unitFilter = 'all';
+    let serviceFilter = 'all';
+
+    const refreshReview = () => {
+        const unitButton = unitButtons.find((button) => button.dataset.nativeUnit === String(unitSelect?.value || ''));
+        const unitTitle = unitButton?.dataset.unitTitle || 'Choose a unit';
+        const unitSubtitle = unitButton?.dataset.unitSubtitle || '';
+        wizard.querySelectorAll('[data-wizard-unit-summary]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
+        wizard.querySelectorAll('[data-wizard-review-unit]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
+    };
+
+    const showStep = (step) => {
+        currentStep = Math.max(1, Math.min(3, Number(step)));
+        panels.forEach((panel) => { panel.hidden = Number(panel.dataset.wizardPanel) !== currentStep; });
+        stepButtons.forEach((button) => {
+            const value = Number(button.dataset.wizardStep);
+            button.classList.toggle('active', value === currentStep);
+            button.classList.toggle('done', value < currentStep);
+            button.disabled = value > currentStep;
+        });
+        [...wizard.querySelectorAll('.booking-wizard__progress>i')].forEach((line, index) => line.classList.toggle('done', index + 1 < currentStep));
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    };
+
+    const activateUnit = (value) => {
+        if (!unitSelect) return;
+        unitSelect.value = String(value);
+        unitButtons.forEach((button) => button.classList.toggle('active', button.dataset.nativeUnit === String(value)));
+        unitSelect.dispatchEvent(new Event('change', {bubbles: true}));
+        refreshReview();
+        applyServiceFilter();
+    };
+    unitButtons.forEach((button) => button.addEventListener('click', () => activateUnit(button.dataset.nativeUnit)));
+
+    const unitSearch = form.querySelector('[data-unit-search]');
+    const applyUnitFilter = () => {
+        const query = (unitSearch?.value || '').trim().toLowerCase();
+        let visible = 0;
+        unitButtons.forEach((button) => {
+            const matchesQuery = !query || button.dataset.unitSearchText.includes(query);
+            const matchesFilter = unitFilter === 'all' || button.dataset.unitBuilding === unitFilter;
+            button.hidden = !(matchesQuery && matchesFilter);
+            if (!button.hidden) visible += 1;
+        });
+        const empty = form.querySelector('[data-unit-empty]');
+        if (empty) empty.hidden = visible > 0;
+    };
+    unitSearch?.addEventListener('input', applyUnitFilter);
+    wizard.querySelectorAll('[data-unit-filter]').forEach((button) => button.addEventListener('click', () => {
+        unitFilter = button.dataset.unitFilter;
+        wizard.querySelectorAll('[data-unit-filter]').forEach((item) => item.classList.toggle('active', item === button));
+        applyUnitFilter();
+    }));
+
+    const serviceSearch = form.querySelector('[data-service-search]');
+    function applyServiceFilter() {
+        const query = (serviceSearch?.value || '').trim().toLowerCase();
+        serviceCards.forEach((card) => {
+            const available = card.dataset.rateAvailable === '1';
+            const matchesQuery = !query || card.dataset.serviceSearchText.includes(query);
+            const matchesFilter = serviceFilter === 'all' || card.dataset.serviceCategory === serviceFilter;
+            card.hidden = !(available && matchesQuery && matchesFilter);
+        });
+    }
+    serviceSearch?.addEventListener('input', applyServiceFilter);
+    wizard.querySelectorAll('[data-service-filter]').forEach((button) => button.addEventListener('click', () => {
+        serviceFilter = button.dataset.serviceFilter;
+        wizard.querySelectorAll('[data-service-filter]').forEach((item) => item.classList.toggle('active', item === button));
+        applyServiceFilter();
+    }));
+    serviceInputs.forEach((input) => input.addEventListener('change', () => {
+        form.querySelector('[data-service-name]').value = input.dataset.serviceLabel || '';
+    }));
+
+    form.querySelectorAll('[data-qty-minus],[data-qty-plus]').forEach((button) => button.addEventListener('click', () => {
+        const input = button.closest('[data-addon-row]')?.querySelector('[data-extra-input]');
+        if (!input) return;
+        const delta = button.matches('[data-qty-plus]') ? 1 : -1;
+        input.value = String(Math.max(0, Math.min(20, Number(input.value || 0) + delta)));
+        input.dispatchEvent(new Event('change', {bubbles: true}));
+    }));
+
+    wizard.querySelectorAll('[data-search-clear]').forEach((button) => button.addEventListener('click', () => {
+        const input = button.closest('label')?.querySelector('input');
+        if (!input) return;
+        input.value = '';
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+        input.focus();
+    }));
+
+    wizard.querySelectorAll('[data-wizard-next]').forEach((button) => button.addEventListener('click', () => {
+        const next = Number(button.dataset.wizardNext);
+        if (currentStep === 1 && !unitSelect?.value) return;
+        if (currentStep === 2 && !serviceInputs.some((input) => input.checked && !input.disabled)) return;
+        showStep(next);
+    }));
+    wizard.querySelectorAll('[data-wizard-back]').forEach((button) => button.addEventListener('click', () => showStep(button.dataset.wizardBack)));
+    stepButtons.forEach((button) => button.addEventListener('click', () => { if (!button.disabled) showStep(button.dataset.wizardStep); }));
+
+    const updateSchedule = () => {
+        const date = dateButtons.find((button) => button.classList.contains('active'))?.dataset.nativeDate;
+        const time = timeButtons.find((button) => button.classList.contains('active'))?.dataset.nativeTime;
+        if (scheduled && date && time) scheduled.value = `${date}T${time}`;
+    };
+    dateButtons.forEach((button) => button.addEventListener('click', () => {
+        dateButtons.forEach((item) => item.classList.toggle('active', item === button));
+        updateSchedule();
+    }));
+    timeButtons.forEach((button) => button.addEventListener('click', () => {
+        timeButtons.forEach((item) => item.classList.toggle('active', item === button));
+        updateSchedule();
+    }));
+
+    refreshReview();
+    applyUnitFilter();
+    applyServiceFilter();
+    updateSchedule();
+    showStep(form.querySelector('.booking-wizard__errors') ? 1 : 1);
 });
 
 document.querySelectorAll('[data-native-booking]').forEach((form) => {

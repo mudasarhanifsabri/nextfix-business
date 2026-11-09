@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="{{ auth()->user()->role === 'nextfix_admin' ? 'NextFix Admin' : 'NextFix' }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <title>{{ $title ?? 'NextFix Business' }}</title>
-    @vite(['resources/css/app.css', 'resources/css/chat.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/css/company-mobile.css', 'resources/css/company-native.css', 'resources/css/booking-evidence.css', 'resources/css/quote-flow.css', 'resources/css/job-report.css', 'resources/css/operations-refunds.css', 'resources/css/notifications.css', 'resources/css/units.css', 'resources/css/navigation-fix.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/chat.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/css/company-mobile.css', 'resources/css/company-native.css', 'resources/css/booking-wizard.css', 'resources/css/booking-evidence.css', 'resources/css/quote-flow.css', 'resources/css/job-report.css', 'resources/css/operations-refunds.css', 'resources/css/notifications.css', 'resources/css/units.css', 'resources/css/navigation-fix.css', 'resources/js/app.js'])
 @include('partials.theme-head')
 </head>
 <body class="{{ auth()->user()->role === 'company_manager' ? 'company-app' : 'admin-app' }} {{ !empty($mobileFocus) ? 'mobile-focus-screen' : '' }}">

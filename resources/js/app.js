@@ -413,6 +413,7 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
         if (!selected) {
             summaryTitles.forEach((element) => { element.textContent = 'Choose a service'; });
             summaryCopies.forEach((element) => { element.textContent = 'Choose an approved service'; });
+            form.querySelectorAll('[data-wizard-review-description]').forEach((element) => { element.textContent = 'Selected cleaning service'; });
             if (submit) submit.disabled = true;
             if (nextService) nextService.disabled = true;
             if (serviceName) serviceName.value = '';
@@ -427,6 +428,9 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
         summaryTitles.forEach((element) => { element.textContent = `${label} · ${format(total)}`; });
         summaryCopies.forEach((element) => { element.textContent = format(total); });
         form.querySelectorAll('[data-wizard-review-service]').forEach((element) => { element.textContent = label; });
+        form.querySelectorAll('[data-wizard-review-description]').forEach((element) => {
+            element.textContent = selected.dataset.serviceDescription || 'Professional cleaning service';
+        });
         form.querySelectorAll('[data-wizard-review-image]').forEach((element) => {
             if (selected.dataset.serviceImage) element.src = selected.dataset.serviceImage;
             element.alt = label;
@@ -490,14 +494,26 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
     const refreshReview = () => {
         const unitButton = unitButtons.find((button) => button.dataset.nativeUnit === String(unitSelect?.value || ''));
         const unitTitle = unitButton?.dataset.unitTitle || 'Choose a unit';
-        const unitSubtitle = unitButton?.dataset.unitSubtitle || '';
-        wizard.querySelectorAll('[data-wizard-unit-summary]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
-        wizard.querySelectorAll('[data-wizard-selected-unit]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
-        wizard.querySelectorAll('[data-wizard-review-unit]').forEach((element) => { element.textContent = unitSubtitle ? `${unitTitle} · ${unitSubtitle}` : unitTitle; });
+        const building = unitButton?.dataset.unitBuildingLabel || '';
+        const unitType = unitButton?.dataset.unitType || 'Unit type';
+        const unitSummary = building ? `${unitTitle} · ${building}` : unitTitle;
+        wizard.querySelectorAll('[data-wizard-unit-summary]').forEach((element) => { element.textContent = unitSummary; });
+        wizard.querySelectorAll('[data-wizard-unit-type]').forEach((element) => { element.textContent = unitType; });
+        wizard.querySelectorAll('[data-wizard-selected-unit]').forEach((element) => { element.textContent = unitSummary; });
+        wizard.querySelectorAll('[data-wizard-review-unit]').forEach((element) => { element.textContent = unitSummary; });
+        wizard.querySelectorAll('[data-wizard-review-unit-type]').forEach((element) => { element.textContent = unitType; });
     };
 
     const showStep = (step) => {
         currentStep = Math.max(1, Math.min(3, Number(step)));
+        const titles = ['Book cleaning', 'Choose service', 'Schedule'];
+        const copies = ['Choose unit', 'Choose service', 'Schedule'];
+        const headerTitle = wizard.querySelector('[data-wizard-header-title]');
+        const stepCount = wizard.querySelector('[data-wizard-step-count]');
+        const stepCopy = wizard.querySelector('[data-wizard-step-copy]');
+        if (headerTitle) headerTitle.textContent = titles[currentStep - 1];
+        if (stepCount) stepCount.textContent = `${currentStep} of 3`;
+        if (stepCopy) stepCopy.textContent = copies[currentStep - 1];
         panels.forEach((panel) => { panel.hidden = Number(panel.dataset.wizardPanel) !== currentStep; });
         stepButtons.forEach((button) => {
             const value = Number(button.dataset.wizardStep);
@@ -555,6 +571,12 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
         wizard.querySelectorAll('[data-service-filter]').forEach((item) => item.classList.toggle('active', item === button));
         applyServiceFilter();
     }));
+    wizard.querySelector('[data-open-addons]')?.addEventListener('click', () => {
+        const addons = wizard.querySelector('.booking-wizard__addons');
+        if (!addons) return;
+        addons.open = true;
+        window.requestAnimationFrame(() => addons.scrollIntoView({behavior: 'smooth', block: 'center'}));
+    });
     serviceInputs.forEach((input) => input.addEventListener('change', () => {
         form.querySelector('[data-service-name]').value = input.dataset.serviceLabel || '';
     }));
@@ -582,6 +604,11 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
         showStep(next);
     }));
     wizard.querySelectorAll('[data-wizard-back]').forEach((button) => button.addEventListener('click', () => showStep(button.dataset.wizardBack)));
+    wizard.querySelector('[data-wizard-header-back]')?.addEventListener('click', (event) => {
+        if (currentStep <= 1) return;
+        event.preventDefault();
+        showStep(currentStep - 1);
+    });
     stepButtons.forEach((button) => button.addEventListener('click', () => { if (!button.disabled) showStep(button.dataset.wizardStep); }));
 
     const updateSchedule = () => {

@@ -1,0 +1,853 @@
+/* All presentation overrides are opt-in. Classic + Light keeps the existing styles. */
+html.nf-themed {
+    --blue: var(--nf-primary);
+    --navy: #172145;
+    --bg: #f6f8fe;
+    --line: #dfe6f2;
+    --muted: #66748c;
+    --blue2: color-mix(in srgb, var(--nf-primary) 10%, white);
+    --nf-surface: #fff;
+    --nf-soft: #f0f4fc;
+    --nf-shadow: 0 12px 30px #1420420a;
+    color-scheme: light;
+}
+html.nf-themed body {
+    background: var(--bg) !important;
+    color: var(--navy);
+}
+html.nf-themed
+    :is(
+        .topbar,
+        .mobile-nav,
+        .worker-nav,
+        .worker-top,
+        .panel,
+        .form-card,
+        .booking-card,
+        .native-job-card,
+        .native-compact-list,
+        .native-home-actions,
+        .native-stat-strip,
+        .worker-card,
+        .stat-grid article,
+        .dropdown-menu,
+        .theme-manager
+    ) {
+    background: var(--nf-surface);
+    color: var(--navy);
+    border-color: var(--line);
+    box-shadow: var(--nf-shadow);
+}
+html.nf-themed
+    :is(.primary, .btn-primary, .hero-cta, .worker-primary, .native-primary) {
+    background: var(--nf-primary);
+    border-color: var(--nf-primary);
+    color: var(--nf-on-primary);
+}
+html.nf-themed
+    :is(
+        .secondary,
+        .icon-button,
+        input,
+        select,
+        textarea,
+        .form-select,
+        .form-control
+    ) {
+    background: var(--nf-surface);
+    color: var(--navy);
+    border-color: var(--line);
+}
+html.nf-themed :is(.form-actions, .booking-submit, .booking-form-head, th) {
+    background: var(--nf-soft);
+    color: var(--navy);
+}
+html.nf-themed :is(.mobile-nav, .worker-nav) a.active {
+    color: var(--nf-primary);
+}
+html.nf-themed .sidebar {
+    background: #142247;
+}
+html.nf-themed .sidebar nav a.active {
+    background: var(--nf-primary);
+    color: var(--nf-on-primary);
+}
+html.nf-themed .app-service-card {
+    border-radius: 20px;
+    border-color: var(--line);
+    box-shadow: var(--nf-shadow);
+}
+html[data-theme="colorful"] .app-service-card.cleaning {
+    background: #deedff;
+    color: #172145;
+}
+html[data-theme="colorful"] .app-service-card.maintenance {
+    background: #ece0ff;
+    color: #172145;
+}
+html[data-theme="colorful"] .app-service-card .service-art {
+    background-image: url("/images/themes/service-scenes-v1.png");
+    background-size: 300% 100%;
+    background-position: left center;
+    right: 12px;
+    bottom: 12px;
+    width: 36%;
+    height: 82%;
+    border-radius: 15px;
+    opacity: 1;
+    transform: none;
+}
+html[data-theme="colorful"] .app-service-card.maintenance .service-art {
+    background-position: center;
+}
+html[data-theme="colorful"] .service-art > i {
+    visibility: hidden;
+}
+html[data-theme="colorful"] .app-service-card > div {
+    position: relative;
+    z-index: 1;
+    max-width: 61%;
+}
+html[data-theme="colorful"] .app-service-card .popular {
+    display: none;
+}
+html[data-theme="colorful"] .customer-hero {
+    background:
+        linear-gradient(90deg, #142247ed 0%, #14224799 48%, #14224718 100%),
+        url("/images/themes/service-scenes-v1.png") left center/auto 160%;
+    color: white;
+}
+html[data-theme="colorful"] .customer-hero :is(.hero-visual, .hero-orb) {
+    display: none;
+}
+html[data-theme="colorful"] .native-home-hero {
+    background:
+        linear-gradient(100deg, #142247e8, #14224766),
+        url("/images/themes/service-scenes-v1.png") center/cover;
+    border-radius: 20px;
+    color: white;
+    padding: 25px;
+    margin-bottom: 18px;
+}
+html[data-theme="colorful"] .native-home-hero :is(h1, p, span) {
+    color: white;
+}
+html[data-theme="premium"] .customer-hero {
+    background: linear-gradient(120deg, #12343b, var(--nf-primary));
+    color: white;
+}
+html[data-theme="premium"] .app-service-card.cleaning {
+    background: #e3f3f0;
+    color: #163a3a;
+}
+html[data-theme="premium"] .app-service-card.maintenance {
+    background: #f6efdf;
+    color: #453421;
+}
+html[data-theme="premium"] .sidebar {
+    background: #12343b;
+}
+html[data-color-mode="dark"].nf-themed {
+    --navy: #eef2ff;
+    --bg: #101829;
+    --nf-surface: #1a2538;
+    --nf-soft: #202e44;
+    --line: #35445d;
+    --muted: #b6c3d9;
+    --blue2: #253956;
+    --nf-shadow: 0 10px 30px #0002;
+    color-scheme: dark;
+}
+html[data-color-mode="dark"]
+    :is(
+        h1,
+        h2,
+        h3,
+        h4,
+        .booking-main strong,
+        .worker-screen-bar__title strong
+    ) {
+    color: var(--navy);
+}
+html[data-color-mode="dark"]
+    :is(
+        .muted,
+        .section-intro p,
+        .booking-main span,
+        .native-section-title small,
+        .worker-screen-bar__title small
+    ) {
+    color: var(--muted);
+}
+html[data-color-mode="dark"] :is(td, .booking-row, .panel-head, .form-actions) {
+    border-color: var(--line);
+}
+html[data-color-mode="dark"]
+    :is(
+        .native-empty-state,
+        .native-compact-list > a,
+        .native-home-actions > a,
+        .worker-profile-card,
+        .quote-card,
+        .notification-menu,
+        .notification-menu-head,
+        .toast,
+        .toast-header
+    ) {
+    background: var(--nf-surface);
+    color: var(--navy);
+    border-color: var(--line);
+}
+html[data-color-mode="dark"] .app-service-card.cleaning {
+    background: #203e59;
+    color: #f1f5ff;
+}
+html[data-color-mode="dark"] .app-service-card.maintenance {
+    background: #3a2e52;
+    color: #f1f5ff;
+}
+html[data-color-mode="dark"] .app-service-card :is(h3, p, strong) {
+    color: inherit;
+}
+html[data-color-mode="dark"] :is(.info-box, .date-tile, .native-stat-strip) {
+    background: var(--nf-soft);
+    color: var(--navy);
+}
+/* Theme Manager is usable even when the active theme is Classic. */
+.theme-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 22px;
+}
+.theme-tabs a {
+    padding: 10px 15px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--nf-surface, #fff);
+    font-weight: 700;
+    font-size: 13px;
+}
+.theme-tabs a[aria-current] {
+    background: var(--blue);
+    color: white;
+}
+.theme-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(280px, 390px);
+    gap: 26px;
+    align-items: start;
+}
+.theme-manager {
+    padding: 26px;
+    background: var(--nf-surface, #fff);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+}
+.theme-manager h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+.theme-manager label {
+    display: grid;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+.theme-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+.theme-presets label {
+    position: relative;
+    padding: 14px 10px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    cursor: pointer;
+}
+.theme-presets input {
+    width: 18px;
+    height: 18px;
+}
+.theme-presets label:has(input:checked) {
+    border-color: var(--blue);
+    outline: 2px solid var(--blue2);
+}
+.theme-presets small {
+    font-size: 10px;
+    color: var(--muted);
+}
+.theme-swatches {
+    display: flex;
+    gap: 4px;
+}
+.theme-swatches i {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+}
+.theme-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+}
+.theme-fields label:first-child {
+    grid-column: 1/-1;
+}
+.theme-fields input[type="color"] {
+    height: 48px;
+    padding: 5px;
+}
+.theme-manager .error {
+    margin: 12px 0;
+}
+.theme-manager .theme-note {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+}
+.theme-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 22px;
+}
+.theme-restore {
+    margin-top: 16px;
+}
+.theme-restore button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.theme-preview-wrap {
+    position: sticky;
+    top: 18px;
+}
+.theme-preview-wrap > p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+.theme-preview {
+    --preview-bg: #f5f8fc;
+    --preview-surface: white;
+    --preview-ink: #172145;
+    --preview-muted: #64728b;
+    background: var(--preview-bg);
+    color: var(--preview-ink);
+    border: 8px solid #d8dfec;
+    border-radius: 34px;
+    padding: 20px 15px;
+    box-shadow: 0 18px 50px #17214515;
+    min-height: 600px;
+}
+.theme-preview[data-color-mode="dark"] {
+    --preview-bg: #101829;
+    --preview-surface: #1a2538;
+    --preview-ink: #eef2ff;
+    --preview-muted: #b6c3d9;
+}
+.theme-preview .preview-brand {
+    font-weight: 800;
+    color: var(--nf-primary);
+    margin-bottom: 24px;
+}
+.theme-preview h3 {
+    font-size: 24px;
+    color: var(--preview-ink);
+    margin-bottom: 14px;
+}
+.preview-banner {
+    border-radius: 18px;
+    padding: 25px 18px;
+    background: linear-gradient(120deg, #163155, var(--nf-primary));
+    color: white;
+    min-height: 175px;
+}
+.preview-banner strong {
+    font-size: 23px;
+    line-height: 1.15;
+    display: block;
+    max-width: 180px;
+    margin-bottom: 20px;
+}
+.preview-banner span {
+    display: inline-block;
+    background: var(--nf-primary);
+    color: var(--nf-on-primary);
+    padding: 9px 13px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.theme-preview[data-theme="colorful"] .preview-banner {
+    background:
+        linear-gradient(90deg, #142247e0, #14224700),
+        url("/images/themes/service-scenes-v1.png") left center/auto 160%;
+}
+.preview-dots {
+    text-align: center;
+    color: var(--nf-primary);
+    padding: 8px;
+}
+.preview-services {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.preview-services > div {
+    border-radius: 16px;
+    padding: 15px;
+    background: var(--preview-surface);
+    min-height: 116px;
+    font-size: 14px;
+    font-weight: 800;
+}
+.preview-services i {
+    display: block;
+    font-size: 25px;
+    margin-bottom: 12px;
+    color: var(--nf-primary);
+}
+.theme-preview[data-theme="colorful"] .preview-services > div:first-child {
+    background: #deedff;
+    color: #172145;
+}
+.theme-preview[data-theme="colorful"] .preview-services > div:last-child {
+    background: #ece0ff;
+    color: #172145;
+}
+.theme-preview[data-theme="premium"] .preview-services > div:first-child {
+    background: #dff1ed;
+    color: #163a3a;
+}
+.theme-preview[data-theme="premium"] .preview-services > div:last-child {
+    background: #f6efdf;
+    color: #453421;
+}
+.preview-summary {
+    margin-top: 15px;
+    background: var(--preview-surface);
+    padding: 15px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+}
+.preview-summary small {
+    color: var(--preview-muted);
+    font-size: 11px;
+}
+.preview-summary strong {
+    display: block;
+    font-size: 22px;
+}
+.preview-job {
+    margin-top: 18px;
+    background: var(--preview-surface);
+    padding: 15px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+.preview-job small {
+    display: block;
+    color: var(--preview-muted);
+    margin-top: 7px;
+}
+.theme-preview[data-preview-scope="admin"] {
+    border-radius: 18px;
+}
+.theme-preview[data-preview-scope="admin"] .preview-banner {
+    min-height: 100px;
+}
+.theme-preview[data-preview-scope="admin"] .preview-banner strong {
+    font-size: 20px;
+    max-width: none;
+}
+.theme-preview[data-preview-scope="admin"] .preview-dots {
+    display: none;
+}
+@media (max-width: 1000px) {
+    .theme-layout {
+        grid-template-columns: 1fr;
+    }
+    .theme-preview-wrap {
+        position: static;
+        max-width: 390px;
+        width: 100%;
+        margin: auto;
+    }
+    .theme-presets {
+        grid-template-columns: 1fr;
+    }
+    .theme-presets label {
+        display: grid;
+        grid-template-columns: 24px 1fr;
+        align-items: center;
+    }
+    .theme-fields {
+        grid-template-columns: 1fr;
+    }
+    .theme-fields label {
+        grid-column: 1/-1;
+    }
+    html[data-theme="colorful"] .app-service-card .service-art {
+        width: 34%;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    html.nf-themed *,
+    html.nf-themed *::before,
+    html.nf-themed *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+html.nf-themed
+    .maintenance
+    :is(.app-service-icon, .service-icon, .booking-service-badge) {
+    color: var(--nf-secondary);
+    background: color-mix(in srgb, var(--nf-secondary) 12%, var(--nf-surface));
+}
+.theme-preview .preview-services > div:last-child i {
+    color: var(--nf-secondary);
+}
+html.nf-themed :is(.primary, .btn-primary):focus-visible {
+    outline: 3px solid var(--nf-secondary);
+    outline-offset: 3px;
+}
+.theme-carousel {
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 22px;
+    box-shadow: 0 14px 34px #17214512;
+    background: #142247;
+}
+.theme-slide {
+    position: relative;
+    min-height: 245px;
+    display: flex;
+    align-items: center;
+    padding: 30px;
+}
+.theme-slide[hidden] {
+    display: none !important;
+}
+.theme-slide-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background-image: url("/images/themes/service-scenes-v1.png");
+    background-size: 300% auto;
+    background-position: left 35%;
+}
+.theme-photo-1 {
+    background-position: center 35%;
+}
+.theme-photo-2 {
+    background-position: right 45%;
+}
+.theme-slide::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #142247eb, #14224780 65%, #14224715);
+}
+.theme-slide-copy {
+    position: relative;
+    z-index: 1;
+    color: white;
+    max-width: 580px;
+}
+.theme-slide-copy h2 {
+    color: #fff !important;
+    font-size: 32px;
+    line-height: 1.15;
+    max-width: 470px;
+}
+.theme-slide-copy p {
+    color: #e1eaff;
+    margin: 12px 0 20px;
+    font-size: 14px;
+}
+.theme-slide-copy a {
+    min-height: 44px;
+}
+.theme-carousel-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    padding: 0 20px 12px;
+    background: #142247;
+    color: #fff;
+}
+.theme-carousel-controls > div {
+    display: flex;
+    gap: 6px;
+}
+.theme-carousel-controls button {
+    border: 0;
+    background: transparent;
+    color: white;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+}
+.theme-carousel-controls [data-theme-slide-to]::before {
+    content: "";
+    display: block;
+    width: 7px;
+    height: 7px;
+    margin: auto;
+    border-radius: 50%;
+    background: #b2c2e2;
+}
+.theme-carousel-controls [aria-pressed="true"]::before {
+    background: #fff;
+    width: 22px;
+    border-radius: 6px;
+}
+html[data-theme="colorful"] .customer-hero,
+html[data-theme="premium"] .customer-hero {
+    display: none;
+}
+.theme-slider-editor {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+}
+.theme-slider-editor summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+.theme-slider-fields {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+.theme-slider-fields legend {
+    font-size: 15px;
+}
+.theme-current-image {
+    width: 100%;
+    max-height: 160px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+.preview-banner-controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0;
+}
+.preview-banner-controls button {
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    background: var(--preview-surface, #fff);
+    color: var(--preview-ink, #172145);
+}
+.preview-banner {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+.preview-banner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--preview-photo, none);
+    background-position: center;
+    background-size: cover;
+}
+.preview-banner:has(+ .preview-banner-controls) strong {
+    color: white;
+    text-shadow: 0 2px 8px #0009;
+}
+.preview-banner span {
+    position: relative;
+    z-index: 1;
+}
+/* Consistent internal surfaces across company, workforce and admin modules. */
+html.nf-themed
+    :is(
+        .ultimate-stats article,
+        .smart-form,
+        .booking-form-card,
+        .form-grid,
+        .native-flow-card,
+        .native-profile-card,
+        .worker-form,
+        .quote-summary,
+        .invoice-summary,
+        .rates-panel,
+        .company-card
+    ) {
+    background: var(--nf-surface);
+    border-color: var(--line);
+    color: var(--navy);
+}
+html.nf-themed :is(.page-actions, .section-intro, .native-section-title) {
+    gap: 16px;
+}
+html.nf-themed :is(input, select, textarea):focus {
+    outline: 2px solid var(--nf-primary);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+html.nf-themed :is(button, a, input, select, textarea):focus-visible {
+    outline: 3px solid var(--nf-primary);
+    outline-offset: 3px;
+}
+html.nf-themed :is(.panel, .form-card, .booking-card, .native-job-card) {
+    border-radius: 18px;
+}
+html.nf-themed table tbody tr:hover {
+    background: var(--nf-soft);
+}
+html.nf-themed .choice-card input:checked + span {
+    border-color: var(--nf-primary);
+    background: var(--blue2);
+}
+html[data-color-mode="dark"]
+    :is(
+        .worker-nav,
+        .worker-top,
+        .native-home-actions,
+        .native-compact-list,
+        .native-home-hero,
+        .ultimate-stats article,
+        .native-flow-card,
+        .quote-summary
+    ) {
+    background: var(--nf-surface);
+    color: var(--navy);
+}
+html[data-color-mode="dark"]
+    :is(
+        .native-home-actions strong,
+        .native-job-card h3,
+        .ultimate-stats strong,
+        .form-grid label,
+        .smart-form label
+    ) {
+    color: var(--navy);
+}
+@media (max-width: 800px) {
+    .theme-slide {
+        min-height: 215px;
+        padding: 25px 22px;
+    }
+    .theme-slide-copy h2 {
+        font-size: 27px;
+        max-width: 270px;
+    }
+    .theme-slide-copy p {
+        max-width: 270px;
+        font-size: 12px;
+    }
+    .theme-carousel-controls {
+        padding-bottom: 4px;
+    }
+    html.nf-themed .app-service-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    html.nf-themed .app-service-card {
+        min-height: 190px;
+        padding: 18px 14px;
+    }
+    html.nf-themed .app-service-card h3 {
+        font-size: 17px;
+    }
+    html.nf-themed .app-service-card p {
+        font-size: 11px;
+    }
+    html.nf-themed .app-service-card strong {
+        font-size: 11px;
+    }
+    html.nf-themed .app-service-card .app-service-icon {
+        width: 37px;
+        height: 37px;
+        font-size: 20px;
+    }
+    html[data-theme="colorful"] .app-service-card .service-art {
+        height: 56%;
+        width: 43%;
+        opacity: 0.85;
+    }
+    html[data-theme="colorful"] .app-service-card > div {
+        max-width: 100%;
+    }
+    html.nf-themed .app-service-card .service-art {
+        z-index: 0;
+    }
+    html.nf-themed .app-service-card p {
+        position: relative;
+        z-index: 1;
+        max-width: 90%;
+    }
+}
+html[data-color-mode="dark"] :is(.login-card, .auth-page) {
+    background: var(--nf-surface);
+    color: var(--navy);
+}
+html.nf-themed .login-card .primary {
+    color: var(--nf-on-primary);
+}
+html.nf-themed .smart-form .choice-card input:focus-visible + span {
+    outline: 3px solid var(--nf-primary);
+    outline-offset: 3px;
+}
+html.nf-themed .worker-app .native-segmented {
+    background: var(--nf-soft);
+}
+html.nf-themed .worker-app .native-segmented a.active {
+    background: var(--nf-primary);
+    color: var(--nf-on-primary);
+}
+html[data-theme="colorful"] .choice-card > span {
+    position: relative;
+    overflow: hidden;
+    padding-top: 88px;
+    min-height: 170px;
+    background: var(--nf-surface);
+}
+html[data-theme="colorful"] .choice-card > span::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    top: 5px;
+    height: 73px;
+    border-radius: 10px;
+    background: url("/images/themes/service-scenes-v1.png") left center/300%
+        auto;
+}
+html[data-theme="colorful"]
+    .choice-grid:not(.contracted-choice-grid)
+    .choice-card
+    > span::before {
+    background-position: center;
+}
+html[data-theme="colorful"] .choice-card input:checked + span {
+    background: var(--blue2);
+}
+html[data-theme="colorful"] .choice-card > span > i {
+    display: none;
+}

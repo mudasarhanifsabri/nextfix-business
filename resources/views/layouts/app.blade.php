@@ -14,6 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <title>{{ $title ?? 'NextFix Business' }}</title>
     @vite(['resources/css/app.css', 'resources/css/chat.css', 'resources/css/ultimate.css', 'resources/css/customer.css', 'resources/css/company-mobile.css', 'resources/css/booking-evidence.css', 'resources/css/quote-flow.css', 'resources/css/job-report.css', 'resources/css/operations-refunds.css', 'resources/css/notifications.css', 'resources/css/units.css', 'resources/css/navigation-fix.css', 'resources/js/app.js'])
+@include('partials.theme-head')
 </head>
 <body class="{{ auth()->user()->role === 'company_manager' ? 'company-app' : 'admin-app' }}">@php($unreadCount = auth()->user()->unreadNotifications()->count())
 @include('partials.pwa-splash')
@@ -37,9 +38,9 @@
                 <a class="{{ request()->routeIs('admin.invoices.*') ? 'active' : '' }}" href="{{ route('admin.invoices.index') }}"><span>▤</span> Invoices</a>
                 <a class="{{ request()->routeIs('admin.payments.*') ? 'active' : '' }}" href="{{ route('admin.payments.index') }}"><span>◉</span> Payments</a>
                 <a class="{{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}" href="{{ route('admin.notifications.index') }}"><span>●</span> Notifications</a>
-                <div class="nav-group {{ request()->routeIs('admin.integrations.*', 'admin.updates.*') ? 'open' : '' }}">
-                    <a class="nav-parent {{ request()->routeIs('admin.integrations.*', 'admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}"><span>⚙</span> Administration <b>⌄</b></a>
-                    <div class="nav-sub"><a class="{{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}">Integrations</a><a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}">System updates</a></div>
+                <div class="nav-group {{ request()->routeIs('admin.integrations.*', 'admin.updates.*', 'admin.themes.*') ? 'open' : '' }}">
+                    <a class="nav-parent {{ request()->routeIs('admin.integrations.*', 'admin.updates.*', 'admin.themes.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}"><span>⚙</span> Administration <b>⌄</b></a>
+                    <div class="nav-sub"><a class="{{ request()->routeIs('admin.themes.*') ? 'active' : '' }}" href="{{ route('admin.themes.index') }}">Themes</a><a class="{{ request()->routeIs('admin.integrations.*') ? 'active' : '' }}" href="{{ route('admin.integrations.index') }}">Integrations</a><a class="{{ request()->routeIs('admin.updates.*') ? 'active' : '' }}" href="{{ route('admin.updates.index') }}">System updates</a></div>
                 </div>
             @endif
         </nav>
@@ -54,6 +55,7 @@
             <div class="dropdown" data-notification-feed="{{ url('/notifications/feed') }}" data-last-notification="{{ auth()->user()->notifications()->latest()->value('id') }}"><button class="icon-button bell-button" data-bs-toggle="dropdown" aria-label="Notifications"><i class="bi bi-bell"></i><b data-notification-count @if(!$unreadCount) hidden @endif>{{ $unreadCount > 9 ? '9+' : $unreadCount }}</b></button><div class="dropdown-menu dropdown-menu-end notification-menu"><div class="notification-menu-head"><strong>Alerts</strong><a href="{{ route('admin.notifications.index') }}">All</a></div>@forelse(auth()->user()->notifications()->limit(4)->get() as $note)<a class="dropdown-item {{ $note->read_at ? '' : 'unread' }}" href="{{ route('admin.notifications.read', $note) }}"><span class="note-dot {{ $note->data['level'] ?? 'info' }}"></span><div><strong>{{ $note->data['title'] ?? 'Notification' }}</strong><small>{{ \Illuminate\Support\Str::limit($note->data['message'] ?? '', 72) }}</small><time>{{ $note->created_at->diffForHumans(short: true) }}</time></div></a>@empty<div class="notification-empty"><i class="bi bi-check2-circle"></i><span>You're all caught up</span></div>@endforelse</div></div>
             <span>{{ now()->timezone(config('app.timezone'))->format('D, d M') }}</span></div></header>
         <div class="content">
+            @include('partials.page-context')
             @if(session('status'))<div class="flash">{{ session('status') }}</div>@endif
             @yield('content')
         </div>
@@ -66,5 +68,6 @@
 @else
 <nav class="mobile-nav admin-mobile"><a href="{{ route('dashboard') }}"><i class="bi bi-grid"></i><span>Home</span></a><a href="{{ route('admin.operations.index') }}"><i class="bi bi-calendar3"></i><span>Jobs</span></a><a href="{{ route('admin.professionals.index') }}"><i class="bi bi-people"></i><span>Team</span></a><a href="{{ route('admin.companies.index') }}"><i class="bi bi-buildings"></i><span>Companies</span></a><a class="mobile-alert-link" href="{{ route('admin.notifications.index') }}"><i class="bi bi-bell"></i><b data-notification-count @if(!$unreadCount) hidden @endif>{{ $unreadCount > 9 ? '9+' : $unreadCount }}</b><span>Alerts</span></a></nav>
 @endif
+@include('partials.smart-tap')
 </body>
 </html>

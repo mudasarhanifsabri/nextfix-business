@@ -1,4 +1,4 @@
-const CACHE='nextfix-shell-v8';
+const CACHE='nextfix-shell-v9';
 const CORE=['/offline','/images/pwa/icon-192.png','/images/pwa/icon-512.png','/images/brand/nextfix-square.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
@@ -9,7 +9,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
   const url=new URL(event.request.url);
-  if(url.origin===location.origin&&(url.pathname.startsWith('/build/')||url.pathname.startsWith('/images/'))){
+  if(url.origin===location.origin&&(url.pathname.startsWith('/build/')||url.pathname.startsWith('/images/')||url.pathname==='/css/themes.css'||url.pathname==='/js/themes.js')){
     event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response;})));
   }
 });

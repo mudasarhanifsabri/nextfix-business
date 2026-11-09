@@ -1,5 +1,6 @@
 @extends('layouts.worker', ['title' => 'Home | NextFix Work', 'screenTitle' => 'Home'])
 @section('content')
+@include('partials.themed-slider')
 <section class="native-home-hero"><div><p>{{ now()->timezone('Asia/Dubai')->format('l, d M') }}</p><h1>Hello, {{ str($professional->name)->before(' ') }}</h1><span>{{ $activeCount ? 'Your next service is ready below.' : 'Everything is clear for now.' }}</span></div><a href="{{ route('worker.profile.show') }}" aria-label="Open profile">@if($professional->profile_photo_path)<img src="{{ route('worker.profile.photo') }}" alt="{{ $professional->name }}">@else<span>{{ strtoupper(substr($professional->name, 0, 2)) }}</span>@endif</a></section>
 <section class="native-stat-strip" aria-label="Work summary"><a href="{{ route('worker.jobs.index') }}"><strong>{{ $todayCount }}</strong><span>Today</span></a><a href="{{ route('worker.jobs.index') }}"><strong>{{ $activeCount }}</strong><span>Active</span></a><a class="{{ $attentionCount ? 'attention' : '' }}" href="{{ route('worker.jobs.index') }}"><strong>{{ $attentionCount }}</strong><span>Attention</span></a></section>
 <div class="native-section-title"><div><small>NEXT SERVICE</small><h2>{{ $nextJob ? 'Continue your work' : 'No active jobs' }}</h2></div>@if($nextJob)<a href="{{ route('worker.jobs.index') }}">View all</a>@endif</div>

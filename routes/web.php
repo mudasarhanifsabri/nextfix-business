@@ -17,6 +17,7 @@ use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ProfessionalController;
 use App\Http\Controllers\RateCardController;
 use App\Http\Controllers\SystemUpdateController;
+use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\WorkerJobController;
 use App\Http\Controllers\WorkerProfileController;
@@ -69,6 +70,9 @@ Route::middleware('auth')->group(function (): void {
     });
 
     Route::middleware('role:nextfix_admin')->group(function (): void {
+        Route::get('/admin/themes', [ThemeController::class, 'index'])->name('admin.themes.index');
+        Route::post('/admin/themes', [ThemeController::class, 'publish'])->name('admin.themes.publish');
+        Route::post('/admin/themes/restore', [ThemeController::class, 'restore'])->name('admin.themes.restore');
         Route::get('/admin/system-updates', [SystemUpdateController::class, 'index'])->name('admin.updates.index');
         Route::post('/admin/system-updates', [SystemUpdateController::class, 'store'])->middleware('throttle:5,1')->name('admin.updates.store');
         Route::resource('/admin/companies', CompanyController::class)

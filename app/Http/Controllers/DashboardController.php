@@ -34,6 +34,7 @@ class DashboardController extends Controller
 
         return view('dashboard', [
             'upcoming' => $bookings->where('scheduled_at', '>=', now())->take(4),
+            'unitCount' => $user->company ? $user->company->units()->where('is_active', true)->count() : 0,
             'pendingCount' => $bookings->where('payment_status', 'pending')->count(),
             'activeCount' => $bookings->whereIn('status', ['confirmed', 'assigned', 'on_the_way', 'in_progress'])->count(),
             'quotationCount' => $bookings->where('workflow_stage', 'awaiting_customer_approval')->count(),

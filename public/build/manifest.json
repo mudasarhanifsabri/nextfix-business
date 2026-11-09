@@ -27,6 +27,11 @@
     "src": "resources/css/company-mobile.css",
     "isEntry": true
   },
+  "resources/css/company-native.css": {
+    "file": "assets/company-native-COB8FeTI.css",
+    "src": "resources/css/company-native.css",
+    "isEntry": true
+  },
   "resources/css/customer.css": {
     "file": "assets/customer-CNejUGz1.css",
     "src": "resources/css/customer.css",
@@ -128,7 +133,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BWoKaG7a.js",
+    "file": "assets/app-N-zrSLpI.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,

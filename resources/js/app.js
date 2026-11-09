@@ -445,6 +445,40 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
     updateServices();
 });
 
+document.querySelectorAll('[data-native-booking]').forEach((form) => {
+    const unitSelect = form.querySelector('select[name="unit_id"]');
+    const unitButtons = [...form.querySelectorAll('[data-native-unit]')];
+    const scheduled = form.querySelector('[data-native-scheduled]');
+    const dateButtons = [...form.querySelectorAll('[data-native-date]')];
+    const timeButtons = [...form.querySelectorAll('[data-native-time]')];
+    const steps = [...form.closest('.native-booking-screen')?.querySelectorAll('.native-booking-steps span') || []];
+
+    const activateUnit = (value) => {
+        if (!unitSelect) return;
+        unitSelect.value = String(value);
+        unitButtons.forEach((button) => button.classList.toggle('active', button.dataset.nativeUnit === String(value)));
+        unitSelect.dispatchEvent(new Event('change', {bubbles: true}));
+    };
+    unitButtons.forEach((button) => button.addEventListener('click', () => activateUnit(button.dataset.nativeUnit)));
+
+    const updateSchedule = () => {
+        if (!scheduled) return;
+        const activeDate = dateButtons.find((button) => button.classList.contains('active'))?.dataset.nativeDate;
+        const activeTime = timeButtons.find((button) => button.classList.contains('active'))?.dataset.nativeTime;
+        if (activeDate && activeTime) scheduled.value = `${activeDate}T${activeTime}`;
+        steps[2]?.classList.toggle('active', Boolean(activeDate && activeTime));
+    };
+    dateButtons.forEach((button) => button.addEventListener('click', () => {
+        dateButtons.forEach((option) => option.classList.toggle('active', option === button));
+        updateSchedule();
+    }));
+    timeButtons.forEach((button) => button.addEventListener('click', () => {
+        timeButtons.forEach((option) => option.classList.toggle('active', option === button));
+        updateSchedule();
+    }));
+    updateSchedule();
+});
+
 const notificationFeed = document.querySelector('[data-notification-feed]');
 if (notificationFeed) {
     let lastNotification = notificationFeed.dataset.lastNotification || '';

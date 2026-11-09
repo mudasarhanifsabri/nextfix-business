@@ -1,5 +1,41 @@
-@extends('layouts.app', ['heading' => $service === 'cleaning' ? 'Book cleaning' : 'Request maintenance'])
+@extends('layouts.app', ['heading' => $service === 'cleaning' ? 'Book cleaning' : 'Request maintenance', 'mobileFocus' => true])
 @section('content')
+@php
+    $nativeScheduled = \Illuminate\Support\Carbon::parse(old('scheduled_at', now()->addDay()->setTime(10, 0)));
+    $nativeImages = ['touch_up' => 'cleaning-hero.webp', 'normal_materials' => 'cleaning-hero.webp', 'normal_linen' => 'checkout-cleaning.webp', 'client_in_stay' => 'checkout-cleaning.webp', 'deep_materials' => 'deep-cleaning.webp', 'deep_linen' => 'deep-cleaning.webp', 'intensive_deep' => 'deep-cleaning.webp'];
+@endphp
+<div class="company-native-only native-booking-screen">
+    <a class="native-back" href="{{ route('dashboard') }}"><i class="bi bi-arrow-left"></i><span>{{ $service === 'cleaning' ? 'Book cleaning' : 'Maintenance' }}</span></a>
+    <div class="native-booking-steps"><span class="active"><b>1</b>Unit</span><i></i><span class="active"><b>2</b>Service</span><i></i><span><b>3</b>Schedule</span></div>
+    <form class="native-booking-form" method="post" action="{{ route('bookings.store') }}" enctype="multipart/form-data" data-native-booking @if($service === 'cleaning') data-cleaning-booking data-rates-active="{{ $rateCard && $rateCard->status === 'approved' ? '1' : '0' }}" data-booking-rates='@json($bookingRates)' @endif>
+        @csrf
+        <input type="hidden" name="service_type" value="{{ $service }}">
+        <select class="native-hidden-select" name="unit_id" required aria-label="Selected property">@if($units->isEmpty())<option value="">Add a unit before booking</option>@else @foreach($units as $unit)<option value="{{ $unit->id }}" @selected(old('unit_id', $units->first()->id) == $unit->id)>{{ $unit->building }} · Unit {{ $unit->unit_number }}</option>@endforeach @endif</select>
+
+        @if($service === 'maintenance')
+            <section class="native-booking-banner"><img src="/images/app/company/maintenance-hero.webp" alt="NextFix technician servicing an air conditioner"><span></span><div><small>INSPECTION FIRST</small><h2>Expert care<br>for every unit.</h2><p>Approve the quotation before work begins.</p></div></section>
+        @endif
+
+        <section class="native-booking-section"><div class="native-section-title"><div><small>STEP 1</small><h3>Choose a unit</h3></div></div><div class="native-unit-strip">@forelse($units as $unit)<button type="button" class="native-unit-option {{ old('unit_id', $units->first()->id) == $unit->id ? 'active' : '' }}" data-native-unit="{{ $unit->id }}"><img src="/images/app/company/unit-dubai.webp" alt=""><span><strong>Unit {{ $unit->unit_number }}</strong><small>{{ $unit->building }} · {{ $unit->rate_unit_label }}</small></span><i class="bi bi-check-circle-fill"></i></button>@empty<a class="native-add-unit" href="{{ route('units.create') }}"><i class="bi bi-plus-circle"></i>Add your first unit</a>@endforelse</div></section>
+
+        <section class="native-booking-section"><div class="native-section-title"><div><small>STEP 2</small><h3>{{ $service === 'cleaning' ? 'Choose a cleaning service' : 'What needs attention?' }}</h3></div>@if($service === 'cleaning')<span data-booking-unit-label></span>@endif</div>
+            @if($service === 'cleaning')
+                <div class="native-cleaning-options">@foreach($cleaningTypes as $code => $label)<label class="native-cleaning-option contract-choice" data-rate-code="{{ $code }}"><input type="radio" name="service_name" value="{{ $label }}" @checked(old('service_name') === $label)><span class="native-choice-image"><img src="/images/app/company/{{ $nativeImages[$code] }}" alt=""><i class="bi bi-check-circle-fill"></i></span><strong>{{ str($label)->replace(' + ', ' & ') }}</strong><small data-rate-price>Checking rate…</small></label>@endforeach</div><div class="no-contracted-service" data-no-contracted-service hidden><i class="bi bi-receipt"></i><strong>No approved service for this unit type</strong><a href="{{ route('rates.show') }}">Review rates</a></div>
+            @else
+                @php($nativeChoices = [['AC inspection','bi-snow','blue'],['Plumbing inspection','bi-droplet','coral'],['Electrical inspection','bi-lightning-charge','amber'],['General maintenance','bi-tools','green']])
+                <div class="native-maintenance-options">@foreach($nativeChoices as $index => $choice)<label class="native-maintenance-option {{ $choice[2] }}"><input type="radio" name="service_name" value="{{ $choice[0] }}" @checked(old('service_name', $nativeChoices[0][0]) === $choice[0])><span><i class="bi {{ $choice[1] }}"></i><b>{{ str($choice[0])->before(' inspection') }}</b><em class="bi bi-check-circle-fill"></em></span></label>@endforeach</div>
+            @endif
+        </section>
+
+        <section class="native-booking-section native-schedule"><div class="native-section-title"><div><small>STEP 3</small><h3>Select date and time</h3></div><span>{{ $nativeScheduled->format('F Y') }}</span></div><input type="hidden" name="scheduled_at" value="{{ $nativeScheduled->format('Y-m-d\TH:i') }}" data-native-scheduled required><div class="native-date-strip">@for($day = 1; $day <= 7; $day++)@php($date = now()->addDays($day))<button type="button" class="native-date-option {{ $date->isSameDay($nativeScheduled) ? 'active' : '' }}" data-native-date="{{ $date->format('Y-m-d') }}"><small>{{ $date->format('D') }}</small><strong>{{ $date->format('d') }}</strong></button>@endfor</div><h4>Select a time</h4><div class="native-time-strip">@foreach(['08:30'=>'8:30 AM','10:00'=>'10:00 AM','12:00'=>'12:00 PM','14:00'=>'2:00 PM','16:00'=>'4:00 PM'] as $value => $label)<button type="button" class="native-time-option {{ $nativeScheduled->format('H:i') === $value ? 'active' : '' }}" data-native-time="{{ $value }}">{{ $label }}</button>@endforeach</div></section>
+
+        <details class="native-booking-details"><summary><i class="bi bi-chat-left-text"></i><span><strong>Add notes or photos</strong><small>{{ $service === 'maintenance' ? 'Show the issue to help the technician prepare' : 'Optional access details for the cleaning team' }}</small></span><i class="bi bi-chevron-down"></i></summary><label>Notes<textarea name="notes" placeholder="Access instructions or helpful details…">{{ old('notes') }}</textarea></label><label class="native-photo-upload"><input type="file" name="booking_photos[]" accept="image/jpeg,image/png,image/webp" multiple data-photo-input data-preview-target="native-booking-photo-preview"><i class="bi bi-camera"></i><span><strong>Add photos</strong><small>Camera or gallery · up to 8</small></span></label><div id="native-booking-photo-preview" class="booking-photo-preview"></div></details>
+
+        <div class="native-booking-submit"><span><small>Your agreed rate</small><strong data-booking-summary-title>{{ $service === 'cleaning' ? 'Choose a service' : 'Inspection payment' }}</strong><em data-booking-summary-copy>{{ $service === 'cleaning' ? 'Select a service to see the price.' : 'Credited after quotation approval.' }}</em></span><button type="submit" @disabled($units->isEmpty() || !$rateCard || $rateCard->status !== 'approved')>Continue <i class="bi bi-arrow-right"></i></button></div>
+    </form>
+</div>
+
+<div class="company-desktop-only">
 @if(!$rateCard || $rateCard->status !== 'approved')<div class="review-banner booking-rate-warning"><i class="bi bi-receipt"></i><div><strong>Rate card approval required</strong><p>Your company’s service prices are not active yet. <a href="{{ route('rates.show') }}">Open Rates</a> to review the proposal or ask NextFix for an update.</p></div></div>@endif
 <div class="booking-progress"><div><span>1</span><strong>Service</strong></div><i></i><div class="active"><span>2</span><strong>Details</strong></div><i></i><div><span>3</span><strong>Confirmed</strong></div></div>
 <div class="booking-layout">
@@ -19,5 +55,6 @@
     <div class="booking-submit"><div><i class="bi {{ $service === 'cleaning' ? 'bi-receipt' : 'bi-shield-lock' }}"></i><span><strong data-booking-summary-title>{{ $service === 'cleaning' ? 'Choose an approved service' : 'Secure inspection payment' }}</strong><small data-booking-summary-copy>{{ $service === 'cleaning' ? 'The exact contract price will appear after you select a unit and service.' : 'The approved inspection fee is credited when you approve the repair quotation.' }}</small></span></div><button class="primary" @disabled($units->isEmpty() || !$rateCard || $rateCard->status !== 'approved')>{{ $service === 'cleaning' ? 'Book cleaning' : 'Continue to inspection payment' }} <i class="bi bi-arrow-right"></i></button></div>
 </form>
 <aside class="booking-help"><span class="help-icon"><i class="bi {{ $service === 'cleaning' ? 'bi-stars' : 'bi-tools' }}"></i></span><h3>{{ $service === 'cleaning' ? 'Direct cleaning booking' : 'Inspection-first maintenance' }}</h3>@if($service === 'cleaning')<ul><li><i class="bi bi-check2"></i> Only your approved services appear</li><li><i class="bi bi-check2"></i> Exact unit rate shown before booking</li><li><i class="bi bi-check2"></i> Track cleaner and progress in the app</li></ul><p>No inspection or repair quotation is required for cleaning.</p>@else<ul><li><i class="bi bi-check2"></i> Pay inspection fee securely with Nomod</li><li><i class="bi bi-check2"></i> Receive report, photos and quotation</li><li><i class="bi bi-check2"></i> Inspection fee credited after approval</li></ul><p>Repair work starts only after your approval and final payment.</p>@endif</aside>
+</div>
 </div>
 @endsection

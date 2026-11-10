@@ -25,7 +25,7 @@ class BookingController extends Controller
         return view('bookings.index', [
             'bookings' => Booking::where('company_id', $companyId)->with('unit')->latest('scheduled_at')->paginate(15),
             'quotations' => Booking::where('company_id', $companyId)->with(['unit', 'inspectionPhotos'])->where('workflow_stage', 'awaiting_customer_approval')->oldest('quotation_sent_at')->get(),
-            'paymentsDue' => Booking::where('company_id', $companyId)->with('unit')->whereIn('status', ['awaiting_inspection_payment', 'awaiting_quote_payment'])->latest()->get(),
+            'paymentsDue' => Booking::where('company_id', $companyId)->with(['unit', 'quotationInvoice'])->whereIn('status', ['awaiting_inspection_payment', 'awaiting_quote_payment'])->latest()->get(),
         ]);
     }
 

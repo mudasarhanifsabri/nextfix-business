@@ -414,6 +414,9 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
             summaryTitles.forEach((element) => { element.textContent = 'Choose a service'; });
             summaryCopies.forEach((element) => { element.textContent = 'Choose an approved service'; });
             form.querySelectorAll('[data-wizard-review-description]').forEach((element) => { element.textContent = 'Selected cleaning service'; });
+            form.querySelectorAll('[data-wizard-review-base]').forEach((element) => { element.textContent = '—'; });
+            form.querySelectorAll('[data-wizard-review-extra-total]').forEach((element) => { element.textContent = format(extraTotal()); });
+            form.querySelectorAll('[data-wizard-review-total]').forEach((element) => { element.textContent = '—'; });
             if (submit) submit.disabled = true;
             if (nextService) nextService.disabled = true;
             if (serviceName) serviceName.value = '';
@@ -422,7 +425,8 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
         const input = selected.querySelector('input');
         const selectedUnit = rates[String(unit?.value || '')] || {};
         const base = Number(selectedUnit.services?.[selected.dataset.rateCode] || 0);
-        const total = base + extraTotal();
+        const extras = extraTotal();
+        const total = base + extras;
         const label = input.dataset.serviceLabel || input.value;
         if (serviceName) serviceName.value = label;
         summaryTitles.forEach((element) => { element.textContent = `${label} · ${format(total)}`; });
@@ -435,6 +439,8 @@ document.querySelectorAll('[data-cleaning-booking]').forEach((form) => {
             if (selected.dataset.serviceImage) element.src = selected.dataset.serviceImage;
             element.alt = label;
         });
+        form.querySelectorAll('[data-wizard-review-base]').forEach((element) => { element.textContent = format(base); });
+        form.querySelectorAll('[data-wizard-review-extra-total]').forEach((element) => { element.textContent = format(extras); });
         form.querySelectorAll('[data-wizard-review-total]').forEach((element) => { element.textContent = format(total); });
         const selectedExtras = extraInputs.filter((extra) => Number(extra.value) > 0);
         const extraReview = form.querySelector('[data-wizard-review-addons]');
@@ -575,12 +581,20 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
         wizard.querySelectorAll('[data-service-filter]').forEach((item) => item.classList.toggle('active', item === button));
         applyServiceFilter();
     }));
-    wizard.querySelector('[data-open-addons]')?.addEventListener('click', () => {
+    wizard.querySelectorAll('[data-service-filter-shortcut]').forEach((button) => button.addEventListener('click', () => {
+        serviceFilter = button.dataset.serviceFilterShortcut || 'all';
+        wizard.querySelectorAll('[data-service-filter]').forEach((item) => {
+            item.classList.toggle('active', item.dataset.serviceFilter === serviceFilter);
+        });
+        applyServiceFilter();
+        wizard.querySelector('[data-service-list]')?.scrollTo({top: 0, behavior: 'smooth'});
+    }));
+    wizard.querySelectorAll('[data-open-addons]').forEach((button) => button.addEventListener('click', () => {
         const addons = wizard.querySelector('.booking-wizard__addons');
         if (!addons) return;
         addons.open = true;
         window.requestAnimationFrame(() => addons.scrollIntoView({behavior: 'smooth', block: 'center'}));
-    });
+    }));
     const refreshServiceReview = (input) => {
         if (!input) return;
         const card = input.closest('[data-rate-code],[data-wizard-service]');

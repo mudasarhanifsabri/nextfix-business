@@ -6,7 +6,12 @@
         ['value' => 'AC inspection', 'label' => 'Air conditioning', 'description' => 'Cooling, airflow or AC fault.', 'category' => 'cooling', 'icon' => 'bi-snow', 'tone' => 'blue'],
         ['value' => 'Plumbing inspection', 'label' => 'Plumbing', 'description' => 'Leak, blockage or water issue.', 'category' => 'water', 'icon' => 'bi-droplet', 'tone' => 'coral'],
         ['value' => 'Electrical inspection', 'label' => 'Electrical', 'description' => 'Power, lighting or socket issue.', 'category' => 'electrical', 'icon' => 'bi-lightning-charge', 'tone' => 'amber'],
-        ['value' => 'General maintenance', 'label' => 'General maintenance', 'description' => 'Appliance, fixture or other repair.', 'category' => 'general', 'icon' => 'bi-tools', 'tone' => 'green'],
+        ['value' => 'Appliance inspection', 'label' => 'Appliances', 'description' => 'Washer, fridge, oven or appliance fault.', 'category' => 'appliances', 'icon' => 'bi-plug', 'tone' => 'green'],
+        ['value' => 'Water heater inspection', 'label' => 'Water heater', 'description' => 'No hot water, heating or tank leak.', 'category' => 'water', 'icon' => 'bi-thermometer-sun', 'tone' => 'coral'],
+        ['value' => 'Door and lock inspection', 'label' => 'Doors & locks', 'description' => 'Door, handle, lock or access problem.', 'category' => 'fixtures', 'icon' => 'bi-key', 'tone' => 'blue'],
+        ['value' => 'Carpentry inspection', 'label' => 'Carpentry & fixtures', 'description' => 'Cabinet, shelf, furniture or fitting.', 'category' => 'fixtures', 'icon' => 'bi-hammer', 'tone' => 'amber'],
+        ['value' => 'Painting inspection', 'label' => 'Painting & walls', 'description' => 'Wall damage, stain, crack or touch-up.', 'category' => 'fixtures', 'icon' => 'bi-paint-bucket', 'tone' => 'coral'],
+        ['value' => 'General maintenance', 'label' => 'Other maintenance', 'description' => 'Another apartment repair or inspection.', 'category' => 'general', 'icon' => 'bi-tools', 'tone' => 'green'],
     ];
     $inspectionMinor = (int) ($rateCard?->maintenance_inspection_minor ?? 0);
 @endphp
@@ -47,9 +52,8 @@
             @if($units->isNotEmpty())
                 <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search unit, building or area" data-unit-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
                 <div class="booking-wizard__chips" data-unit-filters>
-                    <button type="button" class="active" data-unit-filter="all">Recent</button>
-                    @foreach($unitBuildings->take(3) as $building)<button type="button" data-unit-filter="{{ str($building)->lower() }}">{{ $building }}</button>@endforeach
-                    <button type="button" data-unit-filter="all">Available</button>
+                    <button type="button" class="active" data-unit-filter="all">All</button>
+                    @foreach($unitBuildings as $building)<button type="button" data-unit-filter="{{ str($building)->lower() }}">{{ $building }}</button>@endforeach
                 </div>
                 <div class="booking-wizard__title booking-wizard__title--list"><h2>Choose a unit</h2><small>{{ $units->count() }} {{ $units->count() === 1 ? 'unit' : 'units' }}</small><button type="button" aria-label="Filter units"><i class="bi bi-sliders2"></i></button></div>
                 <div class="booking-wizard__unit-list" data-unit-list>
@@ -83,7 +87,8 @@
                 <button type="button" data-service-filter="cooling">Cooling</button>
                 <button type="button" data-service-filter="water">Water</button>
                 <button type="button" data-service-filter="electrical">Electrical</button>
-                <button type="button" data-service-filter="general">General</button>
+                <button type="button" data-service-filter="appliances">Appliances</button>
+                <button type="button" data-service-filter="fixtures">Fixtures</button>
             </div>
             <div class="booking-wizard__title booking-wizard__title--list"><h2>What needs attention?</h2><small>Inspection first</small></div>
             <div class="booking-wizard__service-list">
@@ -125,6 +130,12 @@
                 <i class="bi bi-shield-check"></i><span><small>Inspection fee</small><strong>AED {{ number_format($inspectionMinor / 100, 2) }}</strong></span>
                 <span><i class="bi bi-arrow-repeat"></i><small>Credited in full when<br>the quotation is approved.</small></span>
             </div>
+            <section class="booking-wizard__breakdown" aria-label="Maintenance payment breakdown">
+                <div><strong>Payment breakdown</strong><small>Inspection first</small></div>
+                <p><span>Inspection visit</span><b>AED {{ number_format($inspectionMinor / 100, 2) }}</b></p>
+                <p><span>Credit after quotation approval</span><b>− AED {{ number_format($inspectionMinor / 100, 2) }}</b></p>
+                <p class="total"><span>Due now</span><b>AED {{ number_format($inspectionMinor / 100, 2) }}</b></p>
+            </section>
             <div class="booking-wizard__action booking-wizard__action--confirm"><button type="submit" @disabled($units->isEmpty() || !$rateCard || $rateCard->status !== 'approved' || $inspectionMinor <= 0)>Continue to payment</button></div>
         </section>
     </form>

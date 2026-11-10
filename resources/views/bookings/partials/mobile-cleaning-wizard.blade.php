@@ -40,12 +40,10 @@
             @if($units->isNotEmpty())
                 <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search unit, building or area" data-unit-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
                 <div class="booking-wizard__chips" data-unit-filters>
-                    <button type="button" class="active" data-unit-filter="all">Recent</button>
-                    <button type="button" data-unit-filter="all">Building <i class="bi bi-chevron-down"></i></button>
-                    <button type="button" data-unit-filter="all">Unit type <i class="bi bi-chevron-down"></i></button>
-                    <button type="button" data-unit-filter="all">Available</button>
+                    <button type="button" class="active" data-unit-filter="all">All</button>
+                    @foreach($unitBuildings as $building)<button type="button" data-unit-filter="{{ str($building)->lower() }}">{{ $building }}</button>@endforeach
                 </div>
-                <div class="booking-wizard__title booking-wizard__title--list"><h2>Recent units</h2><small>{{ $units->count() }} {{ $units->count() === 1 ? 'unit' : 'units' }}</small><button type="button" aria-label="Filter units"><i class="bi bi-sliders2"></i></button></div>
+                <div class="booking-wizard__title booking-wizard__title--list"><h2>Choose a unit</h2><small>{{ $units->count() }} {{ $units->count() === 1 ? 'unit' : 'units' }}</small></div>
                 <div class="booking-wizard__unit-list" data-unit-list>
                     @foreach($units as $unit)
                         <button type="button" class="booking-wizard__unit {{ $selectedUnitId === (string) $unit->id ? 'active' : '' }}"
@@ -73,11 +71,10 @@
             </button>
             <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search cleaning services" data-service-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
             <div class="booking-wizard__chips" data-service-filters>
-                <button type="button" class="active" data-service-filter="all">Popular</button>
+                <button type="button" class="active" data-service-filter="all">All</button>
                 <button type="button" data-service-filter="standard">Regular</button>
                 <button type="button" data-service-filter="deep">Deep</button>
                 <button type="button" data-service-filter="linen">Linen</button>
-                <button type="button" data-service-filter="all" data-open-addons>Add-ons</button>
             </div>
             <div class="booking-wizard__service-list" data-service-list>
                 @foreach($cleaningTypes as $code => $label)
@@ -89,6 +86,16 @@
                         <i class="bi bi-check-lg"></i>
                     </label>
                 @endforeach
+                <div class="booking-wizard__service-shortcuts" aria-label="Linen and add-on services">
+                    <button type="button" data-service-filter-shortcut="linen">
+                        <img src="/images/app/company/service-linen.webp" alt="">
+                        <span><strong>Linen service</strong><small>Fresh linen and towel options</small></span><i class="bi bi-chevron-right"></i>
+                    </button>
+                    <button type="button" data-open-addons>
+                        <img src="/images/app/company/service-normal-materials.webp" alt="">
+                        <span><strong>Add-ons</strong><small>Amenities, sofa and carpet care</small></span><i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
             </div>
             <div class="no-contracted-service booking-wizard__empty" data-no-contracted-service hidden><i class="bi bi-receipt"></i><strong>No approved service for this unit type</strong><a href="{{ route('rates.show') }}">Review rates</a></div>
 
@@ -138,6 +145,12 @@
                 <i class="bi bi-tag"></i><span><small>Agreed rate</small><strong data-wizard-review-total>—</strong></span>
                 <span><i class="bi bi-calendar2-check"></i><small>Free cancellation up to<br>2 hours before booking.</small></span>
             </div>
+            <section class="booking-wizard__breakdown" aria-label="Booking price breakdown">
+                <div><strong>Price breakdown</strong><small>Approved company rates</small></div>
+                <p><span>Cleaning service</span><b data-wizard-review-base>—</b></p>
+                <p><span>Linen &amp; add-ons</span><b data-wizard-review-extra-total>AED 0.00</b></p>
+                <p class="total"><span>Total</span><b data-wizard-review-total>—</b></p>
+            </section>
             <div data-wizard-review-addons hidden class="booking-wizard__addon-summary"><i class="bi bi-plus-square"></i><span><small>Add-ons</small><strong data-wizard-review-addon-copy>—</strong></span></div>
 
             <div class="booking-wizard__action booking-wizard__action--confirm"><button type="submit" @disabled(!$rateCard || $rateCard->status !== 'approved')>Confirm booking</button></div>

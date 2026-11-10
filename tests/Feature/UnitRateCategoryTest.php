@@ -235,7 +235,48 @@ class UnitRateCategoryTest extends TestCase
             ->assertSee('1 of 3')
             ->assertSee('Choose a unit')
             ->assertSee('What needs attention?')
+            ->assertSee('Water heater')
+            ->assertSee('Doors &amp; locks', false)
             ->assertSee('Schedule inspection')
+            ->assertSee('Payment breakdown')
             ->assertSee('Continue to payment');
+    }
+
+    public function test_company_booking_screen_presents_pending_payment_as_a_clear_action_card(): void
+    {
+        $company = Company::create(['name' => 'Payment Homes']);
+        $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
+        $unit = Unit::create([
+            'company_id' => $company->id,
+            'building' => 'Marina Residence',
+            'unit_number' => '903',
+            'rate_unit_type' => '2_bhk',
+            'bedrooms' => 2,
+            'address' => 'Dubai Marina, Dubai',
+            'is_active' => true,
+        ]);
+        Booking::create([
+            'company_id' => $company->id,
+            'unit_id' => $unit->id,
+            'reference' => 'NFB-PAY-01',
+            'service_type' => 'maintenance',
+            'service_name' => 'AC inspection',
+            'scheduled_at' => now()->addDay(),
+            'status' => 'awaiting_inspection_payment',
+            'payment_status' => 'pending',
+            'amount_minor' => 15000,
+            'inspection_fee_minor' => 15000,
+            'inspection_payment_url' => 'https://pay.example.test/inspection',
+            'currency' => 'AED',
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('bookings.index'))
+            ->assertOk()
+            ->assertSee('Payments to complete')
+            ->assertSee('Awaiting payment')
+            ->assertSee('AED 150.00')
+            ->assertSee('Pay now')
+            ->assertSee('https://pay.example.test/inspection', false);
     }
 }

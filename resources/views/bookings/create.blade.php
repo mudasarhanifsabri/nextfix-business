@@ -7,6 +7,8 @@
 @if($service === 'cleaning')
     @include('bookings.partials.mobile-cleaning-wizard')
 @else
+    @include('bookings.partials.mobile-maintenance-wizard')
+@if(false)
 <div class="company-native-only native-booking-screen">
     <a class="native-back" href="{{ route('dashboard') }}"><i class="bi bi-arrow-left"></i><span>{{ $service === 'cleaning' ? 'Book cleaning' : 'Maintenance' }}</span></a>
     <form class="native-booking-form" method="post" action="{{ route('bookings.store') }}" enctype="multipart/form-data" data-native-booking @if($service === 'cleaning') data-cleaning-booking data-rates-active="{{ $rateCard && $rateCard->status === 'approved' ? '1' : '0' }}" data-booking-rates='@json($bookingRates)' @endif>
@@ -36,6 +38,7 @@
         <div class="native-booking-submit"><span><small>Your agreed rate</small><strong data-booking-summary-title>{{ $service === 'cleaning' ? 'Choose a service' : 'Inspection payment' }}</strong><em data-booking-summary-copy>{{ $service === 'cleaning' ? 'Select a service to see the price.' : 'Credited after quotation approval.' }}</em></span><button type="submit" @disabled($units->isEmpty() || !$rateCard || $rateCard->status !== 'approved')>Continue <i class="bi bi-arrow-right"></i></button></div>
     </form>
 </div>
+@endif
 @endif
 
 <div class="company-desktop-only">

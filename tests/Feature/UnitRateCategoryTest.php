@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\CompanyRateCard;
 use App\Models\Unit;
 use App\Models\User;
+use App\Support\RateCatalogue;
 use App\Support\WorkChecklist;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -186,5 +187,55 @@ class UnitRateCategoryTest extends TestCase
         ])->assertSessionHasErrors('extras.additional_linen.bath_towel');
 
         $this->assertDatabaseCount('bookings', 0);
+    }
+
+    public function test_demo_rate_card_covers_every_supported_unit_and_cleaning_service(): void
+    {
+        $this->seed();
+
+        $card = CompanyRateCard::firstOrFail();
+
+        foreach (array_keys(RateCatalogue::unitTypes()) as $unitType) {
+            foreach (array_keys(RateCatalogue::cleaningTypes()) as $serviceCode) {
+                $rate = data_get($card->rates, "cleaning.{$unitType}.{$serviceCode}");
+
+                $this->assertIsInt($rate, "Missing demo rate for {$unitType}.{$serviceCode}");
+                $this->assertGreaterThan(0, $rate, "Demo rate must be positive for {$unitType}.{$serviceCode}");
+            }
+        }
+
+        $this->assertSame(15000, $card->maintenance_inspection_minor);
+        $this->assertDatabaseCount('units', 4);
+    }
+
+    public function test_maintenance_mobile_booking_uses_the_three_step_list_wizard(): void
+    {
+        $company = Company::create(['name' => 'Maintenance Homes']);
+        $manager = User::factory()->create(['role' => 'company_manager', 'company_id' => $company->id]);
+        Unit::create([
+            'company_id' => $company->id,
+            'building' => 'Canal Residence',
+            'unit_number' => '1204',
+            'rate_unit_type' => '2_bhk',
+            'bedrooms' => 2,
+            'address' => 'Business Bay, Dubai',
+            'is_active' => true,
+        ]);
+        CompanyRateCard::create([
+            'company_id' => $company->id,
+            'status' => 'approved',
+            'maintenance_inspection_minor' => 15000,
+            'rates' => ['cleaning' => []],
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('bookings.create', 'maintenance'))
+            ->assertOk()
+            ->assertSee('data-wizard-kind="maintenance"', false)
+            ->assertSee('1 of 3')
+            ->assertSee('Choose a unit')
+            ->assertSee('What needs attention?')
+            ->assertSee('Schedule inspection')
+            ->assertSee('Continue to payment');
     }
 }

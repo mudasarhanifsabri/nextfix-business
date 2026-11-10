@@ -482,8 +482,8 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
     const stepButtons = [...wizard.querySelectorAll('[data-wizard-step]')];
     const unitSelect = form.querySelector('select[name="unit_id"]');
     const unitButtons = [...form.querySelectorAll('[data-native-unit]')];
-    const serviceCards = [...form.querySelectorAll('[data-rate-code]')];
-    const serviceInputs = serviceCards.map((card) => card.querySelector('input'));
+    const serviceCards = [...form.querySelectorAll('[data-rate-code],[data-wizard-service]')];
+    const serviceInputs = serviceCards.map((card) => card.querySelector('input')).filter(Boolean);
     const scheduled = form.querySelector('[data-native-scheduled]');
     const dateButtons = [...form.querySelectorAll('[data-native-date]')];
     const timeButtons = [...form.querySelectorAll('[data-native-time]')];
@@ -506,7 +506,11 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
 
     const showStep = (step) => {
         currentStep = Math.max(1, Math.min(3, Number(step)));
-        const titles = ['Book cleaning', 'Choose service', 'Schedule'];
+        const titles = [
+            wizard.dataset.wizardTitleUnit || 'Book cleaning',
+            wizard.dataset.wizardTitleService || 'Choose service',
+            wizard.dataset.wizardTitleSchedule || 'Schedule',
+        ];
         const copies = ['Choose unit', 'Choose service', 'Schedule'];
         const headerTitle = wizard.querySelector('[data-wizard-header-title]');
         const stepCount = wizard.querySelector('[data-wizard-step-count]');
@@ -559,8 +563,8 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
     function applyServiceFilter() {
         const query = (serviceSearch?.value || '').trim().toLowerCase();
         serviceCards.forEach((card) => {
-            const available = card.dataset.rateAvailable === '1';
-            const matchesQuery = !query || card.dataset.serviceSearchText.includes(query);
+            const available = card.dataset.rateAvailable === undefined || card.dataset.rateAvailable === '1';
+            const matchesQuery = !query || (card.dataset.serviceSearchText || '').includes(query);
             const matchesFilter = serviceFilter === 'all' || card.dataset.serviceCategory === serviceFilter;
             card.hidden = !(available && matchesQuery && matchesFilter);
         });
@@ -577,9 +581,25 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
         addons.open = true;
         window.requestAnimationFrame(() => addons.scrollIntoView({behavior: 'smooth', block: 'center'}));
     });
-    serviceInputs.forEach((input) => input.addEventListener('change', () => {
-        form.querySelector('[data-service-name]').value = input.dataset.serviceLabel || '';
-    }));
+    const refreshServiceReview = (input) => {
+        if (!input) return;
+        const card = input.closest('[data-rate-code],[data-wizard-service]');
+        const serviceName = input.dataset.serviceLabel || '';
+        const serviceNameInput = form.querySelector('[data-service-name]');
+        if (serviceNameInput) serviceNameInput.value = serviceName;
+        wizard.querySelectorAll('[data-wizard-review-service]').forEach((element) => { element.textContent = serviceName || 'Choose a service'; });
+        wizard.querySelectorAll('[data-wizard-review-description]').forEach((element) => { element.textContent = card?.dataset.serviceDescription || ''; });
+        const image = wizard.querySelector('[data-wizard-review-image]');
+        if (image && card?.dataset.serviceImage) image.src = card.dataset.serviceImage;
+        const icon = wizard.querySelector('[data-wizard-review-icon]');
+        if (icon) {
+            icon.className = `booking-wizard__review-icon ${input.dataset.serviceTone || 'blue'}`;
+            icon.innerHTML = `<i class="bi ${input.dataset.serviceIcon || 'bi-tools'}"></i>`;
+        }
+        const summary = wizard.querySelector('[data-booking-summary-title]');
+        if (summary) summary.textContent = serviceName || 'Choose an issue';
+    };
+    serviceInputs.forEach((input) => input.addEventListener('change', () => refreshServiceReview(input)));
 
     form.querySelectorAll('[data-qty-minus],[data-qty-plus]').forEach((button) => button.addEventListener('click', () => {
         const input = button.closest('[data-addon-row]')?.querySelector('[data-extra-input]');
@@ -629,6 +649,7 @@ document.querySelectorAll('[data-booking-wizard]').forEach((wizard) => {
     applyUnitFilter();
     applyServiceFilter();
     updateSchedule();
+    refreshServiceReview(serviceInputs.find((input) => input.checked));
     showStep(form.querySelector('.booking-wizard__errors') ? 1 : 1);
 });
 

@@ -42,13 +42,30 @@ cd "$REPOSITORY"
 echo "stage=preflight version=$VERSION run=$RUN_ID"
 
 # Shared hosting permission commands can change executable bits on tracked
-# placeholder files. Ignore mode-only differences but continue to block any
-# actual tracked content changes.
+# placeholder files. Ignore mode-only differences. If cPanel or an emergency
+# server edit changed tracked content, preserve it in a recoverable stash and
+# continue with GitHub as the deployment source of truth.
 git config core.fileMode false
-git diff --quiet && git diff --cached --quiet || {
-    echo "Tracked server files contain local changes; deployment stopped to protect them."
-    exit 25
-}
+TRACKED_CHANGES="$(git status --short --untracked-files=no)"
+if [[ -n "$TRACKED_CHANGES" ]]; then
+    STASH_MESSAGE="nextfix-predeploy-${VERSION}-run-${RUN_ID}-$(date -u +%Y%m%dT%H%M%SZ)"
+
+    echo "Tracked server files contain local changes. Saving them before deployment:"
+    printf '%s\n' "$TRACKED_CHANGES"
+
+    if ! git stash push --quiet --message "$STASH_MESSAGE"; then
+        echo "Unable to save tracked server changes; deployment stopped to protect them."
+        exit 25
+    fi
+
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo "Tracked files are still modified after the safety backup; deployment stopped."
+        exit 25
+    fi
+
+    echo "Saved tracked server changes in Git stash: $STASH_MESSAGE"
+    echo "Recovery command: git stash list"
+fi
 
 echo "stage=fetch"
 git fetch --quiet "$REMOTE" "$BRANCH"

@@ -19,6 +19,113 @@ body.company-app.mobile-focus-screen:has(.booking-wizard) .content{max-width:480
 .booking-wizard__action{position:fixed;z-index:90;right:auto;bottom:0;left:50%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;width:min(100%,480px);min-height:73px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #dfe5ef;background:rgba(255,255,255,.98);box-shadow:0 -9px 28px rgba(18,44,84,.1);transform:translateX(-50%);backdrop-filter:blur(18px)}.booking-wizard__action>span{display:grid;min-width:0}.booking-wizard__action small{color:#7a8799;font-size:7px}.booking-wizard__action strong{overflow:hidden;font-size:10px;text-overflow:ellipsis;white-space:nowrap}.booking-wizard__action>button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:45px;padding:0 15px;border:0;border-radius:13px;background:#1466e8;color:#fff;font:800 10px Manrope;box-shadow:0 7px 18px rgba(20,102,232,.24)}.booking-wizard__action>button:disabled{background:#acb8ca;box-shadow:none}.booking-wizard__action>button.secondary{padding:0 11px;border:1px solid #dce3ee;background:#fff;color:#263953;box-shadow:none}
 }
 
+/* Compact mobile booking controls and add-ons */
+@media (max-width: 800px) {
+    .booking-wizard__search-row {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .booking-wizard__search-row .booking-wizard__search {
+        margin: 0;
+    }
+
+    .booking-wizard__filters {
+        position: relative;
+    }
+
+    .booking-wizard__filters > summary {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border: 1px solid #dfe5ee;
+        border-radius: 14px;
+        background: #fff;
+        color: #1268ee;
+        list-style: none;
+        cursor: pointer;
+    }
+
+    .booking-wizard__filters > summary::-webkit-details-marker,
+    .booking-wizard__addon-group > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .booking-wizard__filters > .booking-wizard__chips {
+        position: absolute;
+        z-index: 30;
+        top: 50px;
+        right: 0;
+        display: flex;
+        width: min(330px, calc(100vw - 30px));
+        padding: 10px;
+        margin: 0;
+        overflow-x: auto;
+        border: 1px solid #dfe5ee;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 14px 30px rgba(27, 51, 91, .16);
+    }
+
+    .booking-wizard__addon-groups {
+        display: grid;
+        gap: 8px;
+        padding: 0 11px 11px;
+    }
+
+    .booking-wizard__addon-group {
+        overflow: hidden;
+        border: 1px solid #edf1f6;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .booking-wizard__addon-group > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        list-style: none;
+        cursor: pointer;
+    }
+
+    .booking-wizard__addon-group > summary span {
+        display: grid;
+    }
+
+    .booking-wizard__addon-group > summary strong {
+        font-size: 10px;
+    }
+
+    .booking-wizard__addon-group > summary small {
+        color: #7a879b;
+        font-size: 8px;
+    }
+
+    .booking-wizard__addon-group > summary > i {
+        transition: transform .2s ease;
+    }
+
+    .booking-wizard__addon-group[open] > summary > i {
+        transform: rotate(180deg);
+    }
+
+    .booking-wizard__addon-items {
+        border-top: 1px solid #edf1f6;
+    }
+
+    .booking-wizard__action--confirm button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+    }
+}
+
 /* Mobile booking v2: compact visual cards matching the native app design. */
 @media (max-width:800px){
 body.company-app.mobile-focus-screen:has(.booking-wizard) .content{width:100%;max-width:480px;padding:0 12px calc(88px + env(safe-area-inset-bottom))}

@@ -48,7 +48,7 @@ class UnitRateCategoryTest extends TestCase
             'booking_photos' => [UploadedFile::fake()->image('access.jpg')],
         ])->assertRedirect(route('bookings.index'));
 
-        $this->assertDatabaseHas('bookings', ['unit_id' => $unit->id, 'amount_minor' => 50000, 'workflow_stage' => 'work']);
+        $this->assertDatabaseHas('bookings', ['unit_id' => $unit->id, 'amount_minor' => 50000, 'workflow_stage' => 'awaiting_quote_payment']);
         $this->assertDatabaseHas('job_photos', ['uploaded_by_user_id' => $manager->id, 'category' => 'booking_issue']);
     }
 
@@ -239,7 +239,7 @@ class UnitRateCategoryTest extends TestCase
             ->assertSee('Doors &amp; locks', false)
             ->assertSee('Schedule inspection')
             ->assertSee('Payment breakdown')
-            ->assertSee('Continue to payment');
+            ->assertSee('Pay inspection fee');
     }
 
     public function test_company_booking_screen_presents_pending_payment_as_a_clear_action_card(): void
@@ -273,9 +273,7 @@ class UnitRateCategoryTest extends TestCase
         $this->actingAs($manager)
             ->get(route('bookings.index'))
             ->assertOk()
-            ->assertSee('Payments to complete')
-            ->assertSee('Awaiting payment')
-            ->assertSee('AED 150.00')
+            ->assertDontSee('Payments to complete')
             ->assertSee('Pay now')
             ->assertSee('https://pay.example.test/inspection', false);
     }

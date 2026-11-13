@@ -2,29 +2,61 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AdminAlert extends Notification implements ShouldQueue
+class AdminAlert extends Notification
 {
-    use Queueable;
-
-    public function __construct(public string $title, public string $message, public string $url, public string $level = 'info') {}
+    public function __construct(
+        public string $title,
+        public string $message,
+        public string $url,
+        public string $level = 'info',
+        public string $actionLabel = 'Open in NextFix',
+        public array $details = [],
+        public ?string $eventKey = null,
+        public bool $email = true,
+    ) {}
 
     public function via(object $notifiable): array
     {
-        return app()->environment('production') && config('mail.default') !== 'log' ? ['database', 'mail'] : ['database'];
+        $channels = ['database'];
+        $mailer = (string) config('mail.default');
+
+        if ($this->email && filled($notifiable->email ?? null) && ! in_array($mailer, ['log', 'array'], true)) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toArray(object $notifiable): array
     {
-        return ['title' => $this->title, 'message' => $this->message, 'url' => $this->url, 'level' => $this->level];
+        return [
+            'title' => $this->title,
+            'message' => $this->message,
+            'url' => $this->url,
+            'level' => $this->level,
+            'action_label' => $this->actionLabel,
+            'event_key' => $this->eventKey,
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->subject($this->title)->greeting('Hello '.$notifiable->name.',')->line($this->message)->action('Open in NextFix', $this->url);
+        $mail = (new MailMessage)
+            ->subject($this->title.' | NextFix')
+            ->greeting('Hello '.$notifiable->name.',')
+            ->line($this->message);
+
+        foreach ($this->details as $label => $value) {
+            if (filled($value)) {
+                $mail->line('**'.$label.':** '.$value);
+            }
+        }
+
+        return $mail
+            ->action($this->actionLabel, $this->url)
+            ->line('This is an automatic service update from NextFix Business.');
     }
 }

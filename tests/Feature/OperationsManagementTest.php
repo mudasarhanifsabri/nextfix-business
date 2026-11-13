@@ -151,7 +151,7 @@ class OperationsManagementTest extends TestCase
         ])->assertRedirect();
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'estimate', 'labour_hours' => 2, 'labour_cost' => 150, 'parts_cost' => 75, 'parts_required' => 'Replacement valve'])->assertRedirect();
         $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'workflow_stage' => 'awaiting_customer_approval']);
-        $this->assertDatabaseCount('notifications', 2);
+        $this->assertDatabaseCount('notifications', 4);
         $this->actingAs($worker)->get(route('worker.jobs.show', $booking))->assertOk()->assertSee('Waiting for company approval')->assertSee('INSPECTION SAVED')->assertSee('QUOTATION SENT')->assertSee('Pipe is leaking.')->assertSee('Replacement valve')->assertDontSee('Tap when done')->assertDontSee('Send estimate for approval')->assertDontSee('Save inspection & continue');
         $this->actingAs($worker)->post(route('worker.jobs.update', $booking), ['action' => 'inspection', 'inspection_condition' => 'good', 'inspection_report' => 'Attempted edit.'])->assertStatus(422);
         $this->actingAs($manager)->get(route('bookings.index'))->assertOk()->assertSee('Quotations ready for review')->assertSee('AED 236.25');

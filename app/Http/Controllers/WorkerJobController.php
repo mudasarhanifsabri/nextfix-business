@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\JobPhoto;
-use App\Models\User;
-use App\Notifications\AdminAlert;
+use App\Services\OperationalNotifier;
 use App\Support\WorkChecklist;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -162,30 +161,13 @@ class WorkerJobController extends Controller
 
         $booking->update($updates);
 
-        if ($action === 'estimate') {
-            foreach ($booking->company->users as $manager) {
-                $manager->notifyNow(new AdminAlert(
-                    'Quotation ready for approval',
-                    $booking->reference.' is ready. Review the inspection, fee credit and remaining amount.',
-                    route('bookings.index').'#quotation-'.$booking->id,
-                    'warning'
-                ), ['database']);
-            }
-            User::where('role', 'nextfix_admin')->get()->each->notifyNow(new AdminAlert(
-                'Quotation sent to company',
-                $booking->reference.' quotation was submitted by '.$professional->name.' and sent to '.$booking->company->name.'.',
-                route('admin.operations.index'),
-                'info'
-            ), ['database']);
-        }
-
-        if (in_array($action, ['hold', 'complete'], true)) {
-            $title = $action === 'hold' ? 'Job placed on hold' : 'Job completed';
-            $detail = $action === 'hold'
-                ? $booking->reference.' paused: '.str_replace('_', ' ', (string) $booking->hold_reason).'.'
-                : $booking->reference.' was completed by '.$professional->name.'.';
-            foreach ($booking->company->users as $manager) $manager->notifyNow(new AdminAlert($title, $detail, route('bookings.index'), $action === 'hold' ? 'warning' : 'success'), ['database']);
-            User::where('role', 'nextfix_admin')->get()->each->notifyNow(new AdminAlert($title, $detail, route('admin.operations.index'), $action === 'hold' ? 'warning' : 'success'), ['database']);
+        $freshBooking = $booking->fresh(['company.users', 'unit', 'professional.user', 'inspectionPhotos']);
+        if ($action === 'inspection') {
+            app(OperationalNotifier::class)->inspectionSubmitted($freshBooking);
+        } elseif ($action === 'estimate') {
+            app(OperationalNotifier::class)->quotationReady($freshBooking);
+        } elseif (in_array($action, ['hold', 'resume', 'complete'], true)) {
+            app(OperationalNotifier::class)->jobStatusChanged($freshBooking, $action);
         }
 
         $message = match ($action) {

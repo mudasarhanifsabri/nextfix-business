@@ -50,10 +50,15 @@
 
         <section class="booking-wizard__panel" data-wizard-panel="1">
             @if($units->isNotEmpty())
-                <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search unit, building or area" data-unit-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
-                <div class="booking-wizard__chips" data-unit-filters>
-                    <button type="button" class="active" data-unit-filter="all">All</button>
-                    @foreach($unitBuildings as $building)<button type="button" data-unit-filter="{{ str($building)->lower() }}">{{ $building }}</button>@endforeach
+                <div class="booking-wizard__search-row">
+                    <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search unit, building or area" data-unit-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
+                    <details class="booking-wizard__filters">
+                        <summary aria-label="Filter units"><i class="bi bi-sliders2"></i></summary>
+                        <div class="booking-wizard__chips" data-unit-filters>
+                            <button type="button" class="active" data-unit-filter="all">All</button>
+                            @foreach($unitBuildings as $building)<button type="button" data-unit-filter="{{ str($building)->lower() }}">{{ $building }}</button>@endforeach
+                        </div>
+                    </details>
                 </div>
                 <div class="booking-wizard__title booking-wizard__title--list"><h2>Choose a unit</h2><small>{{ $units->count() }} {{ $units->count() === 1 ? 'unit' : 'units' }}</small><button type="button" aria-label="Filter units"><i class="bi bi-sliders2"></i></button></div>
                 <div class="booking-wizard__unit-list" data-unit-list>
@@ -81,14 +86,19 @@
                 <span><small>Selected unit</small><strong data-wizard-selected-unit>Choose a unit</strong></span>
                 <i class="bi bi-pencil"></i>
             </button>
-            <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search maintenance services" data-service-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
-            <div class="booking-wizard__chips" data-service-filters>
-                <button type="button" class="active" data-service-filter="all">All</button>
-                <button type="button" data-service-filter="cooling">Cooling</button>
-                <button type="button" data-service-filter="water">Water</button>
-                <button type="button" data-service-filter="electrical">Electrical</button>
-                <button type="button" data-service-filter="appliances">Appliances</button>
-                <button type="button" data-service-filter="fixtures">Fixtures</button>
+            <div class="booking-wizard__search-row">
+                <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search maintenance services" data-service-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
+                <details class="booking-wizard__filters">
+                    <summary aria-label="Filter services"><i class="bi bi-sliders2"></i></summary>
+                    <div class="booking-wizard__chips" data-service-filters>
+                        <button type="button" class="active" data-service-filter="all">All</button>
+                        <button type="button" data-service-filter="cooling">Cooling</button>
+                        <button type="button" data-service-filter="water">Water</button>
+                        <button type="button" data-service-filter="electrical">Electrical</button>
+                        <button type="button" data-service-filter="appliances">Appliances</button>
+                        <button type="button" data-service-filter="fixtures">Fixtures</button>
+                    </div>
+                </details>
             </div>
             <div class="booking-wizard__title booking-wizard__title--list"><h2>What needs attention?</h2><small>Inspection first</small></div>
             <div class="booking-wizard__service-list">
@@ -136,7 +146,7 @@
                 <p><span>Credit after quotation approval</span><b>− AED {{ number_format($inspectionMinor / 100, 2) }}</b></p>
                 <p class="total"><span>Due now</span><b>AED {{ number_format($inspectionMinor / 100, 2) }}</b></p>
             </section>
-            <div class="booking-wizard__action booking-wizard__action--confirm"><button type="submit" @disabled($units->isEmpty() || !$rateCard || $rateCard->status !== 'approved' || $inspectionMinor <= 0)>Continue to payment</button></div>
+            <div class="booking-wizard__action booking-wizard__action--confirm"><button type="submit" @disabled($units->isEmpty() || !$rateCard || $rateCard->status !== 'approved' || $inspectionMinor <= 0)><i class="bi bi-lock"></i> Pay inspection fee</button></div>
         </section>
     </form>
 </div>

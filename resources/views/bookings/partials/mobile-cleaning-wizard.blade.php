@@ -38,10 +38,15 @@
 
         <section class="booking-wizard__panel" data-wizard-panel="1">
             @if($units->isNotEmpty())
-                <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search unit, building or area" data-unit-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
-                <div class="booking-wizard__chips" data-unit-filters>
-                    <button type="button" class="active" data-unit-filter="all">All</button>
-                    @foreach($unitBuildings as $building)<button type="button" data-unit-filter="{{ str($building)->lower() }}">{{ $building }}</button>@endforeach
+                <div class="booking-wizard__search-row">
+                    <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search unit, building or area" data-unit-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
+                    <details class="booking-wizard__filters">
+                        <summary aria-label="Filter units"><i class="bi bi-sliders2"></i></summary>
+                        <div class="booking-wizard__chips" data-unit-filters>
+                            <button type="button" class="active" data-unit-filter="all">All</button>
+                            @foreach($unitBuildings as $building)<button type="button" data-unit-filter="{{ str($building)->lower() }}">{{ $building }}</button>@endforeach
+                        </div>
+                    </details>
                 </div>
                 <div class="booking-wizard__title booking-wizard__title--list"><h2>Choose a unit</h2><small>{{ $units->count() }} {{ $units->count() === 1 ? 'unit' : 'units' }}</small></div>
                 <div class="booking-wizard__unit-list" data-unit-list>
@@ -69,12 +74,17 @@
                 <span><small>Selected unit</small><strong data-wizard-selected-unit>Choose a unit</strong></span>
                 <i class="bi bi-pencil"></i>
             </button>
-            <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search cleaning services" data-service-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
-            <div class="booking-wizard__chips" data-service-filters>
-                <button type="button" class="active" data-service-filter="all">All</button>
-                <button type="button" data-service-filter="standard">Regular</button>
-                <button type="button" data-service-filter="deep">Deep</button>
-                <button type="button" data-service-filter="linen">Linen</button>
+            <div class="booking-wizard__search-row">
+                <label class="booking-wizard__search"><i class="bi bi-search"></i><input type="search" placeholder="Search cleaning services" data-service-search autocomplete="off"><button type="button" data-search-clear aria-label="Clear search"><i class="bi bi-x"></i></button></label>
+                <details class="booking-wizard__filters">
+                    <summary aria-label="Filter services"><i class="bi bi-sliders2"></i></summary>
+                    <div class="booking-wizard__chips" data-service-filters>
+                        <button type="button" class="active" data-service-filter="all">All</button>
+                        <button type="button" data-service-filter="standard">Regular</button>
+                        <button type="button" data-service-filter="deep">Deep</button>
+                        <button type="button" data-service-filter="linen">Linen</button>
+                    </div>
+                </details>
             </div>
             <div class="booking-wizard__service-list" data-service-list>
                 @foreach($cleaningTypes as $code => $label)
@@ -104,7 +114,7 @@
                     <summary><span><i class="bi bi-plus-circle"></i><b>Linen & add-ons</b><small>Optional · approved contract prices</small></span><i class="bi bi-chevron-down"></i></summary>
                     <div class="booking-wizard__addon-groups">
                         @foreach($extraRates as $sectionCode => $section)
-                            <section><div><strong>{{ $section['title'] }}</strong><small>{{ $section['unit'] }}</small></div>
+                            <details class="booking-wizard__addon-group"><summary><span><strong>{{ $section['title'] }}</strong><small>{{ $section['unit'] }}</small></span><i class="bi bi-chevron-down"></i></summary><div class="booking-wizard__addon-items">
                                 @foreach($section['items'] as $itemCode => $item)
                                     @php($oldQuantity = (int) old("extras.{$sectionCode}.{$itemCode}", 0))
                                     <label class="booking-wizard__addon" data-addon-row>
@@ -112,7 +122,7 @@
                                         <span class="booking-wizard__qty"><button type="button" data-qty-minus aria-label="Remove one">−</button><input type="number" name="extras[{{ $sectionCode }}][{{ $itemCode }}]" value="{{ $oldQuantity }}" min="0" max="20" data-extra-input data-extra-section="{{ $sectionCode }}" data-extra-code="{{ $itemCode }}" data-extra-label="{{ $item['label'] }}" data-extra-price="{{ $item['amount'] }}" readonly><button type="button" data-qty-plus aria-label="Add one">+</button></span>
                                     </label>
                                 @endforeach
-                            </section>
+                            </div></details>
                         @endforeach
                     </div>
                 </details>
@@ -153,7 +163,7 @@
             </section>
             <div data-wizard-review-addons hidden class="booking-wizard__addon-summary"><i class="bi bi-plus-square"></i><span><small>Add-ons</small><strong data-wizard-review-addon-copy>—</strong></span></div>
 
-            <div class="booking-wizard__action booking-wizard__action--confirm"><button type="submit" @disabled(!$rateCard || $rateCard->status !== 'approved')>Confirm booking</button></div>
+            <div class="booking-wizard__action booking-wizard__action--confirm"><button type="submit" @disabled(!$rateCard || $rateCard->status !== 'approved')><i class="bi bi-lock"></i> Pay now</button></div>
         </section>
     </form>
 </div>

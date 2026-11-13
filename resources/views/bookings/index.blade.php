@@ -7,40 +7,40 @@
 @foreach($quotations as $booking)@php($credit = $booking->inspection_fee_paid_at ? $booking->inspection_fee_minor : 0)@php($remaining = max(0,$booking->labour_amount_minor+$booking->parts_amount_minor-$credit))@php($vat = (int) round($remaining*.05))@php($grand = $remaining+$vat)<article class="customer-quote" id="quotation-{{ $booking->id }}"><div class="customer-quote-title"><span><i class="bi bi-tools"></i></span><div><small>{{ $booking->reference }}</small><h3>{{ $booking->service_name }}</h3><p>{{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</p></div><div class="quote-total"><small>TOTAL INCL. VAT</small><strong>AED {{ number_format($grand / 100, 2) }}</strong><a class="icon-document" href="{{ route('bookings.quotation.pdf', $booking) }}" title="Download quotation PDF" aria-label="Download quotation PDF"><i class="bi bi-file-earmark-pdf"></i></a></div></div><div class="quote-breakdown"><span>Labour <b>{{ $booking->labour_hours }} hours</b><strong>AED {{ number_format($booking->labour_amount_minor / 100, 2) }}</strong></span><span>Parts <b>{{ $booking->parts_required ?: 'No parts listed' }}</b><strong>AED {{ number_format($booking->parts_amount_minor / 100, 2) }}</strong></span><span class="fee-credit">Inspection credit <b>Already paid</b><strong>− AED {{ number_format($credit / 100, 2) }}</strong></span><span class="quote-due">VAT 5% <b>Total AED {{ number_format($grand/100,2) }}</b><strong>AED {{ number_format($vat / 100, 2) }}</strong></span></div><details class="inspection-summary"><summary><i class="bi bi-clipboard2-pulse"></i> Inspection report</summary><p>{{ $booking->inspection_report }}</p>@if($booking->estimate_note)<small>{{ $booking->estimate_note }}</small>@endif</details><form class="quote-decision" method="post" action="{{ route('bookings.quotation-decision', $booking) }}">@csrf<div class="reject-reasons"><span>If requesting changes, tap a reason</span>@foreach(['Too expensive','Need clarification','Use different parts','Work not required','Need another option'] as $reason)<label><input type="radio" name="decision_note" value="{{ $reason }}"><span>{{ $reason }}</span></label>@endforeach</div><div><button class="secondary" name="decision" value="changes"><i class="bi bi-arrow-counterclockwise"></i> Changes</button><button class="primary" name="decision" value="approve"><i class="bi bi-check2-circle"></i> Approve & pay</button></div></form></article>@endforeach</section>
 @endif
 @if($paymentsDue->isNotEmpty())
-<section class="company-native-only native-payment-stack" aria-label="Payments to complete">
-    <div class="native-section-title"><div><small>ACTION REQUIRED</small><h3>Payments to complete</h3></div><span>{{ $paymentsDue->count() }}</span></div>
-    @foreach($paymentsDue as $booking)
-        @php($isInspection = $booking->status === 'awaiting_inspection_payment')
-        @php($payUrl = $isInspection ? $booking->inspection_payment_url : $booking->quotation_payment_url)
-        @php($dueMinor = $isInspection ? $booking->inspection_fee_minor : ($booking->quotationInvoice?->amount_minor ?? 0))
-        <article class="native-payment-card">
-            <div class="native-payment-card__head">
-                <img src="/images/app/company/{{ $booking->service_type === 'maintenance' ? 'maintenance-hero.webp' : 'unit-dubai.webp' }}" alt="">
-                <span><small>{{ $booking->reference }}</small><strong>{{ $booking->service_name }}</strong><em>{{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</em></span>
-                <b>Awaiting payment</b>
-            </div>
-            <div class="native-payment-card__due">
-                <span><small>{{ $isInspection ? 'Inspection visit' : 'Approved work' }}</small><strong>AED {{ number_format($dueMinor / 100, 2) }}</strong></span>
-                <p>{{ $isInspection ? 'Pay now to confirm the inspection slot. The fee is credited if you approve the quotation.' : 'Your quotation is approved. Payment authorizes the team to begin work.' }}</p>
-            </div>
-            <div class="native-payment-card__actions">
-                <a class="native-payment-card__details" href="{{ route('jobs.report.show', $booking) }}"><i class="bi bi-eye"></i> Details</a>
-                @if($payUrl)
-                    <a class="native-payment-card__pay" href="{{ $payUrl }}" rel="noopener"><i class="bi bi-lock"></i> Pay now</a>
-                @else
-                    <span class="native-payment-card__waiting"><i class="bi bi-clock"></i> Preparing payment link</span>
-                @endif
-            </div>
-        </article>
-    @endforeach
-</section>
 <div class="company-desktop-only">
     @foreach($paymentsDue as $booking)
     <section class="payment-action"><span><i class="bi bi-credit-card"></i></span><div><small>{{ $booking->status === 'awaiting_inspection_payment' ? 'INSPECTION PAYMENT' : 'INVOICE READY' }}</small><strong>{{ $booking->reference }} · {{ $booking->service_name }}</strong><p>{{ $booking->status === 'awaiting_inspection_payment' ? 'Pay the credited inspection fee to schedule the visit.' : 'Quotation approved. Pay the invoice to authorize work.' }}</p></div><div class="payment-buttons">@if($booking->quotation_invoice_id)<a class="icon-document" href="{{ route('bookings.invoice.pdf', $booking) }}" title="Download invoice PDF" aria-label="Download invoice PDF"><i class="bi bi-file-earmark-pdf"></i></a>@endif @php($payUrl = $booking->status === 'awaiting_inspection_payment' ? $booking->inspection_payment_url : $booking->quotation_payment_url)@if($payUrl)<a class="primary" href="{{ $payUrl }}" rel="noopener"><i class="bi bi-lock"></i> Pay now</a>@else<span class="status pending">Link required</span>@endif</div></section>
     @endforeach
 </div>
 @endif
-<section class="company-native-only native-booking-list"><div class="native-section-title"><div><small>SERVICE HISTORY</small><h3>All bookings</h3></div><span>{{ $bookings->total() }}</span></div>@forelse($bookings as $booking)<article class="native-history-card"><a class="native-history-main" href="{{ route('jobs.report.show', $booking) }}"><img src="/images/app/company/{{ $booking->service_type === 'maintenance' ? 'maintenance-hero.webp' : ($booking->service_name === 'Deep cleaning' ? 'deep-cleaning.webp' : 'unit-dubai.webp') }}" alt=""><span><small>{{ $booking->reference }}</small><strong>{{ $booking->service_name }}</strong><em>{{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</em></span><i class="bi bi-chevron-right"></i></a><div class="native-history-meta"><time><b>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('d') }}</b>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('M') }}<small>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('g:i A') }}</small></time><span class="status {{ $booking->status }}">{{ str_replace('_', ' ', $booking->status) }}</span><span class="status {{ $booking->payment_status }}">{{ $booking->payment_status }}</span><a href="{{ route('chat.show', $booking) }}" aria-label="Open job chat"><i class="bi bi-chat-dots"></i></a></div></article>@empty<a class="native-empty-card" href="{{ route('bookings.create', 'cleaning') }}"><i class="bi bi-calendar-plus"></i><span><strong>No bookings yet</strong><small>Create your first service request.</small></span><i class="bi bi-chevron-right"></i></a>@endforelse</section>
-<div class="company-native-only native-pagination">{{ $bookings->links() }}</div>
+<section class="company-native-only native-booking-list">
+    <div class="native-section-title"><div><small>SERVICE HISTORY</small><h3>All bookings</h3></div><span>{{ $bookings->total() }}</span></div>
+    @forelse($bookings as $booking)
+        @php($isPaymentDue = in_array($booking->status, ['awaiting_inspection_payment', 'awaiting_quote_payment'], true))
+        @php($payUrl = $booking->status === 'awaiting_inspection_payment' ? $booking->inspection_payment_url : $booking->quotation_payment_url)
+        <article class="native-history-card">
+            <a class="native-history-main" href="{{ route('jobs.report.show', $booking) }}"><img src="/images/app/company/{{ $booking->service_type === 'maintenance' ? 'maintenance-hero.webp' : ($booking->service_name === 'Deep cleaning' ? 'deep-cleaning.webp' : 'unit-dubai.webp') }}" alt=""><span><small>{{ $booking->reference }}</small><strong>{{ $booking->service_name }}</strong><em>{{ $booking->unit->building }} · Unit {{ $booking->unit->unit_number }}</em></span><i class="bi bi-chevron-right"></i></a>
+            <div class="native-history-meta">
+                <time><b>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('d') }}</b>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('M') }}<small>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('g:i A') }}</small></time>
+                <span class="status {{ $booking->status }}">{{ str_replace('_', ' ', $booking->status) }}</span>
+                <span class="status {{ $booking->payment_status }}">{{ $booking->payment_status }}</span>
+                @if($isPaymentDue && $payUrl)
+                    <a class="native-history-pay" href="{{ $payUrl }}" rel="noopener" aria-label="Pay for {{ $booking->reference }}"><i class="bi bi-lock"></i><span>Pay now</span></a>
+                @else
+                    <a href="{{ route('chat.show', $booking) }}" aria-label="Open job chat"><i class="bi bi-chat-dots"></i></a>
+                @endif
+            </div>
+        </article>
+    @empty
+        <a class="native-empty-card" href="{{ route('bookings.create', 'cleaning') }}"><i class="bi bi-calendar-plus"></i><span><strong>No bookings yet</strong><small>Create your first service request.</small></span><i class="bi bi-chevron-right"></i></a>
+    @endforelse
+</section>
+@if($bookings->hasPages())
+    <nav class="company-native-only native-pagination" aria-label="Booking pages">
+        @if($bookings->onFirstPage())<span aria-disabled="true"><i class="bi bi-chevron-left"></i></span>@else<a href="{{ $bookings->previousPageUrl() }}" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>@endif
+        <strong>Page {{ $bookings->currentPage() }} of {{ $bookings->lastPage() }}</strong>
+        @if($bookings->hasMorePages())<a href="{{ $bookings->nextPageUrl() }}" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>@else<span aria-disabled="true"><i class="bi bi-chevron-right"></i></span>@endif
+    </nav>
+@endif
 <section class="company-desktop-only panel"><div class="panel-head"><div><p class="eyebrow">SERVICE HISTORY</p><h3>All bookings</h3></div></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Unit</th><th>Service</th><th>Schedule</th><th>Payment</th><th>Job status</th><th>Action</th></tr></thead><tbody>@forelse($bookings as $booking)<tr><td><strong>{{ $booking->reference }}</strong></td><td>{{ $booking->unit->building }}<small>Unit {{ $booking->unit->unit_number }}</small></td><td>{{ $booking->service_name }}</td><td>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('d M Y') }}<small>{{ $booking->scheduled_at->timezone('Asia/Dubai')->format('g:i A') }}</small></td><td><span class="status {{ $booking->payment_status }}">{{ $booking->payment_status }}</span></td><td><span class="status {{ $booking->status }}">{{ str_replace('_', ' ', $booking->status) }}</span></td><td><div class="document-actions">@if($booking->estimate_submitted_at)<a class="icon-document" href="{{ route('bookings.quotation.pdf', $booking) }}"><i class="bi bi-file-earmark-text"></i></a>@endif @if($booking->quotation_invoice_id)<a class="icon-document" href="{{ route('bookings.invoice.pdf', $booking) }}"><i class="bi bi-receipt"></i></a>@endif</div></td></tr>@empty<tr><td colspan="7"><div class="empty"><h4>No bookings yet</h4></div></td></tr>@endforelse</tbody></table></div></section><div class="company-desktop-only">{{ $bookings->links() }}</div>
 @endsection

@@ -6,8 +6,8 @@ use App\Models\Booking;
 use App\Models\Invoice;
 use App\Models\JobPhoto;
 use App\Models\Unit;
-use App\Notifications\AdminAlert;
 use App\Services\NomodPaymentLinks;
+use App\Services\OperationalNotifier;
 use App\Support\RateCatalogue;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -194,13 +194,49 @@ class BookingController extends Controller
                 'captured_at' => now(),
             ]);
         }
+        $paymentUrl = null;
         if ($data['service_type'] === 'maintenance') {
             $successUrl = route('bookings.index', ['nf_booking' => $booking->id, 'nf_payment' => 'inspection']);
-            $url = rescue(fn () => app(NomodPaymentLinks::class)->create('Inspection '.$booking->reference, [['name' => 'Maintenance inspection fee', 'amount' => number_format($amount / 100, 2, '.', ''), 'quantity' => 1]], 'NextFix booking '.$booking->reference.' inspection payment.', $successUrl, route('bookings.index')), null, false);
-            $booking->update(['inspection_payment_url' => $url]);
+            $paymentUrl = rescue(fn () => app(NomodPaymentLinks::class)->create('Inspection '.$booking->reference, [['name' => 'Maintenance inspection fee', 'amount' => number_format($amount / 100, 2, '.', ''), 'quantity' => 1]], 'NextFix booking '.$booking->reference.' inspection payment.', $successUrl, route('bookings.index')), null, false);
+            $booking->update(['inspection_payment_url' => $paymentUrl]);
+        } else {
+            $invoice = Invoice::create([
+                'company_id' => $booking->company_id,
+                'number' => 'INV-C-'.now()->format('ymd').'-'.$booking->id,
+                'public_token' => hash('sha256', $booking->reference.now().Str::random()),
+                'issued_at' => today(),
+                'due_at' => today(),
+                'status' => 'sent',
+                'line_items' => collect($bookingItems)->map(fn (array $item): array => [
+                    'description' => $item['label'],
+                    'quantity' => $item['quantity'],
+                    'unit_price_minor' => $item['unit_price_minor'],
+                ])->values()->all(),
+                'subtotal_minor' => $amount,
+                'tax_minor' => 0,
+                'amount_minor' => $amount,
+                'currency' => 'AED',
+                'notes' => 'Cleaning booking '.$booking->reference,
+            ]);
+            $successUrl = route('bookings.index', ['nf_booking' => $booking->id, 'nf_payment' => 'cleaning']);
+            $paymentUrl = rescue(fn () => app(NomodPaymentLinks::class)->create('Cleaning '.$booking->reference, [['name' => $data['service_name'], 'amount' => number_format($amount / 100, 2, '.', ''), 'quantity' => 1]], 'NextFix cleaning booking '.$booking->reference.'.', $successUrl, route('bookings.index')), null, false);
+            $booking->update([
+                'workflow_stage' => 'awaiting_quote_payment',
+                'status' => 'awaiting_quote_payment',
+                'quotation_invoice_id' => $invoice->id,
+                'quotation_payment_url' => $paymentUrl,
+            ]);
         }
 
-        return redirect()->route('bookings.index')->with('status', 'Booking requested. We will confirm the schedule and price with you.');
+        app(OperationalNotifier::class)->bookingCreated(
+            $booking->fresh(['company.users', 'unit', 'professional.user'])
+        );
+
+        if ($paymentUrl) {
+            return redirect()->away($paymentUrl);
+        }
+
+        return redirect()->route('bookings.index')->with('status', 'Booking saved. The payment link is temporarily unavailable; use Pay now from Bookings.');
     }
 
     public function quotationDecision(Request $request, Booking $booking): RedirectResponse
@@ -218,16 +254,27 @@ class BookingController extends Controller
             $paid = ($subtotal + $tax) === 0;
             $successUrl = route('bookings.index', ['nf_booking' => $booking->id, 'nf_payment' => 'quotation']);
             $paymentUrl = $paid ? null : rescue(fn () => app(NomodPaymentLinks::class)->create('Quotation '.$booking->reference, [['name' => 'Approved maintenance work', 'amount' => number_format(($subtotal + $tax) / 100, 2, '.', ''), 'quantity' => 1]], 'NextFix booking '.$booking->reference.' quotation payment. Inspection credit AED '.number_format($credit / 100, 2).' applied.', $successUrl, route('bookings.index')), null, false);
-            $booking->update(['workflow_stage' => $paid ? 'work' : 'awaiting_quote_payment', 'status' => $paid ? 'assigned' : 'awaiting_quote_payment', 'estimate_approved_at' => now(), 'customer_decision_at' => now(), 'customer_decision_note' => $data['decision_note'] ?? null, 'quotation_invoice_id' => $invoice->id, 'quotation_payment_url' => $paymentUrl]);
-            $booking->professional?->user?->notifyNow(new AdminAlert('Quotation approved', $booking->reference.' was approved by '.$booking->company->name.'. '.($paid ? 'Work is ready.' : 'Waiting for payment.'), route('worker.jobs.show', $booking), 'success'), ['database']);
+            $booking->update(['workflow_stage' => $paid ? 'work' : 'awaiting_quote_payment', 'status' => $paid ? 'assigned' : 'awaiting_quote_payment', 'payment_status' => $paid ? 'paid' : 'pending', 'estimate_approved_at' => now(), 'customer_decision_at' => now(), 'customer_decision_note' => $data['decision_note'] ?? null, 'quotation_invoice_id' => $invoice->id, 'quotation_payment_url' => $paymentUrl]);
+            app(OperationalNotifier::class)->quotationApproved(
+                $booking->fresh(['company.users', 'unit', 'professional.user', 'quotationInvoice']),
+                $invoice,
+                $paid
+            );
 
-            return back()->with('status', $paid ? 'Quotation approved. Work is authorized.' : 'Quotation approved. Pay the remaining balance to authorize work.');
+            if ($paymentUrl) {
+                return redirect()->away($paymentUrl);
+            }
+
+            return back()->with('status', $paid ? 'Quotation approved. Work is authorized.' : 'Quotation approved. The payment link is temporarily unavailable.');
         }
 
         $request->validate(['decision_note' => ['required', 'string', 'max:1000']]);
         $reason = $data['decision_note'] ?? 'Please revise the quotation.';
         $booking->update(['workflow_stage' => 'estimate', 'status' => 'changes_requested', 'customer_decision_at' => now(), 'customer_decision_note' => $reason]);
-        $booking->professional?->user?->notifyNow(new AdminAlert('Quotation changes requested', $booking->company->name.' requested changes for '.$booking->reference.': '.$reason, route('worker.jobs.show', $booking), 'warning'), ['database']);
+        app(OperationalNotifier::class)->quotationChangesRequested(
+            $booking->fresh(['company.users', 'unit', 'professional.user']),
+            $reason
+        );
 
         return back()->with('status', 'Changes requested. NextFix will revise the quotation.');
     }

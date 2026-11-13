@@ -29,8 +29,8 @@ class NomodPaymentReconciler
             $successUrl = (string) ($charge['success_url'] ?? $charge['successUrl'] ?? '');
             parse_str((string) parse_url($successUrl, PHP_URL_QUERY), $query);
             $bookingId = filter_var($query['nf_booking'] ?? null, FILTER_VALIDATE_INT);
-            $paymentType = $query['nf_payment'] ?? null;
-            if (! $bookingId || ! in_array($paymentType, ['inspection', 'quotation'], true)) continue;
+            $paymentType = strtolower((string) ($query['nf_payment'] ?? ''));
+            if (! $bookingId || ! in_array($paymentType, ['inspection', 'cleaning', 'quotation'], true)) continue;
 
             $matched += DB::transaction(fn () => $this->settle($bookingId, $paymentType, $charge));
         }
@@ -52,7 +52,7 @@ class NomodPaymentReconciler
         if ($gatewayReference === '') return 0;
         Payment::firstOrCreate(['gateway_reference' => $gatewayReference], [
             'company_id' => $booking->company_id,
-            'invoice_id' => $paymentType === 'quotation' ? $booking->quotation_invoice_id : null,
+            'invoice_id' => $paymentType === 'inspection' ? null : $booking->quotation_invoice_id,
             'reference' => 'NOMOD-'.Str::upper(Str::random(12)), 'method' => 'nomod', 'status' => 'completed',
             'amount_minor' => $amountMinor, 'currency' => $currency, 'paid_at' => now(),
             'notes' => ucfirst($paymentType).' payment for '.$booking->reference.' · reconciled from Nomod API',

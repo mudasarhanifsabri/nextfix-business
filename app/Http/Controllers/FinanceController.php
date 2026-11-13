@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Services\NomodPaymentReconciler;
+use App\Services\OperationalNotifier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -82,6 +83,12 @@ class FinanceController extends Controller
             'notes' => trim(($payment->notes ? $payment->notes."\n" : '').'Refund requested by '.$request->user()->name.' · '.$data['reason']),
         ]);
         if ($manual && $payment->invoice) $payment->invoice->update(['status' => $minor >= $payment->amount_minor ? 'refunded' : 'partially_refunded']);
+        app(OperationalNotifier::class)->refundRequested(
+            $payment->fresh(['company.users', 'invoice']),
+            $minor,
+            $data['reason'],
+            $manual
+        );
 
         return back()->with('status', $manual
             ? 'Manual refund recorded.'

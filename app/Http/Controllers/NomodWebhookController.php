@@ -94,7 +94,7 @@ class NomodWebhookController extends Controller
             throw new \RuntimeException('Nomod payment is missing its NextFix booking reference.');
         }
         $data = $payload['data'] ?? [];
-        $invoice = $paymentType === 'quotation' ? $booking->quotation_invoice_id : null;
+        $invoice = $paymentType === 'inspection' ? null : $booking->quotation_invoice_id;
         $expectedMinor = $paymentType === 'inspection' ? $booking->inspection_fee_minor : $booking->quotationInvoice?->amount_minor;
         $currency = strtoupper((string) ($data['currency'] ?? ''));
         $amountMinor = (int) round(((float) ($data['total'] ?? 0)) * 100);
@@ -165,7 +165,7 @@ class NomodWebhookController extends Controller
         if ($objectId !== '') {
             Payment::where('gateway_reference', $objectId)->update(['status' => $state, 'notes' => $message]);
         }
-        if ($paymentType === 'quotation' && in_array($state, ['refunded', 'partially_refunded', 'disputed'], true)) {
+        if ($paymentType !== 'inspection' && in_array($state, ['refunded', 'partially_refunded', 'disputed'], true)) {
             $booking->quotationInvoice?->update(['status' => $state]);
         }
 
@@ -180,8 +180,8 @@ class NomodWebhookController extends Controller
         $successUrl = (string) ($data['successUrl'] ?? $data['success_url'] ?? '');
         parse_str((string) parse_url($successUrl, PHP_URL_QUERY), $query);
         $bookingId = filter_var($query['nf_booking'] ?? null, FILTER_VALIDATE_INT);
-        $paymentType = $query['nf_payment'] ?? null;
-        if (! $bookingId || ! in_array($paymentType, ['inspection', 'quotation'], true)) return [null, null];
+        $paymentType = strtolower((string) ($query['nf_payment'] ?? ''));
+        if (! $bookingId || ! in_array($paymentType, ['inspection', 'cleaning', 'quotation'], true)) return [null, null];
 
         return [Booking::query()->lockForUpdate()->find($bookingId), $paymentType];
     }

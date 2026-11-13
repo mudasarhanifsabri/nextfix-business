@@ -39,4 +39,59 @@ body.company-app{--native-blue:#175ee8;--native-navy:#0d1d3c;--native-ink:#11193
 .native-profile-hero{position:relative;display:grid;grid-template-columns:54px 1fr;align-items:end;overflow:hidden;min-height:170px;margin-bottom:13px;padding:18px;border-radius:21px;color:#fff}.native-profile-hero>img,.native-profile-hero>span{position:absolute;inset:0;width:100%;height:100%}.native-profile-hero>img{object-fit:cover}.native-profile-hero>span{background:linear-gradient(180deg,rgba(5,18,42,.08),rgba(5,18,42,.86))}.native-profile-hero .company-logo{position:relative;z-index:2;display:grid;place-items:center;width:48px;height:48px;border:2px solid rgba(255,255,255,.82);border-radius:15px;background:var(--native-blue);font-size:14px;font-weight:900}.native-profile-hero>div:last-child{position:relative;z-index:2;display:grid}.native-profile-hero small{font-size:7px;font-weight:900;letter-spacing:.12em}.native-profile-hero h2{margin:1px 0;color:#fff;font-size:19px}.native-profile-hero p{margin:0;color:rgba(255,255,255,.78);font-size:8px}.company-app .company-profile-form{overflow:hidden}.company-app .company-profile-form .panel-head{padding:15px}.company-app .company-profile-form .form-grid{padding:15px}.company-app .profile-readonly{gap:0;padding:5px 15px}.company-app .profile-readonly>span{padding:12px 0;border-bottom:1px solid #edf0f5}.company-app .profile-readonly>small{padding:13px 0}
 }
 
+/* Mobile booking payment action and compact pagination */
+@media (max-width: 800px) {
+    .native-history-meta {
+        grid-template-columns: 50px minmax(0, 1fr) minmax(0, 1fr) auto;
+    }
+
+    .native-history-meta > a.native-history-pay {
+        width: auto;
+        min-width: 72px;
+        padding: 0 9px;
+        grid-auto-flow: column;
+        gap: 5px;
+        border-color: var(--native-blue);
+        background: var(--native-blue);
+        color: #fff;
+    }
+
+    .native-history-pay span {
+        font-size: 7px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .native-pagination {
+        display: grid;
+        grid-template-columns: 42px 1fr 42px;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .native-pagination > a,
+    .native-pagination > span {
+        display: grid;
+        place-items: center;
+        height: 40px;
+        border: 1px solid var(--native-line);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--native-blue);
+        text-decoration: none;
+    }
+
+    .native-pagination > span {
+        background: #f6f8fb;
+        color: #b1bac8;
+    }
+
+    .native-pagination > strong {
+        text-align: center;
+        color: var(--native-muted);
+        font-size: 9px;
+    }
+}
+
 @media(display-mode:standalone) and (max-width:800px){.company-app .topbar{padding-top:calc(9px + env(safe-area-inset-top));height:calc(68px + env(safe-area-inset-top))}.company-app .content{padding-top:12px}.native-booking-submit{bottom:calc(69px + env(safe-area-inset-bottom))}.mobile-focus-screen .topbar{display:none!important}.mobile-focus-screen .content{padding-top:calc(12px + env(safe-area-inset-top))}.mobile-focus-screen .native-booking-submit{bottom:env(safe-area-inset-bottom)}}

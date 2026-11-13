@@ -9,7 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use App\Notifications\AdminAlert;
+use App\Services\OperationalNotifier;
 
 class OperationsController extends Controller
 {
@@ -59,15 +59,12 @@ class OperationsController extends Controller
         if (($data['professional_id'] ?? null) && $booking->service_type === 'maintenance' && $booking->inspection_fee_minor > 0) {
             abort_unless($booking->inspection_fee_paid_at, 422, 'Inspection fee must be paid before assigning a professional.');
         }
+        $previousProfessionalId = $booking->professional_id;
         $booking->update(['professional_id' => $data['professional_id'] ?? null]);
-        if ($booking->professional?->user) {
-            $booking->professional->user->notifyNow(new AdminAlert(
-                'New job assigned',
-                $booking->reference.' · '.$booking->service_name.' at '.$booking->unit->building.' Unit '.$booking->unit->unit_number.'.',
-                route('worker.jobs.show', $booking),
-                'info'
-            ), ['database']);
-        }
+        app(OperationalNotifier::class)->bookingAssigned(
+            $booking->fresh(['company.users', 'unit', 'professional.user']),
+            $previousProfessionalId
+        );
 
         return back()->with('status', $booking->professional_id ? 'Professional assigned to '.$booking->reference.'.' : 'Assignment removed.');
     }
@@ -77,9 +74,9 @@ class OperationsController extends Controller
         $this->authorizeAdmin($request);
         abort_unless($booking->workflow_stage === 'admin_review', 422, 'This estimate is not ready to send.');
         $booking->update(['workflow_stage' => 'awaiting_customer_approval', 'status' => 'awaiting_customer_approval', 'quotation_sent_at' => now()]);
-        foreach ($booking->company->users as $manager) {
-            $manager->notifyNow(new AdminAlert('Quotation ready for approval', $booking->reference.' is ready. Review the inspection, fee credit and remaining amount.', route('bookings.index'), 'warning'), ['database']);
-        }
+        app(OperationalNotifier::class)->quotationReady(
+            $booking->fresh(['company.users', 'unit', 'professional.user'])
+        );
         return back()->with('status', 'Quotation sent to '.$booking->company->name.' for approval.');
     }
 

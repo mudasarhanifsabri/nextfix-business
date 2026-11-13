@@ -4,13 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\User;
-use App\Notifications\AdminAlert;
+use App\Services\OperationalNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -44,7 +43,7 @@ class CompanyRegistrationController extends Controller
             return [$company, $user];
         });
 
-        Notification::send(User::where('role', 'nextfix_admin')->get(), new AdminAlert('New company registration', $company->name.' registered and is ready for onboarding.', route('admin.companies.show', $company), 'info'));
+        app(OperationalNotifier::class)->companyRegistered($company, $user);
         Auth::login($user);
         $request->session()->regenerate();
 

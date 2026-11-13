@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\CompanyRateCard;
-use App\Models\User;
-use App\Notifications\AdminAlert;
+use App\Services\OperationalNotifier;
 use App\Support\RateCatalogue;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 
 class RateCardController extends Controller
@@ -58,7 +56,7 @@ class RateCardController extends Controller
         ])->save();
 
         if ($submit) {
-            Notification::send($company->users, new AdminAlert('Rate card ready for approval', 'NextFix sent a new service rate card for your review.', route('rates.show'), 'info'));
+            app(OperationalNotifier::class)->rateCardReady($company, $card);
         }
 
         return back()->with('status', $submit ? 'Rate card sent to the company for approval.' : 'Rate card saved as draft.');
@@ -92,7 +90,12 @@ class RateCardController extends Controller
             $level = 'warning';
         }
 
-        Notification::send(User::where('role', 'nextfix_admin')->get(), new AdminAlert($title, $request->user()->company->name.': '.$message, route('admin.companies.rates.show', $request->user()->company), $level));
+        app(OperationalNotifier::class)->rateCardDecision(
+            $request->user()->company,
+            $card,
+            $data['decision'],
+            $data['review_note'] ?? null
+        );
 
         return back()->with('status', $message);
     }
